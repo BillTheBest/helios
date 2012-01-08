@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jee="http://www.springframework.org/schema/jee"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+   					       http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
+					       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd"
+       default-init-method="start" default-destroy-method="destroy">
+    
+
+    <bean id="Weblogic10.3_Collector" class="org.helios.collectors.jmx.JMXCollector" 
+    	depends-on="TracerFactory"
+        c:_0-ref="JMXServiceURL_Connector_t3" 
+        p:objectName="org.helios.collectors:type=JMXCollector,name=WeblogicLaptop"
+        p:tracerFactory-ref="TracerFactory"
+        p:tracingNameSpace="JMX,Weblogic"
+        p:logErrors="true"
+        p:logCollectionResult="false"
+        p:traceMXBeans="true">
+        <property name="jmxObjects">
+            <list>
+                <ref bean="ThreadActivity" />
+            </list>
+        </property>
+    </bean>       
+    <!-- 
+    	JMXServiceURL for RMI-IIOP connection to Weblogic server.  There are some prerequisites for this to work which are
+    	described at this blog: http://www.kobatera.com/blog/posts/performance-engineering/using-sitescope-to-monitor-weblogic-103-12 
+    	
+    	-Dcom.sun.CORBA.transport.ORBTCPReadTimeouts=10:60000:500:10   -->
+      
+    <bean id="JMXServiceURL_Connector_RMI" class="org.helios.collectors.jmx.JMXServiceURLConnectionFactory" 
+    		c:_0="service:jmx:rmi:///jndi/iiop://127.0.0.1:7001/weblogic.management.mbeanservers.domainruntime"
+			destroy-method="stop" >	
+	</bean>
+	
+    <!-- JMXServiceURL for default t3 protocol connection to Weblogic server --> 
+    
+    <bean id="JMXServiceURL_Connector_t3" class="org.helios.collectors.jmx.JMXServiceURLConnectionFactory" 
+    		c:_0="service:jmx:t3://127.0.0.1:7001/jndi/weblogic.management.mbeanservers.domainruntime"
+			destroy-method="stop" >	
+			<property name="environment">
+				<map>
+					<entry key="java.naming.security.principal" value="weblogic" />
+					<entry key="java.naming.security.credentials" value="welcome1" />
+					<entry key="jmx.remote.protocol.provider.pkgs" value="weblogic.management.remote" />
+				</map>
+			</property>
+	</bean>	
+	
+</beans>

@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.helios</groupId>
+    <artifactId>helios-collectors</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.helios.helios-collectors</groupId>
+  <artifactId>helios-collectors-snmp</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>collectors-snmp</name>
+  <url>http://maven.apache.org</url>
+		<dependencies>
+			<!--   Test Dependencies -->
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<scope>test</scope>
+			</dependency>
+			<!-- 3rd party compile dependencies -->
+			<dependency>
+				<groupId>log4j</groupId>
+				<artifactId>log4j</artifactId>
+			</dependency>
+			
+			<dependency>
+			  <groupId>joesnmp</groupId>
+			  <artifactId>joesnmp</artifactId>
+			</dependency>		
+			<dependency>
+			  <groupId>org.springframework</groupId>
+			  <artifactId>spring-beans</artifactId>
+			</dependency>
+				
+			<!-- helios compile dependencies -->
+			<dependency>
+				<groupId>org.helios.helios-collectors</groupId>
+				<artifactId>helios-collectors-core</artifactId>
+			</dependency>	
+			<dependency>
+			  <groupId>org.helios.helios-ot</groupId>
+			  <artifactId>helios-ot-core2</artifactId>
+			</dependency>
+		</dependencies>
+</project>

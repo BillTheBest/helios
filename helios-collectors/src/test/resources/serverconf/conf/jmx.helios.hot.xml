@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:jee="http://www.springframework.org/schema/jee"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+       http://www.springframework.org/schema/jee
+       http://www.springframework.org/schema/jee/spring-jee-2.0.xsd" default-init-method="start" default-destroy-method="destroy">
+
+    <bean id="HeliosNotificationListener" class="org.helios.collectors.notification.HeliosNotificationListener" factory-method="getInstance" depends-on="HeliosExecutorService">
+        <constructor-arg type="java.util.concurrent.ExecutorService" ref="HeliosExecutorService"/>
+    </bean>
+
+    <bean id="HeliosExecutorService" class="java.util.concurrent.Executors" factory-method="newFixedThreadPool">
+        <constructor-arg type="int" value="5"/>
+    </bean>
+
+    <bean id="JNDIMBeanServerConnectionFactory" class="org.helios.collectors.jmx.JNDIMBeanServerConnectionFactory" />
+
+    <bean id="JBossJMX" class="org.helios.collectors.jmx.JMXCollector" depends-on="TracerFactory">
+        <constructor-arg type="java.util.Properties">
+            <props>
+                <prop key="java.naming.factory.initial">org.jnp.interfaces.NamingContextFactory</prop>
+                <prop key="java.naming.provider.url">localhost:1099</prop>
+                <prop key="jndi.name">jmx/invoker/RMIAdaptor</prop>
+            </props>
+        </constructor-arg>
+        <constructor-arg type="org.helios.collectors.jmx.IMBeanServerConnectionFactory" ref="JNDIMBeanServerConnectionFactory" />
+        <property name="objectName" value="org.helios.collectors:type=JMXCollector,name=JBoss"/>
+        <property name="logErrors" value="true"/>
+        <property name="logCollectionResult" value="true"/>
+        <property name="frequency" value="15000"/>
+        <property name="tracerFactory" ref="TracerFactory" />
+        <property name="tracingNameSpace" value="JMX,JBoss"/>
+        <property name="availabilityMBean" value="jboss:service=Naming"/>
+        <property name="availabilityAttribute" value="State" />
+        <property name="availabilitySegment" value="JMX,JBoss"/>
+        <property name="traceMXBeans" value="false"/>
+        
+
+        <property name="jmxObjects">
+            <list>
+                <ref bean="TransactionManagerActivity" />
+                <ref bean="DestinationManagerAvailability" />
+                <ref bean="DataSources" />
+                <ref bean="JBossMQ" />
+            </list>
+        </property>
+    </bean>
+
+    <bean name="TransactionManagerActivity" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="jboss:service=TransactionManager"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="CommitCount"/>
+                    <property name="segmentPrefixElements" value="{TARGET-PROPERTY:service}"/>
+                    <property name="metricName" value="CommitCount"/>
+                    <property name="traceType" value="DELTA_INT_AVG"/>
+                </bean>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="TransactionCount"/>
+                    <property name="segmentPrefixElements" value="{TARGET-PROPERTY:service}"/>
+                    <property name="metricName" value="TransactionCount"/>
+                    <property name="traceType" value="INT_AVG"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+    
+    
+    
+    <bean id="DataSources" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="jboss.jca:service=ManagedConnectionPool,*"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="ConnectionCount"/>
+                    <property name="segmentPrefixElements" value="DataSources"/>
+                    <property name="segment" value="{TARGET-PROPERTY:name}"/>
+                    <!--property name="metricName" value="AvailableConnectionCount"/-->
+                    <property name="defaultValue" value="0"/>
+                    <property name="traceType" value="STICKY_INT_AVG"/>
+                </bean>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="InUseConnectionCount"/>
+                    <property name="segmentPrefixElements" value="DataSources"/>
+                    <property name="segment" value="{TARGET-PROPERTY:name}"/>
+                    <!--property name="metricName" value="InUseConnectionCount"/-->
+                    <property name="traceType" value="STICKY_INT_AVG"/>
+                </bean>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="ConnectionCreatedCount"/>
+                    <property name="segmentPrefixElements" value="DataSources"/>
+                    <property name="segment" value="{TARGET-PROPERTY:name}"/>
+                    <!--property name="metricName" value="ConnectionCreatedCount"/-->
+                    <property name="traceType" value="STICKY_INT_AVG"/>
+                </bean>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="ConnectionDestroyedCount"/>
+                    <property name="segmentPrefixElements" value="DataSources"/>
+                    <property name="segment" value="{TARGET-PROPERTY:name}"/>
+                    <property name="traceType" value="STICKY_INT_AVG"/>
+                </bean>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="MaxConnectionsInUseCount"/>
+                    <property name="segmentPrefixElements" value="DataSources"/>
+                    <property name="segment" value="{TARGET-PROPERTY:name}"/>
+                    <property name="traceType" value="STICKY_INT_AVG"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+    
+    
+    <!-- 
+   <bean id="Entities" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="com.ice.ecs.entity:service=ExclusiveLockInterceptor,*"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="ThreadsHoldingLocksCount"/>
+                    <property name="segmentPrefixElements" value="Entities"/>
+                    <property name="segment" value="{TARGET-PROPERTY:class}"/>
+                             <property name="defaultValue" value="0"/>
+                    <property name="traceType" value="STICKY_INT_AVG"/>
+                </bean>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="Invalidations"/>
+                    <property name="segmentPrefixElements" value="Entities"/>
+                    <property name="segment" value="{TARGET-PROPERTY:class}"/>
+                    <property name="defaultValue" value="0"/>
+                    <property name="traceType" value="STICKY_INT_AVG"/>
+                </bean>
+                
+            </list>
+        </property>
+    </bean>    
+    -->
+    
+    <bean id="JBossMQ" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="jboss.mq.destination:service=Queue,*"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="State"/>
+                    <property name="segmentPrefixElements" value="Queue"/>
+                    <property name="segment" value="{TARGET-PROPERTY:name}"/>
+                    <property name="traceType" value="STICKY_INT_AVG"/>
+                    <property name="objectFormatters">
+                        <list>
+                            <ref bean="State2Availability" />
+                        </list>
+                    </property>
+                </bean>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="QueueDepth"/>
+                    <property name="segmentPrefixElements" value="Queue"/>
+                    <property name="segment" value="{TARGET-PROPERTY:name}"/>
+                    <property name="traceType" value="INT_AVG"/>
+                </bean>
+            </list>
+        </property>
+    </bean>        
+    
+    
+    <bean name="DestinationManagerAvailability" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="jboss.mq:service=DestinationManager"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
+                    <property name="targetAttributeName" value="State"/>
+                    <property name="segmentPrefixElements" value="{TARGET-PROPERTY:service}"/>
+                    <property name="metricName" value="Avaliability"/>
+                    <property name="traceType" value="STICKY_INT_AVG"/>
+                    <property name="objectFormatters">
+                        <list>
+                            <ref bean="State2Availability" />
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+    </bean>    
+    
+    <bean name="State2Availability" class="org.helios.collectors.jmx.ScriptObjectFormatter">
+        <property name="scriptBean">
+            <bean class="org.helios.scripting.ScriptBean">
+                <constructor-arg type="java.lang.String" value="groovy"/>
+                <constructor-arg type="java.lang.String">
+                    <value>
+                        <![CDATA[
+                            public format(obj){
+                                if(obj==3)
+                                    return "1"
+                                else
+                                    return "0"
+                            }
+                        ]]>
+                    </value>
+                </constructor-arg>
+                <constructor-arg type="java.lang.Class" value="org.helios.collectors.jmx.IObjectFormatter"/>
+            </bean>
+        </property>
+        <property name="metricName" value="Availability"/>
+    </bean>
+    
+    <bean id="CollectBSExceptionScript" class="org.helios.scripting.ScriptBeanWrapper">
+        <property name="scriptBean">
+            <bean class="org.helios.scripting.ScriptBean">
+                <constructor-arg type="java.lang.String" value="beanshell"/>
+                <constructor-arg type="java.lang.String">
+                    <value>
+                        <![CDATA[
+                            Object executeScript(){
+                                log.info("*** Exception Occured - [BeanShell] ***");
+                                return null;
+                            }
+                        ]]>
+                    </value>
+                </constructor-arg>
+                <constructor-arg type="java.lang.Class" value="org.helios.collectors.IScriptAction"/>
+            </bean>
+        </property>
+    </bean>
+
+</beans>
+

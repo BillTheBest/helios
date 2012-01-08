@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:jee="http://www.springframework.org/schema/jee"
+   xmlns:p="http://www.springframework.org/schema/p"
+   xmlns:c="http://www.springframework.org/schema/c"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans 
+   					   http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+   					   http://www.springframework.org/schema/jee
+					   http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
+					   http://www.springframework.org/schema/util
+					   http://www.springframework.org/schema/util/spring-util-3.1.xsd"
+    default-init-method="connect" default-destroy-method="disconnect">
+
+    <bean id="HSQLDBEndpoint" class="org.helios.ot.endpoint.HSQLDBEndpoint"
+    p:dbUrl="jdbc:hsqldb:file:heliosdb"
+    p:user="sa"
+    p:password="" />
+    
+    <bean id="EndPointBatchConsumer" class="org.helios.ot.tracer.disruptor.EndPointBatchConsumer" 
+    c:_0-ref="HSQLDBEndpoint" depends-on="HSQLDBEndpoint"/>
+     
+     
+</beans>

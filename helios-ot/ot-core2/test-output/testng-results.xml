@@ -1,0 +1,10 @@
+<testng-results>
+  <reporter-output>
+  </reporter-output>
+  <suite name="helios-ot-core2">
+    <groups>
+    </groups>
+    <test name="test.org.helios.ot.endpoint.jms.JMSEndpointTestCase">
+    </test>
+  </suite>
+</testng-results>

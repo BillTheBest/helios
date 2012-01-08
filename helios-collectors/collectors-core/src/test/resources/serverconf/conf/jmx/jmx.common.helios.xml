@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:jee="http://www.springframework.org/schema/jee"
+   xmlns:p="http://www.springframework.org/schema/p"
+   xmlns:c="http://www.springframework.org/schema/c"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans 
+   					   http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+   					   http://www.springframework.org/schema/jee
+					   http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
+					   http://www.springframework.org/schema/util
+					   http://www.springframework.org/schema/util/spring-util-3.1.xsd"
+    default-init-method="start" default-destroy-method="destroy">
+
+	<!-- Bean to take heart-beat of remote JMX connections monitored by Helios  -->
+    <bean id="JMXConnectionFactoryMonitor" class="org.helios.collectors.jmx.JMXConnectionFactoryMonitor" />
+
+	<bean id="MBeanServerConnectionPoolFactory" class="org.helios.collectors.jmx.MBeanServerConnectionPool" scope="prototype" autowire="constructor"  >
+		<property name="maxActive" value="5" />
+		<property name="maxIdle" value="3" />
+		<property name="minIdle" value="1" />
+		<property name="maxWait" value="3000" />
+		<property name="testOnBorrow" value="true" />
+		<property name="timeBetweenEvictionRunsMillis" value="10000" />
+	</bean>
+
+    <!--  bean id="HeliosNotificationListener" class="org.helios.collectors.notification.HeliosNotificationListener"
+    		 factory-method="getInstance" depends-on="HeliosExecutorService" c:_0-ref="HeliosExecutorService" />
+    		
+    	    <bean id="HeliosExecutorService" class="java.util.concurrent.Executors" 
+    		factory-method="newFixedThreadPool" c:_0="5" /> 
+    -->
+    	
+	</beans>

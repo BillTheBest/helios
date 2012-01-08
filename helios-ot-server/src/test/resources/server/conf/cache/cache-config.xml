@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="ehcache.xsd"
+        updateCheck="false" monitoring="autodetect"
+        dynamicConfig="true">
+	<!-- http://www.ehcache.org/ehcache.xml -->
+
+    <diskStore path="java.io.tmpdir" />
+
+	<defaultCache		
+       	eternal="false"
+       	timeToIdleSeconds="120"
+       	timeToLiveSeconds="0"
+       	overflowToDisk="true"       	
+       	diskPersistent="true"
+       	diskExpiryThreadIntervalSeconds="120"
+       	memoryStoreEvictionPolicy="LRU"/>
+       	
+       	
+    <cache name="hostCache"
+    	diskPersistent="false"
+    	eternal="false"    	    	    	
+    	overflowToDisk="true"
+    	timeToIdleSeconds="30"
+    	timeToLiveSeconds="0"
+    	statistics="true"
+       	diskExpiryThreadIntervalSeconds="120"
+       	memoryStoreEvictionPolicy="LRU"/>    	
+    
+    <cache name="agentCache"
+    	diskPersistent="false"
+    	eternal="false"    	    	    	
+    	overflowToDisk="true"
+    	timeToIdleSeconds="60"
+    	timeToLiveSeconds="0"
+    	statistics="true"
+    />    
+
+    <cache name="metricNameCache"
+    	diskPersistent="false"
+    	eternal="false"    	    	    	
+    	overflowToDisk="false"
+    	timeToIdleSeconds="30"
+    	timeToLiveSeconds="0"
+    	statistics="true"
+    >
+		<searchable>
+    		<searchAttribute name="fqn" class="org.helios.server.ot.cache.ClosedTraceAttributeExtractor" />
+  		</searchable>
+    </cache>
+    
+    
+    <!-- Key is the FQN, value is the last received metric for that name -->
+    <cache name="lastMetricCache"
+    	diskPersistent="false"
+    	eternal="true"    	    	    	
+    	overflowToDisk="false"
+    	timeToIdleSeconds="60"    	    
+    	statistics="true"
+    >
+		<searchable/>
+    </cache>    
+        
+
+    <cache name="metricTreeCache"
+    	diskPersistent="false"
+    	eternal="true"    	    	    	
+    	overflowToDisk="false"
+    	timeToIdleSeconds="0"
+    	timeToLiveSeconds="0"
+    	statistics="true">
+	</cache>
+    
+    <cache name="subCache"    
+    	diskPersistent="false"
+    	eternal="false"    	    	    	
+    	overflowToDisk="false"
+    	timeToIdleSeconds="0"
+    	timeToLiveSeconds="0"
+    	statistics="true"
+    >
+		<searchable>
+    		<searchAttribute name="pattern" class="org.helios.server.ot.jms.pubsub.PatternAttributeExtractor" />
+  		</searchable>
+    	
+    </cache>
+    
+    
+    
+    <cache name="consumerCache"
+    	diskPersistent="false"
+    	eternal="false"    	    	    	
+    	overflowToDisk="false"
+    	timeToIdleSeconds="0"
+    	timeToLiveSeconds="0"
+    	statistics="true"
+    />    
+        
+    
+       	
+       	
+    <!--    	
+	<cache name="agentCache"
+	      maxEntriesLocalHeap="1000"
+	      eternal="false"
+	      timeToIdleSeconds="30"
+	      timeToLiveSeconds="0"
+	      overflowToDisk="false"/>
+		
+	<cache name="metricCache"
+	      maxEntriesLocalHeap="1000"
+	      eternal="false"
+	      timeToIdleSeconds="30"
+	      timeToLiveSeconds="0"
+	      overflowToDisk="true"
+	      maxEntriesLocalDisk="10000000"
+       	  diskPersistent="true"
+       	  diskExpiryThreadIntervalSeconds="120"
+       	  memoryStoreEvictionPolicy="LRU"/>
+	 -->
+	
+	
+	
+	
+         
+</ehcache>         

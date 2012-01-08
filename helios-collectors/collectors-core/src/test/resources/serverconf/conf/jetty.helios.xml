@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+ 
+      <bean id="JettyThreadPool" class="org.eclipse.jetty.util.thread.QueuedThreadPool">
+        <property name="minThreads" value="10"/>
+        <property name="maxThreads" value="50"/>
+        <property name="daemon" value="true"/>
+      </bean>
+
+      <bean id="HttpConnector" class="org.eclipse.jetty.server.nio.SelectChannelConnector">
+        <property name="port" value="8161"/>
+        <property name="statsOn" value="true" />
+      </bean>
+	
+
+
+	<bean name="HttpServer" class="org.eclipse.jetty.server.Server" 
+		lazy-init="false" destroy-method="stop" init-method="start">
+	   <property name="connectors">
+	      <list>
+	      	<ref bean="HttpConnector" />
+	      </list>	      
+	    </property>
+         <property name="handler">
+              <bean id="handlers" class="org.eclipse.jetty.server.handler.HandlerCollection">
+                <property name="handlers">
+                  <list>
+                  	<ref bean="Contexts" />
+                  </list>
+                </property>
+              </bean>
+            </property>	    
+	    <property name="threadPool" ref="JettyThreadPool"/>
+	</bean>
+
+    <bean id="Contexts" class="org.eclipse.jetty.server.handler.ContextHandlerCollection">
+      <property name="handlers">
+        <list>
+          <!-- <ref bean="Jolokia" /> -->
+          <ref bean="FileServer" />
+        </list>
+      </property>
+    </bean>
+	
+         <bean name="FileServer" class="org.eclipse.jetty.server.handler.ResourceHandler">
+              <property name="directoriesListed" value="true"/>
+              <property name="welcomeFiles">
+                <list>
+                  <value>index.html</value>
+                </list>
+              </property>
+              <property name="resourceBase" value="."/>
+            </bean>   	
+	
+		<!-- 
+        <bean id="Jolokia" class="org.eclipse.jetty.webapp.WebAppContext">
+                <property name="contextPath" value="/jolokia" />
+                <property name="war" value="./src/test/resources/serverconf/webapps/jolokia.war" />
+          </bean>
+		-->
+	<bean id="JettyJMXExporter" class="org.springframework.jmx.export.MBeanExporter">
+		<property name="beans">
+			<map>
+				<entry key="org.helios.jetty:service=Server" value-ref="HttpServer" />
+				<entry key="org.helios.jetty:service=ContextHandlerCollection" value-ref="Contexts" />
+				<!-- <entry key="org.helios.jetty:service=WebApp,name=Jolokia" value-ref="Jolokia" /> -->
+				<entry key="org.helios.jetty:service=WebApp,name=FileServer" value-ref="FileServer" />
+				<entry key="org.helios.jetty:service=Connector,name=HttpConnector" value-ref="HttpConnector" />
+				<entry key="org.helios.jetty:service=ThreadPool" value-ref="JettyThreadPool" />
+				
+			</map>
+		</property>
+		<property name="server" ref="MBeanServer" />
+	</bean>
+           
+</beans>           

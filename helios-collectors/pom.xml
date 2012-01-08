@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.helios</groupId>
+		<artifactId>helios</artifactId>
+		<version>1.0-SNAPSHOT</version>
+	</parent>
+	<groupId>org.helios</groupId>
+	<artifactId>helios-collectors</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<name>helios-collectors</name>
+	<url>http://maven.apache.org</url>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>collectors-core</module>
+    		<module>collectors-snmp</module>
+    		<module>collectors-http</module>
+    		<module>collectors-jmx-proxies</module>
+    		<module>collectors-sigar</module>
+  	</modules>
+
+
+	<dependencyManagement>
+		<dependencies>
+			<!--   Test Dependencies -->
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
+				<scope>test</scope>
+			</dependency>
+			<!-- 3rd party compile dependencies -->
+			<dependency>
+				<groupId>log4j</groupId>
+				<artifactId>log4j</artifactId>
+				<version>${log4j.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.sdicons.jsontools</groupId>
+				<artifactId>jsontools-core</artifactId>
+				<version>${jsontools-core.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.json</groupId>
+				<artifactId>json</artifactId>
+				<version>${json.version}</version>
+			</dependency>
+			<dependency>
+			  <groupId>commons-pool</groupId>
+			  <artifactId>commons-pool</artifactId>
+			  <version>${commons.pool.version}</version>
+			</dependency>
+			<dependency>
+			  <groupId>commons-httpclient</groupId>
+			  <artifactId>commons-httpclient</artifactId>
+			  <version>${httpclient.version}</version>
+			</dependency>
+			<dependency>
+			  <groupId>org.apache.commons</groupId>
+			  <artifactId>not-yet-commons-ssl</artifactId>
+			  <version>${httpclient-ssl.version}</version>
+			</dependency>
+			<dependency>
+			  <groupId>joesnmp</groupId>
+			  <artifactId>joesnmp</artifactId>
+			  <version>${joesnmp.version}</version>
+			</dependency>
+			<dependency>
+			  <groupId>jboss</groupId>
+			  <artifactId>jbossall-client</artifactId>
+			  <version>${jbossall-client.version}</version>
+			  <scope>provided</scope>
+			</dependency>
+			<dependency>
+			  <groupId>org.springframework</groupId>
+			  <artifactId>spring-beans</artifactId>
+			  <version>${spring.version}</version>
+			</dependency>
+
+
+
+
+			<!-- helios compile dependencies -->
+			<dependency>
+				<groupId>org.helios.helios-spring</groupId>
+				<artifactId>helios-spring-core</artifactId>
+				<version>${helios.version}</version>
+			</dependency>
+
+			<dependency>
+			  	<groupId>org.helios.helios-ot</groupId>
+				<artifactId>helios-ot-core</artifactId>
+				<version>${helios.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.helios.helios-ot</groupId>
+				<artifactId>helios-ot-camel</artifactId>
+				<version>${helios.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.helios</groupId>
+				<artifactId>helios-scripting</artifactId>
+				<version>${helios.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.helios</groupId>
+				<artifactId>helios-jmx</artifactId>
+				<version>${helios.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.helios.helios-collectors</groupId>
+				<artifactId>helios-collectors-core</artifactId>
+				<version>${helios.version}</version>
+			</dependency>
+			<dependency>
+				  <groupId>org.helios.helios-collectors</groupId>
+				  <artifactId>helios-collectors-jmx-proxies</artifactId>
+				<version>${helios.version}</version>
+			</dependency>
+                        <dependency>
+                            <groupId>org.helios.helios-persistence</groupId>
+                                <artifactId>helios-persistence-core</artifactId>
+                                <version>${project.version}</version>
+                                <scope>test</scope>
+                        </dependency>
+                       <dependency>
+                                <groupId>org.helios</groupId>
+                                <artifactId>helios-scripting</artifactId>
+                                <version>${project.version}</version>
+                        </dependency>
+                        <dependency>
+                                <groupId>org.helios</groupId>
+                                <artifactId>helios-util</artifactId>
+                                <version>${project.version}</version>
+                        </dependency>
+			<dependency>
+			  	<groupId>org.helios.helios-ot</groupId>
+				<artifactId>helios-ot-core2</artifactId>
+				<version>${helios.version}</version>
+			</dependency>
+
+
+		</dependencies>
+	</dependencyManagement>
+</project>

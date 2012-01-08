@@ -1,0 +1,2 @@
+sl simplerender.groovy
+epl "select * from Trace.win:time_batch(5 sec)"

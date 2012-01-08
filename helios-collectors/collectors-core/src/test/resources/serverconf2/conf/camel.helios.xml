@@ -1,0 +1,32 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+	
+	<bean name="opentrace" class="org.helios.tracing.extended.camel.OpenTraceComponent" >
+		<constructor-arg ref="HeliosCamelContext"/>
+		<constructor-arg ref="TraceModelCache"/>
+	</bean>
+	
+	<bean name="TraceProcessor" class="org.helios.tracing.extended.camel.routing.TraceProcessor" />
+	<bean name="TraceInstanceProcessor" class="org.helios.tracing.extended.camel.routing.TraceInstanceProcessor" />
+	<bean name="TraceRouteBuilder" class="org.helios.tracing.extended.camel.routing.OpenTraceRoutesBuilder" />
+	
+	
+	<camelContext id="HeliosCamelContext" xmlns="http://camel.apache.org/schema/spring">
+	    <!-- Default JMX connector url: "service:jmx:rmi:///jndi/rmi://localhost:1099/jmxrmi/camel" -->
+		<jmxAgent id="camelagent" createConnector="false"/>
+		<!-- <routeBuilder ref="TraceRouteBuilder"/>  -->
+	    <route id="CamelTraceRoute" group="CamelTraceRoutes" >
+	    	<from uri="opentrace://tracer?qsize=50&amp;qfair=false"/>	
+	    	<choice>
+	    		<when>
+	    			<simple>${header.model} equals 'true'</simple>
+	    			<bean ref="TraceInstanceJDBCPersistor" method="process" />
+	    		</when>
+	    	</choice>	    	
+	    </route>	       	
+  	</camelContext>
+
+</beans>

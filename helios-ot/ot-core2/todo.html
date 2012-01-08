@@ -1,0 +1,32 @@
+<html>
+	<head><title>ot-core2 To Do</title></head>
+	<body>
+		<h3>ot-core2 To Do, Last Updated Aug 18, 2011</h3>
+		<ul>
+			<li>Global phase trigger optimizations:
+				<ol>
+					<li>TracerManager tracks if phase triggers are applied anywhere.
+					This will save trace processors from having to iterate traces in 
+					cases where it would otherwise deal only with copying on collection
+					into another.</li>
+					<li>In cases where we need to iterate a collection only to check for phase triggers,
+					that job should be handed off to a thread pool, but not until we know for sure
+					that the phase is complete.</li>
+				</ol></li>
+			<li>Implement local OpenMetricTypes as an endpoint.</li>
+			<li>Need a good model for defining and registering end points.</li>
+			<li>Ditch the metric flush JMX event. Apply as part of OpenTypeMetrics.</li>
+			<li>JMXMetric modes:<ul>
+				<li><b>One2One</b>: One MBean per metric. The ObjectName of the MBean has 1:1 cardinality with the metric FQN</li>
+				<li><b>NameSpace</b>: The ObjectName and MBean represents the lowest (most specific) portion of the metric namespace. The metric name is an attribute of the MBean
+				and the value of the attribute is the OpenTypeMetric CompositeType.</li>
+				<li><b>NameSpaceTable</b>: Same as NameSpace except the metrics are represented as one attribute in a TabularType.</li>
+			</ul></li>
+			<li>Hook in real time data viewer</li>
+			<li>ThreadPools need to be given a chance to clean up instead of interrupting threads, so we need to add a max shutdown time.
+			At the same time, in sensitive components like IA, a stop needs a little more TLC.</li>
+			<li></li>
+			<li></li>		
+		</ul>
+	</body>
+</html>

@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.helios</groupId>
+    <artifactId>helios-spring</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.helios.helios-spring</groupId>
+  <artifactId>helios-spring-core</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>helios-spring-core</name>
+  <url>http://www.heliosdev.org/projects/helios-spring/core</url>
+
+  <build>
+  	<plugins>
+    	<plugin>
+    		<groupId>org.apache.maven.plugins</groupId>
+    		<artifactId>maven-jar-plugin</artifactId>
+    		<inherited>true</inherited>
+    		<configuration>
+        		<archive>                   
+		            <manifest>
+		                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+		                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+		            </manifest>
+        		</archive>
+    		</configuration>
+		</plugin>
+	</plugins>
+  </build>
+
+              
+  <dependencies>
+	<!--   Test Dependencies -->
+	    <dependency>
+	      <groupId>junit</groupId>
+	      <artifactId>junit</artifactId>	
+	      <scope>test</scope>
+	    </dependency>
+	<!-- 3rd party compile dependencies -->
+		<dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-asm</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<scope>compile</scope>
+		</dependency>	
+		<dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-core</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-context</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-beans</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-expression</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-web</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.freemarker</groupId>
+			<artifactId>freemarker</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>org.hibernate</groupId>
+		  <artifactId>hibernate-core</artifactId>
+		</dependency>
+	      <dependency>
+		<groupId>args4j</groupId>
+		<artifactId>args4j</artifactId>
+	      </dependency>
+<dependency>
+  <groupId>org.apache.ivy</groupId>
+  <artifactId>ivy</artifactId>
+  <version>2.2.0</version>
+</dependency>
+
+
+	<!-- helios compile dependencies -->
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-jmx</artifactId>
+		</dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,271 @@
+/**
+ * Helios, OpenSource Monitoring
+ * Brought to you by the Helios Development Group
+ *
+ * Copyright 2007, Helios Development Group and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
+ *
+ */
+package org.helios.collectors.wpm;
+
+import java.util.List;
+
+import org.helios.collectors.CollectionResult;
+import org.helios.collectors.SocketAbstractCollector;
+import org.helios.collectors.exceptions.CollectorStartException;
+import org.helios.helpers.StringHelper;
+import org.helios.jmx.dynamic.annotations.JMXAttribute;
+import org.helios.jmx.dynamic.annotations.JMXManagedObject;
+import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.nsclient4j.NSClient4JException;
+import org.nsclient4j.NSClient4j;
+
+
+/**
+ * <p>Title: WPMCollector </p>
+ * <p>Description: A NSClient4J based collector to gather Windows Performance Monitor (WPM) statictics.</p> 
+ * <p>Company: Helios Development Group</p>
+ * @author Sandeep Malhotra (smalhotra@heliosdev.org)
+ */
+@JMXManagedObject (declared=false, annotated=true)
+public class WPMCollector extends SocketAbstractCollector{
+
+	/** URL collector version */
+	private static final String WPM_COLLECTOR_VERSION="0.1";
+	/** Host to be monitored where NSClient service is already running */
+	protected String host = null;
+	/** Default NSClient port */
+	protected int port = 1248;
+	/** The nsclient4j service password defaults to "None" */
+	protected String password = "None";
+	/** Reference to NSClient4j instance */
+	protected NSClient4j nsClient = null;
+	/** Reference to WPMAttributes instance which holds a list of WPM statistics that needs to be collected. */
+	protected WPMAttributes attributes = null;
+	
+
+	/**
+	 * Constructor #1 - To be used when both password and port are different than their default values. Default port for NSClient 
+	 * is 1248 and default password is "None".
+	 * 
+	 * @param host
+	 * @param port
+	 * @param password
+	 */
+	public WPMCollector(String host, int port, String password) {
+		this.host = host;
+		this.port = port;
+		this.password = password;
+	}	
+	
+	/**
+	 * Constructor #2 - Use when port is different than default 1248
+	 *   
+	 * @param host
+	 * @param port
+	 */
+	public WPMCollector(String host, int port) {
+		this.host = host;
+		this.port = port;
+	}		
+	
+	/**
+	 * Constructor #3 - Use when password is different than default "None".
+	 * 
+	 * @param host
+	 * @param password
+	 */
+	public WPMCollector(String host, String password) {
+		this.host = host;
+		this.password = password;
+	}	
+	
+	/**
+	 * Constructor #4 - Use when port and password are same as default values.
+	 * 
+	 * @param host
+	 */
+	public WPMCollector(String host) {
+		this.host = host;
+	}		
+	
+	/**
+	 * Implementation of WPM collection process which is executed when HeliosScheduler makes a collect callback. 
+	 */
+	public CollectionResult collectCallback() {
+		long start = System.currentTimeMillis();
+		CollectionResult result = new CollectionResult();
+		try{
+			if(nsClient==null)
+				initializeNSClient();
+			
+			processWPMAttributes();
+			result.setResultForLastCollection(CollectionResult.Result.SUCCESSFUL);
+		}catch(Exception ex){
+			if(logErrors)
+				log.error("An error occured during collect callback for WPMCollector: "+this.getBeanName(),ex);
+			result.setResultForLastCollection(CollectionResult.Result.FAILURE);
+			result.setAnyException(ex);
+			return result;
+		}finally{
+			tracer.traceSticky(System.currentTimeMillis()-start, "Elapsed Time", getTracingNameSpace());
+		}
+		return result;
+	}
+	
+	/**
+	 * Initializes NSClient4j instance.  If an active portTunnel instance is passed to WPMCollector, then
+	 * getLocalHostName() and getLocalPort() methods of portTunnel instance would be used to get host and port information   
+	 * Otherwise, host and port passed through a constructor would be used.
+	 * 
+	 * @throws NSClient4JException
+	 */
+	protected void initializeNSClient() throws NSClient4JException {
+		try {
+			if(getPortTunnel() != null)
+				nsClient = new NSClient4j(getPortTunnel().getLocalHostName(), getPortTunnel().getLocalPort(), password);
+			else
+				nsClient = new NSClient4j(host, port, password);
+		} catch (NSClient4JException nsex) {
+			if(getPortTunnel() != null)
+				log.error("Failed to connect to NSClient with active port tunnel at [" + getPortTunnel().getLocalHostName()+":"+ getPortTunnel().getLocalPort()+"]");
+			else
+				log.error("Failed to connect to NSClient at [" + host+":"+ port+"]");
+			throw nsex;
+		}
+	}
+	
+	protected void processWPMAttributes() {
+		if(attributes != null){
+			if(attributes.getCounter()!=null)
+				processCounters(attributes.getCounter());
+			
+			if(attributes.getService()!=null)
+				processService(attributes.getService());
+
+			if(attributes.getFileSystem()!=null)
+				processFileSystem(attributes.getFileSystem());
+			
+			if(attributes.getProcess()!=null)
+				processProc(attributes.getProcess());
+		}
+	}
+	
+	private void processProc(List<String> processes) {
+		for(String process: processes) { 
+			int isUp = 0;
+			try {
+				if(nsClient.isProcessUp(process.trim()))
+					isUp = 1;
+				tracer.trace(isUp, "Availability", StringHelper.append(tracingNameSpace, true, "Process", process.replaceAll(":", ";"))); //replaceAll("\\|", "}").
+			} catch (Exception e) {
+				log.debug("An error occured while gathering value for WPM Service: " + process, e);
+			}			
+		}		
+	}
+
+	/** 
+	 * Use nsclient4j.getUsedPercentDiskSpace(FileSystem) to get percentage of used disk space on a given fileSystem and traces that value through HeliosOpenTrace. 
+	 *  
+	 *   
+	 * @param fileSystems
+	 */
+	private void processFileSystem(List<String> fileSystems) {
+		for(String fileSystem: fileSystems) { 
+		int percentFull = 0;
+			try {
+				percentFull = (int)Float.parseFloat(nsClient.getUsedPercentDiskSpace(fileSystem.trim()));
+				tracer.trace(percentFull, "Used Disk Space (%)", StringHelper.append(tracingNameSpace, false, "FileSystem", fileSystem.replaceAll("\\|", "}").replaceAll(":", ";")));
+			}catch (Exception e) {
+				log.debug("An error occured while gathering value for WPM fileSystem: " + fileSystem, e);
+			}
+		}
+	}
+
+	/**
+	 * Use nsclient4j.isServiceUp(servicename) to check whether a Windows service is running on not.  
+	 * 
+	 * @param services
+	 */
+	private void processService(List<String> services) {
+		for(String service: services) { 
+			int isUp = 0;
+			try {
+				if(nsClient.isServiceUp(service.trim()))
+					isUp = 1;
+				tracer.trace(isUp, "Availability", StringHelper.append(tracingNameSpace, true, "Service", service.replaceAll(":", ";"))); //replaceAll("\\|", "}")
+			} catch (Exception e) {
+				log.debug("An error occured while gathering value for WPM Service: " + service, e);
+			}			
+		}		
+	}
+	
+	/**
+	 * Use nasclient4j.getPerfMonCounter(counterName) to gather current statistics for that WPM counter.
+	 * @param counters
+	 */
+	protected void processCounters(List<String> counters) {
+		for(String counter:counters) {
+			try {
+				String strValue = nsClient.getPerfMonCounter(counter.trim());
+				long longValue = (long)Float.parseFloat(strValue);				
+				AttributeSegment as = new AttributeSegment(counter.trim());
+				tracer.trace(longValue, as.getMetricName(), StringHelper.append(tracingNameSpace, true, as.getMetricSegment()));
+			} catch (Exception e) {
+				log.debug("An error occured while gathering value for WPM Counter: " + counter, e);
+			}			
+		}		
+	}
+
+	/**
+	 * @return String version of Helios WPMCollector
+	 */
+	@JMXAttribute (name="CollectorVersion", description="Version used for WPM collector", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String getCollectorVersion() {
+		return "WPMCollector v. " + WPM_COLLECTOR_VERSION;
+	}
+
+	public void startCollector() throws CollectorStartException {
+		try{
+			initializeNSClient();
+		}catch(NSClient4JException nsex){
+			throw new CollectorStartException("An error occured during startup of WPMCollector: " + this.getBeanName(), nsex);
+		}
+	}
+	
+	/**
+	 * @return the attributes
+	 */
+	public WPMAttributes getAttributes() {
+		return attributes;
+	}
+
+	/**
+	 * @param attributes the attributes to set
+	 */
+	public void setAttributes(WPMAttributes attributes) {
+		this.attributes = attributes;
+	}
+	
+	public void stopCollector(){
+		if(nsClient != null)
+			nsClient.close();
+	}
+
+}

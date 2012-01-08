@@ -1,0 +1,98 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:lang="http://www.springframework.org/schema/lang"      
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang-3.1.xsd">
+
+    <lang:groovy id="H2InMemLoader" init-method="load"> 
+		<lang:inline-script>
+			package org.helios.persistence;
+			import javax.sql.*;
+			import groovy.sql.*;
+			import org.helios.tracing.*;
+			import org.h2.tools.Server;
+			
+			class H2Loader {
+		    	DataSource ds;
+		    	Sql sql;
+		    	String sqlFile;
+		    	public void load() {
+		    		Server.main(["-tcpPort", "8092",  "-tcp",  "-tcpDaemon"] as String[]);
+		    		sql = new Sql(ds);
+		    		File f = new File(sqlFile);		    		
+		    		println "Loading DDL file [${f.getAbsolutePath()}]";
+		    		String command = "RUNSCRIPT FROM '${f.getAbsolutePath()}'".toString();
+		    		sql.execute(command);
+					MetricType.values().each() {
+					    println "Type:${it.name()}:${it.getCode()}"
+					    sql.executeInsert("INSERT INTO TRACE_TYPE VALUES(?,?)", [it.getCode(), it.name()]);
+					}		    		
+		    		
+		    		println "\n\t==========================\n\tDDL Load Complete\n\t==========================\n";
+		    	}
+		    }
+    	</lang:inline-script>
+    	<lang:property name="ds" ref="DataSource" />    	
+    	<lang:property name="sqlFile" value="./src/test/resources/serverconf2/ddl/TraceModelDB.sql" />    	               
+    </lang:groovy>
+
+       
+
+	<!-- In Memory H2 Server -->
+	<!-- In Mem with TCP: jdbc:h2:tcp://localhost/mem:helios;DB_CLOSE_DELAY=-1 -->
+	<!-- No TCP In Mem: jdbc:h2:helios;DB_CLOSE_DELAY=-1 -->
+	
+	 <bean id="DataSource"
+	      class="org.apache.commons.dbcp.BasicDataSource"
+	      destroy-method="close"
+	      p:url="jdbc:h2:helios;JMX=TRUE;DB_CLOSE_DELAY=-1"
+	      p:driverClassName="org.h2.Driver"
+	      p:username="sa"
+	      p:password=""
+	      p:initial-size="2"
+	      p:max-active="5"
+	      p:pool-prepared-statements="true"
+	      p:validation-query="SELECT SYSTIME"
+	      p:test-on-borrow="true"
+	      p:test-while-idle="false"/>
+	      
+	
+	<!-- Remote H2 Server -->
+	<!--        
+	 <bean id="DataSource"
+	      class="org.apache.commons.dbcp.BasicDataSource"
+	      destroy-method="close"
+	      p:url="jdbc:h2:tcp://localhost/~/helios"
+	      p:driverClassName="org.h2.Driver"
+	      p:username="sa"
+	      p:password=""
+	      p:initial-size="2"
+	      p:max-active="5"
+	      p:pool-prepared-statements="true"
+	      p:validation-query="SELECT SYSTIME"
+	      p:test-on-borrow="true"
+	      p:test-while-idle="false"/>
+       -->
+	<bean id="PersistenceJMXExporter" class="org.springframework.jmx.export.MBeanExporter">
+		<property name="beans">
+			<map>
+				<entry key="org.helios.persistence:service=DataSource" value-ref="DataSource" />
+			</map>
+		</property>
+		<property name="server" ref="MBeanServer" />
+	</bean>
+	
+	<bean id="TraceInstanceJDBCPersistor" class="org.helios.tracing.persistence.jdbc.TraceInstanceJDBCPersistor"
+		init-method="start" destroy-method="stop"
+	>
+		<property name="dataSource" ref="DataSource" />
+		<property name="traceModelCache" ref="TraceModelCache" />
+		<property name="batchedInserts" value="true" />
+		<property name="sizeTrigger" value="100" />
+		<property name="timeTrigger" value="60000" />
+	</bean>
+       
+       
+</beans>      

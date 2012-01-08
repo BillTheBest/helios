@@ -1,0 +1,227 @@
+/**
+ * Helios, OpenSource Monitoring
+ * Brought to you by the Helios Development Group
+ *
+ * Copyright 2007, Helios Development Group and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
+ *
+ */
+package org.helios.tracing.relay.amqp;
+
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.log4j.Logger;
+import org.helios.tracing.ITracer;
+import org.helios.tracing.extended.graphite.GraphiteClient;
+import org.helios.tracing.extended.graphite.GraphiteTracerInstanceFactory;
+import org.helios.tracing.trace.Trace;
+
+import com.rabbitmq.client.QueueingConsumer;
+
+/**
+ * <p>Title: AMQPGraphiteRelay</p>
+ * <p>Description: A relay to read messages off an AMQP queue and write messages to Graphite.</p> 
+ * <p>Company: ICE Futures US</p>
+ * @author Whitehead (nicholas.whitehead@theice.com)
+ * @version $LastChangedRevision$
+ * <p><code>org.helios.tracing.relay.amqp.AMQPGraphiteRelay</code></p>
+ */
+
+public class AMQPGraphiteRelay implements Runnable {
+	/** Instance logger */
+	protected final Logger log = Logger.getLogger(getClass());
+	/**   The AMQP client to provide a queue subscription */
+	protected AMQPClient amqpClient = null;
+	/** An optional tracer factory for the graphite tracer */
+	protected GraphiteTracerInstanceFactory tracerFactory = null;
+	/** The graphite tracer to send metrics to the carbon listener */
+	protected ITracer tracer = null;
+	/** the message receive timeout on the subscriber in ms. */
+	protected final AtomicLong subTimeout = new AtomicLong(5000L);
+	/** the maximum buffered traces to hold before flushing */
+	protected final AtomicInteger maxBufferSize = new AtomicInteger(100);
+	
+	/** the AMQP consumer */
+	protected QueueingConsumer consumer = null;
+	/** the run flag on the consumer thread */
+	protected AtomicBoolean keepRunning = new AtomicBoolean(true);
+	/** the run thread */
+	protected Thread runThread = null;
+	/** The thread's thread group */
+	private static final ThreadGroup threadGroup = new ThreadGroup(AMQPGraphiteRelay.class.getSimpleName() + "ThreadGroup");
+	/** The name tag for this relay */
+	protected String name = null;
+	
+	/**
+	 * Starts the relay
+	 * @throws Exception
+	 */
+	public void start() throws Exception {
+		log.info("\n\t===============================\n\tStarting AMQPGraphiteRelay\n\t===============================\n");
+		if(amqpClient==null) {
+			amqpClient = new AMQPClient();			
+		}
+		if(!amqpClient.isConnected()) {
+			amqpClient.connect();
+		}
+		if(tracerFactory==null) {
+			tracer = new GraphiteTracer(GraphiteClient.getClient());
+		} else {
+			tracer = (GraphiteTracer) tracerFactory.getTracer();
+		}
+		name = "AMQPGraphiteRelay [" + amqpClient.getAmqpHost() + ":" + amqpClient.getAmqpPort() + "] --> " + tracer.getGraphiteServer() + " Thread";
+		consumer = amqpClient.createSubscriber();
+		runThread = new Thread(threadGroup, this, name);
+		runThread.start();
+		log.info("Relaying from AMQP [" + amqpClient.getAmqpHost() + ":" + amqpClient.getAmqpPort() + "] to " + tracer.getGraphiteServer() + "]");
+		log.info("\n\t===============================\n\tStarted AMQPGraphiteRelay\n\t===============================\n");
+	}
+	
+	/**
+	 * Stops the relay
+	 */
+	public void stop() {
+		log.info("\n\t===============================\n\tStopping AMQPGraphiteRelay\n\t===============================\n");
+		keepRunning.set(false);
+		runThread.interrupt();
+		try { amqpClient.closeConsumer(consumer); } catch (Exception e) {}
+		try { tracer.getClient().disconnect(); } catch (Exception e) {}
+		log.info("\n\t===============================\n\tStopped AMQPGraphiteRelay\n\t===============================\n");
+	}
+	
+	/**
+	 * The consuer run loop
+	 * @see java.lang.Runnable#run()
+	 */
+	public void run() {
+		log.info("Started run thread for relay [" + name + "]" );
+		QueueingConsumer.Delivery delivery = null;
+		Set<Trace> traceSet = new HashSet<Trace>();
+		int pendingCount = 0;
+		while(keepRunning.get()) { 
+			try {
+				delivery = consumer.nextDelivery(getSubTimeout());
+				if(delivery==null) {
+					pendingCount=maxBufferSize.get();  // forces a flush
+				} else {
+					traceSet.add(deserialize(delivery.getBody()));
+					pendingCount++;
+				}
+				if(pendingCount==maxBufferSize.get()) {
+					if(traceSet.size()>0) {						
+						long start = System.currentTimeMillis();
+						tracer.traceTraces(traceSet);
+						long elapsed = System.currentTimeMillis()-start;
+						log.info("Flushed [" + traceSet.size() + "] traces to graphite in [" + elapsed + "] ms.");
+						traceSet = new HashSet<Trace>();
+					}
+					pendingCount = 0;
+				}
+			} catch (InterruptedException ie) {
+				if(keepRunning.get()) {
+					Thread.interrupted(); Thread.interrupted();
+				} else {
+					break;
+				}
+			} catch (Exception e) {
+				
+			}
+		}
+		log.info("Consumer Run Loop Terminated");
+	}
+	
+	/**
+	 * Deserializes a byte array to a trace
+	 * @param bytes the byte array
+	 * @return a trace
+	 */
+	public Trace deserialize(byte[] bytes)   {
+		try {
+			if(bytes==null || bytes.length<1) return null;
+			ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+			ObjectInputStream ois = new ObjectInputStream(bais);
+			return (Trace) ois.readObject();
+		} catch (Exception e) {			
+			throw new RuntimeException("Failed to deserialize trace", e);
+		}
+	}	
+	
+	/**
+	 * @return the amqpClient
+	 */
+	public AMQPClient getAmqpClient() {
+		return amqpClient;
+	}
+	/**
+	 * @param amqpClient the amqpClient to set
+	 */
+	public void setAmqpClient(AMQPClient amqpClient) {
+		this.amqpClient = amqpClient;
+	}
+	/**
+	 * @return the tracerFactory
+	 */
+	public GraphiteTracerInstanceFactory getTracerFactory() {
+		return tracerFactory;
+	}
+	/**
+	 * @param tracerFactory the tracerFactory to set
+	 */
+	public void setTracerFactory(GraphiteTracerInstanceFactory tracerFactory) {
+		this.tracerFactory = tracerFactory;
+	}
+	/**
+	 * @return the tracer
+	 */
+	public ITracer getTracer() {
+		return tracer;
+	}
+	/**
+	 * @return the subTimeout
+	 */
+	public long getSubTimeout() {
+		return subTimeout.get();
+	}
+	/**
+	 * @param subTimeout the subTimeout to set
+	 */
+	public void setSubTimeout(long subTimeout) {
+		this.subTimeout.set(subTimeout);
+	}
+
+	/**
+	 * @return the maxBufferSize
+	 */
+	public int getMaxBufferSize() {
+		return maxBufferSize.get();
+	}
+
+	/**
+	 * @param maxBufferSize the maxBufferSize to set
+	 */
+	public void setMaxBufferSize(int maxBufferSize) {
+		this.maxBufferSize.set(maxBufferSize);
+	}
+}

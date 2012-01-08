@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+	<bean id="MBeanServer" class="org.helios.jmx.util.MBeanServerFactory"
+		lazy-init="false" factory-method="createMBeanServer">
+		<constructor-arg type="java.lang.String" value="DefaultDomain" />
+	</bean>
+	
+	<bean id="HeliosMBeanServer" class="org.helios.jmx.util.MBeanServerFactory"
+		lazy-init="false" factory-method="createMBeanServerForwarder">
+		<constructor-arg type="java.lang.String" value="Helios" />
+		<constructor-arg type="javax.management.MBeanServer" ref="MBeanServer" />
+	</bean>
+	
+	<!-- 
+	<bean id="MBeanServerFactory" class="org.helios.collectors.jmx.LocalMBeanServerConnectionFactory" init-method="start">
+		<constructor-arg type="javax.management.MBeanServer" ref="MBeanServer" />
+	</bean>
+	-->
+	
+
+	<bean id="HeliosMBeanServerFactory" class="org.helios.collectors.jmx.LocalMBeanServerConnectionFactory" init-method="start">
+		<constructor-arg type="javax.management.MBeanServer" ref="HeliosMBeanServer" />
+	</bean>
+	
+
+	<bean name="JVMDiagnosticService" class="org.helios.jmx.JVMDiagnosticService" factory-method="getInstance" />
+
+	<bean id="MBeanServerJMXUrl" class="javax.management.remote.JMXServiceURL"
+		lazy-init="false">
+		<constructor-arg type="java.lang.String"
+			value="service:jmx:rmi:///jndi/rmi://localhost:8003/jmxrmi" />
+	</bean>
+
+	<bean id="Printer" class="org.helios.jmx.util.JMXServerConnectionPrinter">
+		<constructor-arg ref="MBeanServerConnector" />
+	</bean>
+
+	<bean id="RMIRegistry" class="java.rmi.registry.LocateRegistry"
+		lazy-init="false" factory-method="createRegistry">
+		<constructor-arg value="8003" />
+	</bean>
+	
+	<bean id="SearchService" class="org.helios.collectors.jmx.identifiers.SearchService" init-method="start" />
+
+
+	<bean id="MBeanServerConnector" class="javax.management.remote.JMXConnectorServerFactory"
+		lazy-init="false" init-method="start" factory-method="newJMXConnectorServer"
+		depends-on="RMIRegistry">
+		<constructor-arg ref="MBeanServerJMXUrl" />
+		<constructor-arg>
+			<map />
+		</constructor-arg>
+		<constructor-arg ref="MBeanServer" />
+	</bean>
+	
+	<bean name="ClassServer" class="org.helios.jmx.classloader.server.ClassServer" init-method="start" />
+	
+	<bean name="GroovyService" class="org.helios.scripting.console.GroovyService" />
+
+	<bean id="exporter" class="org.springframework.jmx.export.MBeanExporter">
+		<property name="beans">
+			<map>
+				<entry key="org.helios.jmx:service=JMXConnectorServer" value-ref="MBeanServerConnector" />
+			</map>
+		</property>
+		<property name="server" ref="MBeanServer" />
+	</bean>
+
+
+
+
+</beans>   
+

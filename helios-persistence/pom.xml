@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.helios</groupId>
+    <artifactId>helios</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.helios</groupId>
+  <artifactId>helios-persistence</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>persistence</name>
+  <url>http://www.heliosdev.org/projects/opentrace</url>
+  <modules>
+    <module>persistence-core</module>
+  </modules>
+  
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.1</version>
+				<configuration>
+					<!--
+						During release:perform, enable the "release" profile
+					-->
+					<releaseProfiles>release</releaseProfiles>
+					<goals>deploy assembly:assembly</goals>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+  
+
+	<dependencyManagement>
+  <dependencies>
+	<!--   Test Dependencies -->
+	    <dependency>
+	      <groupId>junit</groupId>
+	      <artifactId>junit</artifactId>	
+	      <version>${junit.version}</version>
+	      <scope>test</scope>
+	    </dependency>
+		<dependency>
+		  <groupId>com.h2database</groupId>
+		  <artifactId>h2</artifactId>
+		  <version>${h2.version}</version>
+		  <scope>test</scope>
+		</dependency>	    
+	    
+	<!-- 3rd party compile dependencies -->
+		<dependency>
+		  <groupId>trove</groupId>
+		  <artifactId>trove</artifactId>
+		  <version>${trove.version}</version>
+		</dependency>
+		<dependency>
+		  <groupId>org.hibernate</groupId>
+		  <artifactId>hibernate-core</artifactId>
+		  <version>${hibernate.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>javassist</groupId>
+			<artifactId>javassist</artifactId>
+                        <version>${javassist.version}</version>
+		</dependency>
+
+	<!-- helios compile dependencies -->
+		<dependency>
+			<groupId>org.helios.helios-ot</groupId>
+			<artifactId>helios-ot-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		
+  </dependencies>
+
+	</dependencyManagement>
+
+
+</project>

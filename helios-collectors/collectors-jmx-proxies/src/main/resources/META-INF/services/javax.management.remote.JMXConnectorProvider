@@ -1,0 +1,3 @@
+org.helios.collectors.jmxproxies.protocol.hsp.ClientProvider
+org.helios.collectors.jmxproxies.protocol.lhsp.ClientProvider
+

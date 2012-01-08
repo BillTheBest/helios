@@ -1,0 +1,218 @@
+/**
+ * Helios, OpenSource Monitoring
+ * Brought to you by the Helios Development Group
+ *
+ * Copyright 2007, Helios Development Group and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
+ *
+ */
+package org.helios.spring.monitors;
+
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.management.RuntimeMXBean;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.log4j.Logger;
+import org.helios.jmx.threadservices.scheduling.IScheduledThreadPoolService;
+import org.helios.jmx.threadservices.scheduling.NamedTask;
+import org.helios.jmx.threadservices.scheduling.ScheduledTaskHandle;
+import org.helios.tracing.ITracer;
+import org.helios.tracing.TracerFactory;
+import org.mortbay.log.Log;
+
+
+
+
+
+/**
+ * <p>Title: Java15GCMonitor</p>
+ * <p>Description: S sample monitor to generate some load.</p> 
+ * <p>Company: Helios Development Group</p>
+ * @author Whitehead (whitehead.nicholas@gmail.com)
+ * @version $LastChangedRevision$
+ * $HeadURL$
+ * $Id$
+ */
+public class Java15GCMonitor implements Runnable, NamedTask {
+	protected Logger LOG = Logger.getLogger(Java15GCMonitor.class);
+	protected List<GarbageCollectorMXBean> garbageCollectors = new ArrayList<GarbageCollectorMXBean>();
+	protected List<MemoryPoolMXBean> memoryPools = new ArrayList<MemoryPoolMXBean>();
+	protected MemoryMXBean memoryMXBean = null;
+	protected RuntimeMXBean runtimeMXBean = null;
+	protected IScheduledThreadPoolService scheduler = null;
+	protected TracerFactory tracerFactory = null;
+	
+	protected static final String COLLECTION_COUNT = "CollectionCount";
+	protected static final String COLLECTION_TIME = "CollectionTime";
+	protected static final String COLLECTION_PTIME = "CollectionPTime";
+	
+	protected static final String MEMORY_INIT = "MemoryInit";
+	protected static final String MEMORY_USED = "MemoryUsed";
+	protected static final String MEMORY_MAX = "MemoryMax";
+	protected static final String MEMORY_COM = "MemoryCommitted";
+	protected static final String MEMORY_PU = "MemoryPercentUtilized";
+	protected static final String MEMORY_PC = "MemoryPercentCapacity";
+	
+	protected static final String MEMORY_ROOT = "JVM Memory";
+	
+	protected ScheduledTaskHandle task = null;
+
+	public void init() {
+		garbageCollectors = ManagementFactory.getGarbageCollectorMXBeans();
+		memoryPools = ManagementFactory.getMemoryPoolMXBeans();
+		memoryMXBean = ManagementFactory.getMemoryMXBean();
+		runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+		LOG.info("MXBean References Created");
+	}
+
+	public void run() {
+		if(LOG.isDebugEnabled()) LOG.debug("\n\t***********************************************\n\tJava15GC Monitor Collecting\n\t***********************************************\n");
+		ITracer tracer = tracerFactory.getInstance().getTracer();
+		tracer.startThreadInfoCapture(7);
+		processGarbageCollectors();
+		processMemoryPools();
+		tracer.endThreadInfoCapture("Collectors", getName());
+		if(LOG.isDebugEnabled()) LOG.debug("\n\t***********************************************\n\tJava15GC Monitor Collect Complete\n\t***********************************************\n");
+	}
+	
+	public void start() {
+		init();
+		LOG.info("\n\t***********************************************\n\tJava15GC Monitor Starting\n\t***********************************************\n");
+		task = scheduler.scheduleAtFrequency(true, this, 0, 5000, TimeUnit.MILLISECONDS);
+		LOG.info("\n\t***********************************************\n\tJava15GC Monitor Started\n\t***********************************************\n");
+	}
+	
+	public void stop() {
+		task.cancel(true);
+	}
+	
+	
+/**
+ * Collects garbage collector stats. 
+ */
+protected void processGarbageCollectors() {
+	ITracer tracer = tracerFactory.getInstance().getTracer();
+	String gcName = null;	
+	long collectTime = 0L;
+	long collectCount = 0L;
+
+	for(GarbageCollectorMXBean gc: garbageCollectors) {
+		gcName = gc.getName();			
+		collectTime = gc.getCollectionTime();
+		collectCount = gc.getCollectionCount();			
+		tracer.traceStickyDelta(collectTime, "Collect Time", "JVM", "GC", gcName);
+		tracer.traceStickyDelta(collectCount, "Collect Count", "JVM", "GC", gcName);
+	}
+}	
+	
+	/**
+	 * Collects memory pool stats
+	 */
+	protected void processMemoryPools() {
+		ITracer tracer = tracerFactory.getInstance().getTracer();
+		String memPoolKey = null;
+		MemoryUsage usage = null;
+		for(MemoryPoolMXBean memoryPool: memoryPools) {
+			memPoolKey = memoryPool.getType().toString() + ":" + memoryPool.getName();
+			usage = memoryPool.getUsage();		
+			tracer.trace(usage.getInit(), "Initial", "JVM", "Memory Pool", memoryPool.getType().toString(), memoryPool.getName());
+			tracer.trace(usage.getUsed(), "Used", "JVM", "Memory Pool", memoryPool.getType().toString(), memoryPool.getName());
+			tracer.trace(usage.getCommitted(), "Committed", "JVM", "Memory Pool", memoryPool.getType().toString(), memoryPool.getName());
+			if(usage.getMax() > 0) {
+				tracer.trace(usage.getMax(), "Maximum", "JVM", "Memory Pool", memoryPool.getType().toString(), memoryPool.getName());
+				tracer.trace(getCapacityPercentage(usage), "% of Capacity", "JVM", "Memory Pool", memoryPool.getType().toString(), memoryPool.getName());
+			}
+			tracer.trace(getInUsePercentage(usage), "% of Allocated", "JVM", "Memory Pool", memoryPool.getType().toString(), memoryPool.getName());
+		}		
+	}	
+	
+	
+	/**
+	 * Helper method to generate a percentage.
+	 * @param part
+	 * @param all
+	 * @return A percentage value.
+	 */
+	protected static long percent(float part, float all) {
+		return (long)((part)/all*100);
+	}
+		
+	
+	/**
+	 * Calculates the percentage of committed memory in use.
+	 * @param mem The MemoryUsage
+	 * @return percent memory in use.
+	 */
+	protected long getInUsePercentage(MemoryUsage mem) {
+		return percent(mem.getUsed(), mem.getCommitted());
+	}
+
+	/**
+	 * Calculates the percentage of memory in use against total capacity.
+	 * @param mem The memory usage
+	 * @return percentage capacity.
+	 */
+	protected long getCapacityPercentage(MemoryUsage mem) {
+		return percent(mem.getUsed(), mem.getMax());
+	}
+	
+
+	public String getName() {
+		return "Java15GCMonitor";
+	}
+
+	/**
+	 * @return the scheduler
+	 */
+	public IScheduledThreadPoolService getScheduler() {
+		return scheduler;
+	}
+
+	/**
+	 * @param scheduler the scheduler to set
+	 */
+	public void setScheduler(IScheduledThreadPoolService scheduler) {
+		this.scheduler = scheduler;
+	}
+
+	/**
+	 * @return the tracerFactory
+	 */
+	public TracerFactory getTracerFactory() {
+		return tracerFactory;
+	}
+
+	/**
+	 * @param tracerFactory the tracerFactory to set
+	 */
+	public void setTracerFactory(TracerFactory tracerFactory) {
+		this.tracerFactory = tracerFactory;
+	}
+	
+
+	
+	
+
+}

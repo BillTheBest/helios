@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+                      
+	
+	
+	
+  <bean id="AMQPClient" class="org.helios.tracing.extended.amqp.AMQPClient">
+  	<constructor-arg value="localhost" />
+  	<constructor-arg value="5672" />
+  </bean>	
+	
+	
+  <bean id="AMQP" class="org.helios.tracing.extended.amqp.AMQPTracerInstanceFactory">
+  	<property name="amqpHost" value="localhost" />
+  </bean>
+  
+   <bean id="ESPER" class="org.helios.esper.tracing.EsperTracerInstanceFactory">
+  	<property name="engine" ref="Engine" />
+  </bean>
+  
+  	<bean id="GRAPHITE" class="org.helios.tracing.extended.graphite.GraphiteTracerInstanceFactory">
+		<property name="graphiteHost" value="njwub104" />
+		<property name="graphitePort" value="2003" />
+	</bean>
+  
+  
+  <bean id="STACK" class="org.helios.tracing.stack.StackTracerInstanceFactory" factory-method="getInstance">
+  	<constructor-arg type="java.util.ArrayList" index="0" >
+  		<list>  			
+  			<ref bean="ESPER" />
+  			<ref bean="AMQP" />
+  			<ref bean="GRAPHITE" />
+  		</list>
+  	</constructor-arg>
+  	<constructor-arg type="boolean" value="false" index="1" />
+  </bean>	
+  	
+  
+  
+  	
+	
+	<bean id="TracerFactory" class="org.helios.tracing.TracerFactory"	 factory-method="getInstance">
+		<constructor-arg type="java.util.Collection">
+		 		<set>
+		 			<ref bean="STACK" />
+				</set>
+		</constructor-arg>
+		<constructor-arg type="java.util.Collection"><set></set></constructor-arg>
+	</bean>
+	
+	<!-- 
+	<bean id="AMQPGraphiteRelay"
+		class="org.helios.tracing.relay.amqp.AMQPGraphiteRelay" init-method="start" destroy-method="stop" >
+		<property name="tracerFactory" ref="Graphite" />
+		<property name="amqpClient" ref="AMQPClient" />
+	</bean>
+	
+	<bean id="Graphite" class="org.helios.tracing.extended.graphite.GraphiteTracerInstanceFactory">
+		<property name="graphiteHost" value="graphite" />
+		<property name="graphitePort" value="2003" />
+	</bean>
+	
+	 -->
+
+
+	<bean id="HeliosScheduler"
+		class="org.helios.jmx.threadservices.scheduling.HeliosScheduler" lazy-init="false" factory-method="getInstance">
+		<constructor-arg type="java.util.Properties">
+			<value>
+				org.helios.scheduler.task.instrumentation=true
+				org.helios.scheduler.prestartthreads=3
+				org.helios.scheduler.corepoolsize=5
+				org.helios.scheduler.maxpoolsize=10
+				org.helios.scheduler.daemonthreads=true
+			</value>
+		</constructor-arg>
+	</bean>
+			
+	<bean id="Engine" class="org.helios.esper.engine.Engine" init-method="start" destroy-method="stop" >
+		<property name="objectName" value="org.helios.esper:service=Engine" />
+		<property name="configuration">
+			<bean id="EngineConfiguration" class="com.espertech.esper.client.Configuration" />
+		</property>
+        <property name="variables">
+                <map>
+                		<entry key="Period" value="30"/>
+                </map>
+        </property>
+		
+        <property name="aliases">
+                <map>
+                		<entry key="Trace" value="org.helios.tracing.Trace"/>
+                        <entry key="Metric" value="org.helios.tracing.Metric"/>
+                        <entry key="MetricName" value="org.helios.esper.engine.MetricName"/>
+                        <entry key="InactiveMetric" value="org.helios.esper.engine.MetricName"/>
+                </map>
+        </property>
+        <property name="statements">
+                <map>
+                        <entry key="UniqueMetricNameWindow" value="create window MetricNameCatalog.win:keepall() as select fullName, metricName, typeName, typeCode from MetricName" />
+                        <entry key="UniqueMetricNameWindowPopulate" value="insert into MetricNameCatalog select  fullName, name as metricName, metricType.name as typeName, metricType.code as typeCode from Trace.std:unique(name)" />
+                        <entry key="UniqueMetricNameWindowSelect" value="select istream * from MetricNameCatalog" />
+                        <entry key="LastMetricWindow" value="create window LastMetrics.std:unique(fullName) as select fullName, metricName, typeName, typeCode, lastReceivedTime from MetricName" />
+                        <!-- .std:groupby(fullName).std:lastevent() -->
+                        <entry key="UpdateMetricWindow" value="insert into LastMetrics select fullName, name as metricName, metricType.name as typeName, metricType.code as typeCode, current_timestamp as lastReceivedTime from Trace.std:lastevent().win:time_batch(30 sec) group by fullName" />
+                        <entry key="InactiveMetrics" value="on pattern [every timer:interval(5 sec)] select * from LastMetrics where current_timestamp > (lastReceivedTime+30000) " />
+                        <entry key="DeleteInactiveMetrics" value="on pattern [every timer:interval(10 sec)] delete from MetricNameCatalog as mnc where exists (select fullName from LastMetrics where current_timestamp > (lastReceivedTime+30000) and fullName = mnc.fullName)" />
+                        
+                </map>
+        </property>
+        <property name="listeners">
+                <set>
+                        <ref bean="MetricNameCatalog"/>
+                </set>
+        </property>
+		
+		<property name="metricsEnabled" value="true" />
+	</bean>	
+	
+      <bean id="MetricNameCatalog"  init-method="start" class="org.helios.esper.engine.MetricNameCatalog">
+              <constructor-arg value="Helios Metric Name Catalog"/>    
+              <property name="targetStatements" value="UniqueMetricNameWindowSelect,InactiveMetrics" />          
+              <property name="MBeanServer" ref="MBeanServer" />
+              <property name="objectName" value="org.helios.tracing.server:service=MetricNameCatalog" />
+      </bean>
+      
+      <bean id="OnDemmandProcessor" class="org.helios.esper.engine.service.interactive.OnDemmandProcessor" init-method="init" >
+              <constructor-arg ref="Engine" />    
+      </bean>
+      
+      
+      
+	
+	
+</beans>	

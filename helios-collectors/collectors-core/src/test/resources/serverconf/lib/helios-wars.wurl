@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wurl>	
+	<link protocol="fs" path="/jolokia" beanName="JolokiaWar">./src/test/resources/serverconf/webapps/jolokia.war</link>
+</wurl>

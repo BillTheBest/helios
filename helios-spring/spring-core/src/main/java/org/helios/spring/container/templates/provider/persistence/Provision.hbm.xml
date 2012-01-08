@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated Sep 4, 2009 3:51:26 PM by Hibernate Tools 3.2.4.GA -->
+<hibernate-mapping>
+    <class name="org.helios.spring.container.templates.provider.persistence.Provision" table="provision" schema="helios">
+        <id name="provisionId" type="int">
+            <column name="provision_id" />
+            <generator class="assigned" />
+        </id>
+        <property name="provisionName" type="string">
+            <column name="provision_name" length="256" not-null="true" />
+        </property>
+        <set name="provisionSets" inverse="true" lazy="false" table="provision_set" fetch="select">
+            <key>
+                <column name="provision_id" not-null="true" />
+            </key>
+            <one-to-many class="org.helios.spring.container.templates.provider.persistence.ProvisionSet" />
+        </set>     	   
+    </class>
+    <query name="GetProvisionByName"><![CDATA[from Provision where provisionName = ?]]></query>
+</hibernate-mapping>

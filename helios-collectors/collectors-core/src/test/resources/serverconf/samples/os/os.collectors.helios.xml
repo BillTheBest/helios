@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:jee="http://www.springframework.org/schema/jee"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+       http://www.springframework.org/schema/jee
+       http://www.springframework.org/schema/jee/spring-jee-2.0.xsd" default-init-method="start" default-destroy-method="destroy">
+
+	<bean id="SigarSystemImpl" class="org.helios.collectors.os.sigar.SigarImpl" />
+		<!-- constructor-arg type="java.lang.String" value="C:\\tools\\eclipse\\workspace\\helios\\helios-collectors\\collectors-sigar\\sigar\\"/> -->
+
+    <!-- bean id="LocalSigarCollector" class="org.helios.collectors.os.OSCollector" depends-on="TracerFactory,SigarSystemImpl">
+    	<constructor-arg type="org.helios.collectors.os.ISystem" ref="SigarSystemImpl"/>
+		<property name="logErrors" value="true"/>
+		<property name="tracingNameSpace" value="OSCollector,Local"/>
+		<property name="schedule" value="0/10 * * * * ?"/>
+		<property name="tracerFactory" ref="TracerFactory" />
+		<property name="processMatcher" value="firefox,eclipse" />
+		<property name="serviceMatcher" value="Alerter,AppMgmt" />
+    </bean>
+
+	<bean id="SigarMBeanProxy" class="org.helios.collectors.os.sigar.remote.SigarMBeanProxyFactory"
+		factory-method="newSigarMBeanProxy">
+		<constructor-arg type="java.util.Properties">
+			<props>
+				<prop key="java.naming.factory.initial">org.jnp.interfaces.NamingContextFactory</prop>
+				<prop key="java.naming.provider.url">par2par2m580001:1099</prop>
+				<prop key="jndi.name">jmx/invoker/RMIAdaptor</prop>
+			</props>
+		</constructor-arg>
+		<constructor-arg type="java.lang.String" value="org.helios.collectors:service=SigarImpl" />
+	</bean>
+
+	<bean id="RemoteSigarCollector" class="org.helios.collectors.os.OSCollector">
+		<constructor-arg type="org.helios.collectors.os.ISystem" ref="SigarMBeanProxy"/>
+		<property name="logErrors" value="true"/>
+		<property name="logCollectionResult" value="true"/>
+		<property name="tracingNameSpace" value="OSCollector,Remote,PAR2PAR2M580001"/>
+		<property name="schedule" value="0/10 * * * * ?"/>
+		<property name="regexProcessMatcher" value=".*jboss.*" />
+		<property name="serviceMatcher" value="Diskeeper,Eventlog,Alerter,AppMgmt" />
+		<property name="tracerFactory" ref="TracerFactory" />
+    </bean>  -->
+
+</beans>

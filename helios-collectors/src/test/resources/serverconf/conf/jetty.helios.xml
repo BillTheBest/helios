@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+
+	<bean name="HttpServer" class="org.eclipse.jetty.server.Server" 
+		lazy-init="false" destroy-method="stop" init-method="start">
+	   <property name="connectors">
+	      <list>
+	        <bean id="Connector" class="org.eclipse.jetty.server.nio.SelectChannelConnector">
+	          <property name="port" value="8161"/>
+	        </bean>
+	      </list>	      
+	    </property>
+	</bean>
+
+           
+</beans>           

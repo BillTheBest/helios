@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+
+	  <bean id="consoleProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+	  	<property name="properties">
+    		<value>
+    			m2Home=/home/nwhitehead/.m2/repository
+    			console.version=2.8.1
+    		</value>
+ 		</property>
+	  </bean>
+ 
+      <bean id="JettyThreadPool" class="org.eclipse.jetty.util.thread.QueuedThreadPool">
+        <property name="minThreads" value="10"/>
+        <property name="maxThreads" value="50"/>
+        <property name="daemon" value="true"/>
+      </bean>
+
+      <bean id="HttpConnector" class="org.eclipse.jetty.server.nio.SelectChannelConnector">
+        <property name="port" value="8161"/>
+        <property name="statsOn" value="true" />
+        <property name="host" value="0.0.0.0" ></property>
+      </bean>
+	
+
+
+	<bean name="HttpServer" class="org.eclipse.jetty.server.Server" 
+		lazy-init="false" destroy-method="stop" init-method="start">
+	   <property name="connectors">
+	      <list>
+	      	<ref bean="HttpConnector" />
+	      </list>	      
+	    </property>
+         <property name="handler" ref="JettyHandlers"/>            
+	    <property name="threadPool" ref="JettyThreadPool"/>
+	</bean>
+	
+      <bean id="JettyHandlers" class="org.eclipse.jetty.server.handler.HandlerCollection">
+        <property name="handlers">
+          <list>
+          	<!-- <ref bean="CamelWar" /> -->
+          	<ref bean="HeliosWar" />
+          	<ref bean="JolokiaWar" />
+          	<!-- <ref bean="ActiveMQWar" /> -->
+          </list>
+        </property>
+        <property name="server" ref="HttpServer" />
+      </bean>
+	
+	  <bean id="CamelWar" class="org.eclipse.jetty.webapp.WebAppContext">
+	      <property name="contextPath" value="/camel"/>
+	      <property name="war" value="${m2Home}/org/apache/camel/camel-web/${console.version}/camel.war" />
+	      <property name="logUrlOnStart" value="true"/>  
+	  </bean>	
+                        
+<!-- 
+
+	  <bean id="ActiveMQWar" class="org.eclipse.jetty.webapp.WebAppContext">
+	      <property name="contextPath" value="/amq"/>
+	      <property name="war" value="/home/nwhitehead/libs/java/activemq/5.5.0/apache-activemq-5.5.0/webapps/admin" />
+	      <property name="logUrlOnStart" value="true"/>  
+	  </bean>	
+
+ -->	
+	  <bean id="HeliosWar" class="org.eclipse.jetty.webapp.WebAppContext">
+	      <property name="contextPath" value="/helios"/>
+	      <property name="war" value="./src/test/resources/helios.war" />
+	      <property name="logUrlOnStart" value="true"/>  
+	  </bean>	
+	
+	  <bean id="JolokiaWar" class="org.eclipse.jetty.webapp.WebAppContext">
+	      <property name="contextPath" value="/jmx"/>
+	      <property name="war" value="./src/test/resources/jolokia.war" />
+	      <property name="logUrlOnStart" value="true"/>  
+	  </bean>	
+	
+           
+</beans>           

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jee="http://www.springframework.org/schema/jee"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+   					       http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
+					       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd"
+       default-init-method="start" default-destroy-method="destroy">
+
+    <bean id="Tomcat_Collector" class="org.helios.collectors.jmx.JMXCollector"
+    	depends-on="TracerFactory"
+        c:_0-ref="JMXServiceURL_Connector"
+        p:objectName="org.helios.collectors:type=JMXCollector,name=TomcatLaptop"
+        p:tracerFactory-ref="TracerFactory"
+        p:tracingNameSpace="JMX,Tomcat"
+        p:traceMXBeans="true"
+        p:logErrors="true"
+        p:logCollectionResult="false">
+        <property name="jmxObjects">
+            <list>
+                <ref bean="ServletActivity" />
+                <ref bean="ThreadPoolActivity" />
+            </list>
+        </property>
+    </bean>
+
+    <util:map id="credentials" map-class="java.util.HashMap">
+        <entry key="jmx.remote.credentials">
+        	<value type="java.lang.String[]">helios,helios</value>
+        </entry>
+    </util:map>
+
+	<!--  JMXServiceURL connection - Comment credentials property if your Tomcat MBean server is not secured with any password-->
+    <bean id="JMXServiceURL_Connector" class="org.helios.collectors.jmx.JMXServiceURLConnectionFactory" 
+    		c:_0="service:jmx:rmi:///jndi/rmi://localhost:8999/jmxrmi" 
+    		p:environment-ref="credentials"
+    		destroy-method="stop" />
+
+</beans>

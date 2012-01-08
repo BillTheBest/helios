@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.helios</groupId>
+    <artifactId>helios</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.helios</groupId>
+  <artifactId>helios-native</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>helios-native</name>
+  <packaging>pom</packaging>
+  <url>http://www.heliosdev.org/projects/helios-native</url>
+  <modules>
+    <module>helios-sigar</module>
+    <module>helios-native-jmx</module>
+  </modules>
+
+	<dependencyManagement>
+	  <dependencies>
+	<!--   Test Dependencies -->
+	    <dependency>
+	      <groupId>junit</groupId>
+	      <artifactId>junit</artifactId>
+	      <version>${junit.version}</version>
+	      <scope>test</scope>
+	    </dependency>
+	<!-- 3rd party compile dependencies -->
+		<dependency>
+		  <groupId>org.hyperic</groupId>
+		  <artifactId>sigar</artifactId>
+		  <version>1.6.4</version>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>${log4j.version}</version>
+		</dependency>
+		<dependency>
+		  <groupId>org.glassfish.external</groupId>
+		  <artifactId>jmxremote_optional-repackaged</artifactId>			
+		  <version>${jmxremote-optional.version}</version>
+		</dependency>
+	      <dependency>
+		<groupId>args4j</groupId>
+		<artifactId>args4j</artifactId>
+		<version>${args4j.version}</version>
+	      </dependency>
+
+
+
+	<!-- helios compile dependencies -->
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-jmx</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+	  </dependencies>
+	</dependencyManagement>
+
+</project>

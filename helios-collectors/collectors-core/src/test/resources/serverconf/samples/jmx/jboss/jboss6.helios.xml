@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:jee="http://www.springframework.org/schema/jee"
+   xmlns:p="http://www.springframework.org/schema/p"
+   xmlns:c="http://www.springframework.org/schema/c"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans 
+   					   http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+   					   http://www.springframework.org/schema/jee
+					   http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
+					   http://www.springframework.org/schema/util
+					   http://www.springframework.org/schema/util/spring-util-3.1.xsd"
+    default-init-method="start" default-destroy-method="destroy">
+    
+
+   <!--  JBoss 6.x Memory  -->
+    <bean name="ThreadNMemoryActivity" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="jboss.system:type=ServerInfo"/>
+        <property name="targetAttributeTraces">
+            <list>                       
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="MaxMemory"
+                    p:segmentPrefixElements="Memory" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="TotalMemory"
+                    p:segmentPrefixElements="Memory" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="FreeMemory"
+                    p:segmentPrefixElements="Memory" />   
+            </list>
+        </property>
+    </bean>
+
+   <!--  JBoss 6.x  -->
+    <bean name="ThreadActivity" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="java.lang:type=Threading,*"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="ThreadCount"
+                    p:segmentPrefixElements="Threads" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="DaemonThreadCount"
+                    p:segmentPrefixElements="Threads" />                        
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="PeakThreadCount"
+                    p:segmentPrefixElements="Threads" /> 
+            </list>
+        </property>
+    </bean>
+      
+    <bean id="DataSources" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="jboss.jca:service=ManagedConnectionPool,*"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="ConnectionCount"
+                    p:segmentPrefixElements="DataSources"
+                    p:segment="{TARGET-PROPERTY:name}"
+                    p:metricName="Active Connection" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="InUseConnectionCount"
+                    p:segmentPrefixElements="DataSources"
+                    p:segment="{TARGET-PROPERTY:name}"
+                    p:metricName="In-use Connection"
+                    p:traceType="INT_AVG"  />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="ConnectionCreatedCount"
+                    p:segmentPrefixElements="DataSources"
+                    p:segment="{TARGET-PROPERTY:name}"
+                    p:metricName="Total Created" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="ConnectionDestroyedCount"
+                    p:segmentPrefixElements="DataSources"
+                    p:segment="{TARGET-PROPERTY:name}"
+                    p:metricName="Total Destroyed" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="MaxSize"
+                    p:segmentPrefixElements="DataSources"
+                    p:segment="{TARGET-PROPERTY:name}"
+                    p:metricName="Maximum Available" />
+            </list>
+        </property>
+    </bean> 
+    
+    <!-- JBoss 6.x Transaction Activity -->
+    <bean name="TransactionManagerActivity" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="jboss.jta:name=TransactionStatistics,*"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="NumberOfCommittedTransactions"
+                    p:segmentPrefixElements="JTA"
+                    p:traceType="DELTA_LONG_AVG" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="NumberOfResourceRollbacks"
+                    p:segmentPrefixElements="JTA"
+                    p:traceType="DELTA_LONG_AVG" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="NumberOfTimedOutTransactions"
+                    p:segmentPrefixElements="JTA"
+                    p:traceType="DELTA_LONG_AVG" />  
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="NumberOfInflightTransactions"
+                    p:segmentPrefixElements="JTA"
+                    p:traceType="DELTA_LONG_AVG" />                                      
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="NumberOfTransactions"
+                    p:segmentPrefixElements="JTA"
+                    p:traceType="LONG_AVG" />
+            </list>
+        </property>
+    </bean>          
+      
+    <bean name="TomcatClusterActivity" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="jboss:service=HAPartition,*"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="CurrentView"
+                    p:metricName="Members"
+                    p:segmentPrefixElements="Cluster,Partition,{TARGET-PROPERTY:partition}" >                    
+                    <property name="objectFormatters">
+						<list>
+							<ref bean="CollectionSizer"/>
+						</list>
+					</property>
+				</bean>
+            </list>
+        </property>
+    </bean>     
+    
+    <!-- JBoss 6.x   -->
+    <bean name="TopicActivity" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="org.hornetq:type=Topic,*"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="MessageCount"
+                    p:segmentPrefixElements="JMS,Topic"
+                    p:segment="{TARGET-PROPERTY:name}"
+                    p:traceType="INT_AVG" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="SubscriptionCount"
+                    p:segmentPrefixElements="JMS,Topic"
+                    p:metricName="Total Subscribers"
+                    p:segment="{TARGET-PROPERTY:name}" />
+            </list>
+        </property>
+    </bean> 
+    
+	<!-- JBoss 6.x   -->
+    <bean name="QueueActivity" class="org.helios.collectors.jmx.JMXObject">
+        <property name="targetObjectName" value="org.hornetq:type=Queue,*"/>
+        <property name="targetAttributeTraces">
+            <list>
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="MessageCount"
+                    p:segmentPrefixElements="JMS,Queue"
+                    p:segment="{TARGET-PROPERTY:name}"
+                    p:traceType="INT_AVG" />
+                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+                    p:targetAttributeName="ConsumerCount"
+                    p:segmentPrefixElements="JMS,Queue"
+                    p:segment="{TARGET-PROPERTY:name}" />                    
+            </list>
+        </property>
+    </bean>                  
+      
+</beans>      

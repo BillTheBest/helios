@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>helios</artifactId>
+    <groupId>org.helios</groupId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.helios</groupId>
+  <artifactId>helios-util</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>helios-util</name>
+  <url>http://www.heliosdev.org/projects/helios-util</url>
+  <dependencies>
+	<!--   Test Dependencies -->
+	    <dependency>
+	      <groupId>junit</groupId>
+	      <artifactId>junit</artifactId>	
+	      <scope>test</scope>
+	    </dependency>
+		<dependency>
+		  <groupId>com.h2database</groupId>
+		  <artifactId>h2</artifactId>		  
+		  <scope>test</scope>
+		</dependency>	    
+	<!-- 3rd party compile dependencies -->
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>javassist</groupId>
+			<artifactId>javassist</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>trove</groupId>
+		  <artifactId>trove</artifactId>
+		</dependency>
+		
+
+  </dependencies>
+</project>

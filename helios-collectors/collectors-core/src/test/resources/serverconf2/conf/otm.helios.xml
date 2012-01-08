@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+
+
+	<!-- 
+	<bean id="AMQPClient" class="org.helios.tracing.extended.amqp.AMQPClient" destroy-method="stop">
+		<constructor-arg value="graphite" />
+		<constructor-arg value="5672" />
+	</bean>
+	<bean id="AMQP"
+		class="org.helios.tracing.extended.amqp.AMQPTracerInstanceFactory">
+		<property name="amqpHost" value="graphite" />
+	</bean>
+
+
+
+	
+	
+	-->
+	
+	<bean name="TraceModelCache" class="org.helios.tracing.core.trace.cache.DefaultTraceModelCacheImpl">
+		<constructor-arg ref="SequenceManager"  />
+	</bean>
+	<bean name="SequenceManager" class="org.helios.sequence.SequenceManager"/>
+	
+
+	<bean id="ESPER" class="org.helios.esper.tracing.EsperTracerInstanceFactory">
+		<property name="esperProvider">
+			<bean id="esperProvider" factory-bean="Engine" factory-method="getProvider">
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="PUBLISHER" class="org.helios.tracing.PublishingTracerInstanceFactory" />
+
+	
+	<bean id="GRAPHITE"
+		class="org.helios.tracing.extended.graphite.GraphiteTracerInstanceFactory">
+		<property name="graphiteHost" value="graphite" />
+		<property name="graphitePort" value="2003" />
+	</bean>
+	
+	
+
+
+	<bean id="STACK" class="org.helios.tracing.stack.StackTracerInstanceFactory"
+		factory-method="getInstance">
+		<constructor-arg type="java.util.ArrayList" index="0">
+			<list>
+				<ref bean="ESPER" />
+				<ref bean="PUBLISHER" />
+				<ref bean="GRAPHITE" />
+				<!-- 
+				<ref bean="AMQP" />
+				<ref bean="GRAPHITE" />
+				-->
+			</list>
+		</constructor-arg>
+		<constructor-arg type="boolean" value="false" index="1" />
+	</bean>
+
+
+
+
+
+	<bean id="TracerFactory" class="org.helios.tracing.TracerFactory"
+		factory-method="getInstance">
+		<constructor-arg type="java.util.Collection">
+			<set>
+				<ref bean="STACK" />
+			</set>
+		</constructor-arg>
+		<constructor-arg type="java.util.Collection">
+			<set></set>
+		</constructor-arg>
+	</bean>
+
+	<!--
+		<bean id="AMQPGraphiteRelay"
+		class="org.helios.tracing.relay.amqp.AMQPGraphiteRelay"
+		init-method="start" destroy-method="stop" > <property
+		name="tracerFactory" ref="Graphite" /> <property name="amqpClient"
+		ref="AMQPClient" /> </bean> <bean id="Graphite"
+		class="org.helios.tracing.extended.graphite.GraphiteTracerInstanceFactory">
+		<property name="graphiteHost" value="graphite" /> <property
+		name="graphitePort" value="2003" /> </bean>
+	-->
+
+
+	<bean id="HeliosScheduler"
+		class="org.helios.jmx.threadservices.scheduling.HeliosScheduler"
+		lazy-init="false" factory-method="getInstance">
+		<constructor-arg type="java.util.Properties">
+			<value>
+				org.helios.scheduler.task.instrumentation=true
+				org.helios.scheduler.prestartthreads=3
+				org.helios.scheduler.corepoolsize=5
+				org.helios.scheduler.maxpoolsize=10
+				org.helios.scheduler.daemonthreads=true
+			</value>
+		</constructor-arg>
+	</bean>
+
+
+
+
+
+</beans>	

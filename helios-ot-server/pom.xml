@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.helios</groupId>
+    <artifactId>helios</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.helios</groupId>
+  <artifactId>helios-ot-server</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>opentrace-server</name>
+  <url>http://www.heliosdev.org/projects/opentrace</url>
+  <modules>
+  </modules>
+  
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.1</version>
+				<configuration>
+					<!--
+						During release:perform, enable the "release" profile
+					-->
+					<releaseProfiles>release</releaseProfiles>
+					<goals>deploy assembly:assembly</goals>
+				</configuration>
+			</plugin>
+            		<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.3.1</version>
+				<configuration>
+				    <archive>
+				        <manifest>
+				            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+				            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+				            <addClasspath>true</addClasspath>
+				        </manifest>
+				        <manifestEntries>
+				        </manifestEntries>
+				    </archive>
+				</configuration>
+            		</plugin>
+	</plugins>
+	</build>
+  
+
+
+	  <dependencies>
+	<!--   Test Dependencies -->
+	    <dependency>
+	      <groupId>junit</groupId>
+	      <artifactId>junit</artifactId>
+	      <version>${junit.version}</version>
+	      <scope>test</scope>
+	    </dependency>
+		<dependency>
+		  <groupId>com.h2database</groupId>
+		  <artifactId>h2</artifactId>
+		<scope>test</scope>
+		</dependency>
+
+	<!-- 3rd party compile dependencies -->
+
+	<dependency>
+	  <groupId>commons-dbcp</groupId>
+	  <artifactId>commons-dbcp</artifactId>
+	</dependency>
+	
+	<dependency>
+	  <groupId>org.codehaus.jettison</groupId>
+	  <artifactId>jettison</artifactId>
+	  <version>1.3</version>
+	</dependency>
+	
+	<!-- Groovy -->
+	<dependency>
+	  <groupId>org.codehaus.groovy</groupId>
+	  <artifactId>groovy-all</artifactId>
+	</dependency>
+	
+	<!-- ActiveMQ -->
+	<dependency>
+	  <groupId>org.apache.activemq</groupId>
+	  <artifactId>activemq-core</artifactId>	  
+	</dependency>
+	<dependency>
+	  <groupId>org.apache.activemq</groupId>
+	  <artifactId>activemq-web</artifactId>	  
+	</dependency>
+	<dependency>
+	  <groupId>org.apache.activemq</groupId>
+	  <artifactId>activemq-camel</artifactId>	  
+	</dependency>
+	
+	
+	<dependency>
+	  <groupId>opensymphony</groupId>
+	  <artifactId>sitemesh</artifactId>
+	  <version>2.5-atlassian-5</version>
+	</dependency>
+
+	<!-- Camel -->
+  
+<!-- 
+	<dependency>
+	    <groupId>org.apache.camel</groupId>
+	    <artifactId>camel-netty</artifactId>
+	</dependency>
+ -->  
+ 
+ 
+	<dependency>
+	  <groupId>org.apache.camel</groupId>
+	  <artifactId>camel-core</artifactId>
+	</dependency>
+	
+	<dependency>
+	  <groupId>org.apache.camel</groupId>
+	  <artifactId>camel-core</artifactId>
+	</dependency>
+	
+
+	<dependency>
+	  <groupId>org.apache.camel</groupId>
+	  <artifactId>camel-spring</artifactId>
+	</dependency>
+
+	<dependency>
+	  <groupId>org.apache.camel</groupId>
+	  <artifactId>camel-jms</artifactId>
+	</dependency>    
+
+	<dependency>
+	  <groupId>org.apache.camel</groupId>
+	  <artifactId>camel-jetty</artifactId>
+	</dependency>
+	
+	<dependency>
+	  <groupId>org.apache.camel</groupId>
+	  <artifactId>camel-jmx</artifactId>
+	</dependency>
+	
+
+	<dependency>
+	  <groupId>org.apache.camel</groupId>
+	  <artifactId>camel-servlet</artifactId>
+	</dependency>    
+
+		<dependency>
+		  <groupId>org.apache.camel</groupId>
+		  <artifactId>camel-jaxb</artifactId>
+		</dependency>    
+
+		<dependency>
+		  <groupId>org.apache.camel</groupId>
+		  <artifactId>camel-jackson</artifactId>
+		</dependency>    
+		
+		<dependency>
+		  <groupId>org.apache.camel</groupId>
+		  <artifactId>camel-xstream</artifactId>
+		</dependency>    
+		
+	    <dependency>
+			<groupId>org.reflections</groupId>
+			<artifactId>reflections</artifactId>
+	    </dependency>	    
+		
+	
+		<dependency>
+		  <groupId>org.apache.camel</groupId>
+		  <artifactId>camel-web</artifactId>
+		  <type>war</type>
+		</dependency>		
+	
+		<!-- Jersey -->
+		
+		
+                <dependency>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-core</artifactId>
+		</dependency>
+
+                <dependency>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-server</artifactId>
+		</dependency>
+		
+                <dependency>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-client</artifactId>
+		</dependency>
+		
+
+                <dependency>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-json</artifactId>
+		</dependency>
+		
+                <dependency>
+                    <groupId>org.codehaus.jackson</groupId>
+                    <artifactId>jackson-jaxrs</artifactId>
+		</dependency>
+		
+
+                <dependency>
+                    <groupId>com.sun.jersey.contribs</groupId>
+                    <artifactId>jersey-spring</artifactId>
+                    <exclusions>
+                    <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring</artifactId>
+        </exclusion>
+                    </exclusions>
+		</dependency>
+
+    	<!-- Spring -->
+		<dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-jdbc</artifactId>
+		</dependency>
+        
+	    <dependency>
+	    	<groupId>org.springframework</groupId>
+		<artifactId>spring-aop</artifactId>
+	    </dependency>
+	    <dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-aspects</artifactId>
+	    </dependency>
+	    <dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-beans</artifactId>
+	    </dependency>
+	    <dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-context</artifactId>
+	    </dependency>
+	    <dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-context-support</artifactId>
+	    </dependency>
+	    <dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-core</artifactId>
+	    </dependency>
+	    <dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-jms</artifactId>
+	    </dependency>
+	    <dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-web</artifactId>
+	    </dependency>
+
+		<!-- Spring Mongo DB -->		
+		  <dependency>
+		    <groupId>org.springframework.data</groupId>
+		    <artifactId>spring-data-mongodb</artifactId>
+		  </dependency>
+	    
+		<!-- ehcache -->
+		<dependency>
+		  <groupId>net.sf.ehcache</groupId>
+		  <artifactId>ehcache-core</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>org.codehaus.redback.components.cache</groupId>
+		  <artifactId>spring-cache-ehcache</artifactId>
+		</dependency>
+		
+	    
+	    
+	    <!--  Jetty -->
+
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-servlet</artifactId>
+	    </dependency>
+	     
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-http</artifactId>
+	    </dependency>
+	    
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-continuation</artifactId>
+	    </dependency>
+	    
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-util</artifactId>
+	    </dependency>
+	    
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-xml</artifactId>
+	    </dependency>
+
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-io</artifactId>
+	    </dependency>
+	    
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-jmx</artifactId>
+	    </dependency>
+	    
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-annotations</artifactId>
+	    </dependency>    
+
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-server</artifactId>
+	    </dependency>
+	    
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-deploy</artifactId>
+	    </dependency>
+
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-websocket</artifactId>
+	    </dependency>
+
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-jsp-2.1</artifactId>
+	    </dependency>
+	    
+	    <dependency>
+	      <groupId>org.eclipse.jetty</groupId>
+	      <artifactId>jetty-servlet</artifactId>
+	    </dependency>
+	    
+		<dependency>
+		  <groupId>org.mortbay.jetty</groupId>
+		  <artifactId>jsp-2.1-glassfish</artifactId>
+		  <version>9.1.1.B60.25.p2</version>
+		</dependency>
+
+		<!-- 
+		<dependency>
+		  <groupId>org.apache.geronimo.ext.tomcat</groupId>
+		  <artifactId>jasper</artifactId>
+		  <version>7.0.0.1</version>
+		</dependency>
+		-->
+
+	<!--   TEMP. If we use these, clean them up -->
+		<dependency>
+		  <groupId>org.apache.xbean</groupId>
+		  <artifactId>xbean-spring</artifactId>
+		  <version>3.8</version>
+		</dependency>	
+		
+	    <dependency>
+	      <groupId>org.slf4j</groupId>
+	      <artifactId>slf4j-log4j12</artifactId>
+	      <version>1.5.8</version>
+	    </dependency>
+	    
+		<dependency>
+		  <groupId>org.apache.activemq</groupId>
+		  <artifactId>activemq-pool</artifactId>
+		</dependency>
+
+		<dependency>
+		  <groupId>org.apache.activemq</groupId>
+		  <artifactId>activemq-camel</artifactId>		  
+		</dependency>
+		
+	
+	<!-- -->
+
+	<!-- helios compile dependencies -->
+		<dependency>
+			<groupId>org.helios.helios-ot</groupId>
+			<artifactId>helios-ot-core2</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.helios.helios-spring</groupId>
+			<artifactId>helios-spring-launcher</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+
+		<dependency>
+			  <groupId>org.helios.helios-collectors</groupId>
+			  <artifactId>helios-collectors-jmx-proxies</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+		
+		<dependency>
+		  <groupId>org.helios.helios-collectors</groupId>
+		  <artifactId>helios-collectors-core</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+
+		<dependency>
+			  <groupId>org.helios</groupId>
+			  <artifactId>helios-scripting</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+		
+		
+		
+
+		<!--  JSON Libraries -->
+		<dependency>
+		  <groupId>com.googlecode.json-simple</groupId>
+		  <artifactId>json-simple</artifactId>
+		</dependency>
+
+
+	  </dependencies>
+
+
+
+</project>

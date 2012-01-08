@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"       
+       xmlns:cache="http://www.springframework.org/schema/cache"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd
+       ">
+       
+	<!-- 
+	<ehcache:config  
+		configLocation="./src/test/resources/conf/cache/cache-config.xml" />
+	 -->
+	 
+	<bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+		<property name="cacheManager" ref="ehcache" />
+	</bean>
+	
+	<bean id="ehcache" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" destroy-method="destroy">
+		<property name="configLocation">
+			<bean id="ehcacheconfigLocaytion" class="org.springframework.core.io.FileSystemResource">
+				<constructor-arg value="./src/test/resources/server/conf/cache/cache-config.xml"  />
+			</bean>
+		</property>
+		<property name="cacheManagerName" value="HeliosCacheManager" />
+		<property name="shared" value="true" />
+	</bean>
+	
+	<bean id="CacheListener" class="org.helios.server.ot.cache.CacheEventManager">
+		<constructor-arg ref="ehcache" />
+		<property name="supressedCacheNames">
+			<set>
+				<value>lastMetricCache</value>
+			</set>
+		</property>
+	</bean>
+	
+	<bean id="hostCache" factory-bean="ehcache" factory-method="getCache" >
+		<constructor-arg value="hostCache" />
+	</bean>
+	
+	<bean id="agentCache" factory-bean="ehcache" factory-method="getCache" >
+		<constructor-arg value="agentCache" />
+	</bean>
+	
+	<bean id="metricNameCache" factory-bean="ehcache" factory-method="getCache" >
+		<constructor-arg value="metricNameCache" />
+	</bean>
+
+	<bean id="lastMetricCache" factory-bean="ehcache" factory-method="getCache" >
+		<constructor-arg value="lastMetricCache" />
+	</bean>
+	
+	
+	<bean id="metricTreeCache" factory-bean="ehcache" factory-method="getCache" >
+		<constructor-arg value="metricTreeCache" />
+	</bean>
+	
+	
+	<bean id="subCache" factory-bean="ehcache" factory-method="getCache" >
+		<constructor-arg value="subCache" />
+	</bean>
+	
+	<bean id="consumerCache" factory-bean="ehcache" factory-method="getCache" >
+		<constructor-arg value="consumerCache" />
+	</bean>
+	
+	<bean id="ehcachejmx" class="net.sf.ehcache.management.ManagementService" init-method="init" >
+		<constructor-arg value="#{ ehcache }" />
+		<constructor-arg ref="MBeanServer" />
+		<constructor-arg value="true" />
+		<constructor-arg value="true" />
+		<constructor-arg value="true" />
+		<constructor-arg value="true" />
+		<constructor-arg value="true" />
+	</bean>
+		
+		
+	
+       
+</beans>       

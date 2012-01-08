@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.helios</groupId>
+    <artifactId>helios-native</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.helios.helios-native</groupId>
+  <artifactId>helios-native-sigar</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>helios-native-sigar</name>
+  <url>http://www.heliosdev.org/projects/helios-native/helios-sigar</url>
+
+    <build>
+        <finalName>helios-sigar</finalName>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+			<manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries> 
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            <mainClass>org.helios.nativex.sigar.HeliosSigar</mainClass>
+			</manifest>
+			<manifestEntries>
+				<helios-version>${version}</helios-version>
+			</manifestEntries>												
+                        
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+			<id>helios-native-sigar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <stripVersion>true</stripVersion>
+                            <descriptors>
+                                <descriptor>src/main/assembly/launcher.xml</descriptor>
+                            </descriptors>                            
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>		
+
+
+  <dependencies>
+	<!-- packaging dependencies -->
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-jmx</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>org.hyperic</groupId>
+		  <artifactId>sigar</artifactId>
+		</dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.helios</groupId>
+    <artifactId>helios-native</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.helios.helios-native</groupId>
+  <artifactId>helios-native-jmx</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>helios-native-jmx</name>
+  
+  <url>http://www.heliosdev.org/projects/helios-native/helios-native-jmx</url>
+
+    <build>
+        <finalName>helios-native-jmx</finalName>
+        <plugins>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+			<manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries> 
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            <mainClass>org.helios.nativex.jmx.NativeJMXAgent</mainClass>
+			</manifest>
+			<manifestEntries>
+				<helios-version>${version}</helios-version>
+ 				<Premain-Class>org.helios.nativex.agent.NativeAgent</Premain-Class>
+            	<Agent-Class>org.helios.nativex.agent.NativeAgent</Agent-Class>
+            	<Can-Redefine-Classes>true</Can-Redefine-Classes>
+            	<Can-Retransform-Classes>true</Can-Retransform-Classes>				
+            	<Can-Set-Native-Method-Prefix>true</Can-Set-Native-Method-Prefix>
+			</manifestEntries>												
+                        
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>helios-native-jmx-launcher</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <stripVersion>true</stripVersion>
+                            <descriptors>
+                                <descriptor>src/main/assembly/launcher.xml</descriptor>
+                            </descriptors>                            
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+		     <plugin>
+		        <groupId>org.sonatype.plugins</groupId>
+		        <artifactId>jarjar-maven-plugin</artifactId>
+		        <executions>
+		          <execution>
+		            <phase>package</phase>
+		            <goals>
+		              <goal>jarjar</goal>
+		            </goals>
+		            <configuration>
+		              <includes>
+		                <include>asm:asm</include>
+		                <include>org.sonatype.sisu.inject:cglib</include>
+		              </includes>
+		              <rules>
+		                <rule>
+		                  <pattern>org.apache.log4j.**</pattern>
+		                  <result>org.helios.org.apache.log4j.@1</result>
+		                </rule>
+		                <rule>
+		                  <pattern>net.sf.cglib.**</pattern>
+		                  <result>com.google.inject.internal.cglib.@1</result>
+		                </rule>
+		                <keep>
+		                  <pattern>com.google.inject.**</pattern>
+		                </keep>
+		              </rules>
+		            </configuration>
+		          </execution>
+		        </executions>
+		      </plugin>            
+        </plugins>
+    </build>		
+
+
+  <dependencies>
+	<!-- packaging dependencies -->
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-jmx</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+		  <groupId>org.helios.helios-native</groupId>
+		  <artifactId>helios-native-sigar</artifactId>
+		  <version>${helios.version}</version>
+		  <scope>compile</scope>
+		</dependency>
+		<dependency>
+		  <groupId>org.helios</groupId>
+		  <artifactId>helios-scripting</artifactId>
+		  <version>${helios.version}</version>
+		  <scope>runtime</scope>
+		</dependency>
+		
+<!--
+		<dependency>
+		  <groupId>org.glassfish.external</groupId>
+		  <artifactId>jmxremote_optional-repackaged</artifactId>			
+		  <version>${jmxremote-optional.version}</version>
+		</dependency>
+-->
+	      <dependency>
+			<groupId>args4j</groupId>
+			<artifactId>args4j</artifactId>
+			<version>${args4j.version}</version>
+	      </dependency>
+	      <dependency>
+			<groupId>args4j</groupId>
+			<artifactId>args4j-tools</artifactId>
+			<version>${args4j.version}</version>
+			<scope>provided</scope>
+	      </dependency>
+
+	      
+		
+  </dependencies>
+</project>

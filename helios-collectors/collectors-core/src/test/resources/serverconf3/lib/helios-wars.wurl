@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wurl>		
+	<link protocol="fs" path="/jolokia" beanName="JolokiaWar">/home/nwhitehead/libs/java/jolokia/jolokia-0.83/jolokia-war-0.83.war</link>
+	<link protocol="fs" path="/helios" beanName="HeliosWar">/home/nwhitehead/hprojects/helios/helios-webapp/target/helios-webapp</link>
+	
+</wurl>
