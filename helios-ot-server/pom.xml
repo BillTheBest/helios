@@ -418,7 +418,7 @@
 		</dependency>
 		
 		<dependency>
-		    <groupId>org.helios</groupId>
+		    <groupId>org.helios.helios-spring</groupId>
 		    <artifactId>helios-spring-launcher</artifactId>
 		    <version>${helios.version}</version>
 		</dependency>
