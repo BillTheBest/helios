@@ -64,7 +64,7 @@
 			</dependency>
 			<dependency>
 			  <groupId>org.helios.helios-collectors</groupId>
-			  <artifactId>helios-collectors-jmx-proxies</artifactId>
+			  <artifactId>collectors-jmx-proxies</artifactId>
 			</dependency>
 			
 			

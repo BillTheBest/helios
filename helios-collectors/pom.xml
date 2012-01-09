@@ -96,11 +96,6 @@
 				<version>${helios.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.helios.helios-ot</groupId>
-				<artifactId>helios-ot-camel</artifactId>
-				<version>${helios.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>org.helios</groupId>
 				<artifactId>helios-scripting</artifactId>
 				<version>${helios.version}</version>
@@ -117,7 +112,7 @@
 			</dependency>
 			<dependency>
 				  <groupId>org.helios.helios-collectors</groupId>
-				  <artifactId>helios-collectors-jmx-proxies</artifactId>
+				  <artifactId>collectors-jmx-proxies</artifactId>
 				<version>${helios.version}</version>
 			</dependency>
                         <dependency>
