@@ -59,7 +59,7 @@ public class HeliosThread extends Thread implements Comparable<Thread> {
 		super(group, target, name, stackSize);
 		this.termCounter = termCounter;
 		log = Logger.getLogger(getClass().getName() + "." + name);
-		if(log.isDebugEnabled()) log.debug("Created HeliosThread[" + name + "] with Runnable of type[" + target.getClass().getName() + "]");
+		//if(log.isDebugEnabled()) log.debug("Created HeliosThread[" + name + "] with Runnable of type[" + target.getClass().getName() + "]");
 	}
 	
 	/**
