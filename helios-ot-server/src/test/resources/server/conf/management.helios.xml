@@ -55,9 +55,6 @@
 		value="service:jmx:rmi://0.0.0.0:8002/jndi/rmi://localhost:8003/jmxrmi"
 	 -->
 
-	<bean id="Printer" class="org.helios.jmx.util.JMXServerConnectionPrinter">
-		<constructor-arg ref="MBeanServerConnector" />
-	</bean>
 
 	<bean id="RMIRegistry" class="java.rmi.registry.LocateRegistry"
 		lazy-init="false" factory-method="createRegistry">
@@ -66,6 +63,7 @@
 	
 	<bean name="GroovyService" class="org.helios.scripting.console.GroovyService" />	
 
+	<!-- 
 	<bean id="MBeanServerConnector" class="javax.management.remote.JMXConnectorServerFactory"
 		lazy-init="false" init-method="start" factory-method="newJMXConnectorServer"
 		depends-on="RMIRegistry">
@@ -76,6 +74,11 @@
 		<constructor-arg ref="MBeanServer" />
 	</bean>
 	
+	<bean id="Printer" class="org.helios.jmx.util.JMXServerConnectionPrinter">
+		<constructor-arg ref="MBeanServerConnector" />
+	</bean>
+	
+	
 
 	<bean id="exporter" class="org.springframework.jmx.export.MBeanExporter">
 		<property name="beans">
@@ -85,6 +88,8 @@
 		</property>
 		<property name="server" ref="MBeanServer" />
 	</bean>
+	
+	-->
 
 
 
