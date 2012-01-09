@@ -44,6 +44,7 @@ import groovy.ui.Console;
 public class GroovyService extends ManagedObjectDynamicMBean{ 
 	/**  */
 	private static final long serialVersionUID = -2758890352866603234L;
+	/** The default JMX ObjectName for this MBean */
 	public static final String OBJECT_NAME_STR = "org.helios.scripting:service=GroovyService";
 	/** The JMX ObjectName for the GroovyService service */
 	public static final ObjectName OBJECT_NAME = JMXHelper.objectName(OBJECT_NAME_STR);
@@ -73,4 +74,6 @@ public class GroovyService extends ManagedObjectDynamicMBean{
 	public void launchConsole() {
 		Console.main(new String[]{});
 	}
+	
+	
 }

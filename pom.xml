@@ -84,7 +84,8 @@
 		<joesnmp.version>0.3.4</joesnmp.version>
 		<groovy.version>1.8.4</groovy.version>
 		<jbossall-client.version>4.2.2.GA</jbossall-client.version>
-		<jetty.version>7.4.5.v20110725</jetty.version>
+		<!-- 		<jetty.version>7.4.5.v20110725</jetty.version>   -->
+		<jetty.version>8.0.3.v20111011</jetty.version>
 		<jansi.version>1.4</jansi.version>
 		<h2.version>1.3.149</h2.version>
 		<atmosphere.version>0.7</atmosphere.version>

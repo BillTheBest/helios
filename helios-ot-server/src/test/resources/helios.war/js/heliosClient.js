@@ -75,7 +75,7 @@ $.helios = function(options) {
 	 * Terminates the http or websocket session.
 	 */
 	$.helios.termSession = function(callbacks) {
-		if(!$.helios.exists("/session/sessionId")) return;
+		if(!$.helios.exists("/session/sessionId") || $.helios.get("/session/sessionId")==null) return;
 		$.helios.stopPoller();
 		$.helios.stopSubscriber(function() {
 			$.ajax({
@@ -84,7 +84,7 @@ $.helios = function(options) {
 				cache: false,
 				success: function(data){								
 					$.helios._processCallbacks(callbacks, [data]);
-					$.helios.deleten("/session/sessionId");
+					$.helios.deleten("/session/sessionId", true);
 				}
 			});			
 		});
@@ -478,7 +478,8 @@ $.helios = function(options) {
 	/**
 	 * Deletes the item at the passed namespace
 	 */
-	$.helios.deleten = function(namespace) {
+	$.helios.deleten = function(namespace, noPub) {
+		var noPublish = noPub || false;
 		var node = $.helios.get(namespace);
 		var context = [];
 		var parent = [];
@@ -493,12 +494,12 @@ $.helios = function(options) {
 		        $.each(value, recurse);
 		        if(key) {
 		            delete parent[(parent.length-2)][key];
-		            $.helios.publish(ctx(context), [null]);
+		            if(!noPublish) $.helios.publish(ctx(context), [null]);
 		        }
 		    } else {
 		        context.push(key);
 		        //console.info("Context:[%s]  Key:[%s], Value:[%s]", ctx(context), key, value);
-		        $.helios.publish(ctx(context), [null]);
+		        if(!noPublish) $.helios.publish(ctx(context), [null]);
 		        delete parent[(parent.length-2)][key];
 		    }
 		    parent.pop();
@@ -507,8 +508,7 @@ $.helios = function(options) {
 		recurse(null, node);
 		var topRef = $.helios.parentOf(namespace); 
 		delete $.helios.get(topRef[0])[topRef[1]];
-		$.helios.publish(topRef[0] + topRef[1], [null]);
-
+		if(!noPublish) $.helios.publish(topRef[0] + topRef[1], [null]);
 	};
 	
 	/**
