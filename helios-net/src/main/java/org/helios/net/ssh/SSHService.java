@@ -36,12 +36,15 @@ import java.net.URL;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
 import ch.ethz.ssh2.Connection;
+import ch.ethz.ssh2.ConnectionMonitor;
 import ch.ethz.ssh2.ServerHostKeyVerifier;
 
 /**
@@ -52,7 +55,7 @@ import ch.ethz.ssh2.ServerHostKeyVerifier;
  * <p><code>org.helios.net.ssh.SSHService</code></p>
  */
 
-public class SSHService {
+public class SSHService implements ConnectionMonitor {
 	/** Instance logger */
 	protected Logger log = Logger.getLogger(getClass());
 	/** The remote SSH server host name or IP address */
@@ -83,6 +86,12 @@ public class SSHService {
 	protected Date connectTime = null;
 	/** the last disconnect time */
 	protected Date disconnectTime = null;
+	/** Service listeners for this instance */
+	protected final Set<SSHServiceConnectionListener> connectionListeners = new CopyOnWriteArraySet<SSHServiceConnectionListener>();
+	
+	
+	/** Service listeners to be automatically added to all created instances */
+	protected static final Set<SSHServiceConnectionListener> staticConnectionListeners = new CopyOnWriteArraySet<SSHServiceConnectionListener>();
 
 	
 	
@@ -173,6 +182,7 @@ public class SSHService {
 			}
 			log.info("Connected to [" + this + "]");
 			sshConnection.setTCPNoDelay(true);
+			sshConnection.addConnectionMonitor(this);
 			connected.set(true);
 			connectTime = new Date();
 		}
@@ -410,6 +420,8 @@ public class SSHService {
 			
 		}
 	}
+	
+	// Set<SSHServiceConnectionListener> connectionListeners 
 
 	/**
 	 * Returns the implemented host key verifier

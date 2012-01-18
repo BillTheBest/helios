@@ -30,7 +30,10 @@ import java.lang.management.ManagementFactory;
 import java.net.Socket;
 import java.rmi.server.RMIClientSocketFactory;
 
+import javax.management.MBeanServerDelegate;
+
 import org.apache.log4j.Logger;
+import org.helios.helpers.JMXHelper;
 
 /**
  * <p>Title: SSHRMIClientSocketFactory</p>
@@ -49,7 +52,8 @@ public class SSHRMIClientSocketFactory implements RMIClientSocketFactory, Serial
 	/** The target port to reach through the tunnel */
 	protected int tunneledPort;
 	/** The mbean serverid of the originating JVM */
-	protected String agentId = null;
+	public static final String MBEANSERVER_ID = (String)JMXHelper.getRuntimeHeliosMBeanServer().getAttribute(MBeanServerDelegate.DELEGATE_NAME, "MBeanServerId"); 
+
 
 	
 	/**
@@ -61,22 +65,9 @@ public class SSHRMIClientSocketFactory implements RMIClientSocketFactory, Serial
 	 */
 	public SSHRMIClientSocketFactory(String targetAddress, int tunneledPort) {
 		this.targetAddress = targetAddress;
-		this.tunneledPort = tunneledPort;
-		this.agentId = getAgentId();
-		//this.sshRmiSockets = sshRmiSockets;
+		this.tunneledPort = tunneledPort;		
 	}
 	
-	/**
-	 * Retrieves the platform agent mbean server id.
-	 * @return the platform agent mbean server id.
-	 */
-	public static String getAgentId() {
-		try {
-			return (String)ManagementFactory.getPlatformMBeanServer().getAttribute(MBEAN_SERVER_DELEGATE, "MBeanServerId");
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to get platform agent mbeanserver id", e);
-		} 
-	}
 	
 	
 	/**
