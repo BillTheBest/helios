@@ -40,10 +40,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
+import org.helios.net.ssh.portforward.LocalPortForward;
 
 import ch.ethz.ssh2.Connection;
+import ch.ethz.ssh2.ConnectionInfo;
 import ch.ethz.ssh2.ConnectionMonitor;
 import ch.ethz.ssh2.ServerHostKeyVerifier;
 
@@ -72,14 +76,24 @@ public class SSHService implements ConnectionMonitor {
 	protected char[] pemPrivateKey = null;
 	/** An SSH HostKey Verifier  */
 	protected ServerHostKeyVerifier hostKeyVerifier = new YesManHostKeyVerifier();
-	/** An SSH Connection */
+	/** A SSH Connection */
 	protected Connection sshConnection = null;
+	/** The connection info */
+	protected ConnectionInfo connectionInfo = null;
+	/** The server host key */
+	protected ServerHostKey hostKey = null;
 	/** Connection timeout in ms. */
 	protected int connectionTimeout = 10000;
+	/** Indicates if this connection should be shared */
+	protected final AtomicBoolean sharedConnection = new AtomicBoolean(true);
+	/** Indicates if this connection should create shared port forwards */
+	protected final AtomicBoolean sharedPortForwards = new AtomicBoolean(true);
+	/** The number of shared references */
+	protected final AtomicInteger shareCount = new AtomicInteger(0);
 	/** Connection state indicator */
-	protected final  AtomicBoolean connected = new AtomicBoolean(false);
-	/** A static map of created SSH Services */
-	protected static final Map<String, SSHService> services = new ConcurrentHashMap<String, SSHService>();
+	protected final AtomicBoolean connected = new AtomicBoolean(false);
+	/** A static map of created SSHServices keyed by ServerHostKey */
+	protected static final Map<ServerHostKey, SSHService> keyedServices = new ConcurrentHashMap<ServerHostKey, SSHService>();
 	/** A map of created local port forwards for this connection */
 	protected final Map<String, LocalPortForward> localPortForwarders = new ConcurrentHashMap<String, LocalPortForward>();
 	/** the last connect time */
@@ -100,30 +114,34 @@ public class SSHService implements ConnectionMonitor {
 	 * @param host The SSH server host name or IP address
 	 * @param port The SSH server port 
 	 * @param sshUserName The SSH server user name
+	 * @param sharedConnection Indicates if this connection should be shared
+	 * @param sharedPortForwards Indicates if this connection should create shared port forwards 
 	 */
-	protected SSHService(String host, int port, String sshUserName) {
+	protected SSHService(String host, int port, String sshUserName, boolean sharedConnection, boolean sharedPortForwards) {
 		this.host = host;
 		this.port = port;
 		this.sshUserName = sshUserName;
+		this.sharedConnection.set(sharedConnection);
+		this.sharedPortForwards.set(sharedPortForwards);
 		log.info("Created SSH Service For " + this  );
 	}
 	
 	/**
-	 * Generates a key unqiuely identifying an SSHService
+	 * Generates a visual key describing an SSHService
 	 * @param host The SSH server host name or IP address
 	 * @param port The SSH server port 
 	 * @param userName The SSH server user name
-	 * @return An SSHService key
+	 * @return An SSHService visual key
 	 */
 	public static String serviceKey(String host, int port, String userName) {
 		return new StringBuilder(userName).append("@").append(host).append(":").append(port).toString();
 	}
 	
 	/**
-	 * Generates a key unqiuely identifying a port forward
+	 * Generates a visual key describing a port forward
 	 * @param local_port The local port to listen on
 	 * @param remote_port The remote port to forward to
-	 * @return the port forward service key that uniquely identifies this port forward 
+	 * @return a port forward visual key 
 	 */
 	public String portForwardServiceKey(int local_port,  int remote_port)   {		
 		return new StringBuilder("localhost:").append(local_port).append("-->").append(this).append("[").append(remote_port).append("]").toString();
@@ -135,26 +153,45 @@ public class SSHService implements ConnectionMonitor {
 	 * @param host The SSH server host name or IP address
 	 * @param port The SSH server port 
 	 * @param userName The SSH server user name
+	 * @param sharedConnection Indicates if this connection should be shared
+	 * @param sharedPortForwards Indicates if this connection should create shared port forwards
 	 * @return an SSHService
-	 */	
-	public static SSHService createSSHService(String host, int port, String userName) {
-		String key = serviceKey(host, port, userName);
-		SSHService sshService = services.get(key);
-		if(sshService==null) {
-			synchronized(services) {
-				sshService = services.get(key);
-				if(sshService==null) {
-					sshService =  new SSHService(host, port, userName);
-					services.put(key, sshService);
-				}
-			}
-		}
-		return sshService;
+	 */
+	public static SSHService createSSHService(String host, int port, String userName, boolean sharedConnection, boolean sharedPortForwards) {
+		return new SSHService(host, port, userName, sharedConnection, sharedPortForwards);
+//		String key = serviceKey(host, port, userName);
+//		SSHService sshService = services.get(key);
+//		if(sshService==null) {
+//			synchronized(services) {
+//				sshService = services.get(key);
+//				if(sshService==null) {
+//					sshService =  new SSHService(host, port, userName, sharedConnection, sharedPortForwards);
+//					services.put(key, sshService);
+//				}
+//			}
+//		}
+//		return sshService;
 	}
+	
+	/**
+	 * Creates a new shared connection SSHService that creates shared port forwards. 
+	 * Check to see if it is connected before using it.
+	 * @param host The SSH server host name or IP address
+	 * @param port The SSH server port 
+	 * @param userName The SSH server user name
+	 * @return an SSHService
+	 */
+	public static SSHService createSSHService(String host, int port, String userName) {
+		return createSSHService(host, port, userName, true, true);
+	}
+	
 	
 	
 	/**
 	 * Connects and authenticates to the SSH server.
+	 * If this SSHService is defined as a shared connection, and a shared connection for the same SSH server already exists,
+	 * this service will be closed and discarded and the shared service will be returned. Otherwise, this service will
+	 * be connected, authenticated and returned.
 	 * The order of authentication methods will be:<ol>
 	 * <li>Non authentication will be attempted first.</li>
 	 * <li>If a private key and a passphrase have been supplied, public key authentication will be attempted .</li>
@@ -162,30 +199,117 @@ public class SSHService implements ConnectionMonitor {
 	 * <li>If a password has been supplied, password authentication will be attempted</li>
 	 * <li>If a private key and a password have been supplied, public key authentication will be attempted using the password as the private key passphrase.</li>
 	 * </ol>
+	 * @return A connected and authenticated SSHService connected to the requested SSH server. May not be the same instance.
 	 * @throws Exception An exception is thrown if the connection or authentication or host key verification fails. 
 	 */
-	public void connect() throws Exception {
-		if(connected.get()) return;
+	public SSHService connect() throws Exception {
+		if(connected.get()) return this;
+		SSHService svc = null;
 		synchronized(connected) {
 			validate();
 			log.info(this + "  Connecting....");
 			sshConnection = new Connection(host, port);
-			sshConnection.connect(hostKeyVerifier, connectionTimeout, connectionTimeout);
-			log.info(this + "  Connected. Starting authentication....");
-			Map<String, Exception> exceptions = authenticate();
-			if(exceptions!=null) {
-				connected.set(false);
-				throw new Exception("Failed to authenticate to [" + this + "] using any method");
-			}
-			if(!sshConnection.isAuthenticationComplete()) {
-				throw new Exception("Authentication incomplete for [" + this + "] after successful methods");
-			}
-			log.info("Connected to [" + this + "]");
-			sshConnection.setTCPNoDelay(true);
-			sshConnection.addConnectionMonitor(this);
-			connected.set(true);
-			connectTime = new Date();
+			connectionInfo = sshConnection.connect(hostKeyVerifier, connectionTimeout, connectionTimeout);			
+			hostKey = ServerHostKey.newInstance(this); 
+			
+			if(isSharedConnection()) {
+				SSHService sharedService = keyedServices.get(hostKey);
+				if(sharedService==null) {
+					synchronized(keyedServices) {
+						sharedService = keyedServices.get(hostKey);
+						if(sharedService==null) {
+							completeAuthentication();
+							svc = this;
+						}
+					}
+				}
+				if(sharedService!=null) {
+					this._close();
+					sharedService.shareCount.incrementAndGet();
+					log.info("Returning shared service for " + sharedService.hostKey);
+					svc = sharedService;
+				}
+			} else {
+				completeAuthentication();
+				svc = this;
+			}			
 		}
+		return svc;
+	}
+	
+	/**
+	 * Completes authentication on this service
+	 * @throws Exception thrown on any error comleting authentication and configuring the connection
+	 */
+	protected void completeAuthentication() throws Exception {
+		log.info(this + "  Connected. Starting authentication....");
+		Map<String, Exception> exceptions = authenticate();
+		if(exceptions!=null) {				
+			connected.set(false);
+			throw new Exception("Failed to authenticate to [" + this + "] using any method");
+		}
+		if(!sshConnection.isAuthenticationComplete()) {				
+			throw new Exception("Authentication incomplete for [" + this + "] after successful methods");
+		}
+		log.info("Connected to [" + this + "]");
+		sshConnection.setTCPNoDelay(true);
+		sshConnection.addConnectionMonitor(this);
+		connected.set(true);
+		keyedServices.put(hostKey, this);
+		connectTime = new Date();		
+	}
+	
+	public static void main(String[] args) {
+		BasicConfigurator.configure();
+		Logger LOG = Logger.getLogger(SSHService.class);
+		LOG.info("Shared SSHService Test");
+		int key1 = -1, key2 = -1;
+		try {
+			SSHService sshService1 = SSHService.createSSHService("localhost", 22, "nwhitehead").sshUserPassword("mypasswd").connect();
+			key1 = System.identityHashCode(sshService1);
+			SSHService sshService2 = SSHService.createSSHService("localhost", 22, "nwhitehead").sshUserPassword("mypasswd").connect();
+			key2 = System.identityHashCode(sshService2);
+			LOG.info("Key 1 = Key 2:" + (key1==key2));
+			sshService1.close();
+			LOG.info("Service 2 Connected ?:" + sshService2.isConnected());
+			sshService2.close();
+			LOG.info("Service 2 Connected ?:" + sshService2.isConnected());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		LOG.info("Dedicated SSHService Test");
+		key1 = -1;
+		key2 = -1;
+		try {
+			SSHService sshService1 = SSHService.createSSHService("localhost", 22, "nwhitehead", false, false).sshUserPassword("mypasswd").connect();
+			key1 = System.identityHashCode(sshService1);
+			SSHService sshService2 = SSHService.createSSHService("localhost", 22, "nwhitehead").sshUserPassword("mypasswd").connect();
+			key2 = System.identityHashCode(sshService2);
+			LOG.info("Key 1 = Key 2:" + (key1==key2));
+			sshService1.close();
+			sshService2.close();
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * Returns the actual SSH connection
+	 * @return the actual SSH connection
+	 */
+	public Connection getConnection() {
+		return sshConnection;
+	}
+	
+	
+	/**
+	 * Returns the SSH {@link ConnectionInfo} for this service
+	 * @return the SSH {@link ConnectionInfo} for this service
+	 */
+	public ConnectionInfo getConnectionInfo() {
+		return connectionInfo;
 	}
 	
 	/**
@@ -298,6 +422,31 @@ public class SSHService implements ConnectionMonitor {
 		} catch (Exception e) {
 			throw new Exception("Failed to validate SSH Server Host Name [" + host + "]");
 		}
+	}
+	
+	/**
+	 * Closes the SSHService and all associated services.
+	 */
+	public void close() {
+		if(sharedConnection.get()) {
+			int _sharedCount = shareCount.decrementAndGet();
+			if(_sharedCount < 1) {
+				_close();
+			}
+		} else {
+			_close();
+		}
+	}
+	
+	/**
+	 * The actual close operation that closes the SSH connection and removes the service from the cache.
+	 * This will be called when a non-shared connection is closed, or the last reference to a shared connection is closed and the share count drops to zero.
+	 */
+	protected void _close() {
+		if(connected.get()) {
+			try { sshConnection.close(); } catch (Exception e) {}
+		}
+		keyedServices.remove(hostKey);		
 	}
 	
 	/**
@@ -430,6 +579,14 @@ public class SSHService implements ConnectionMonitor {
 	public ServerHostKeyVerifier getHostKeyVerifier() {
 		return hostKeyVerifier;
 	}
+	
+	/**
+	 * Returns the connected SSH server's host key
+	 * @return the connected SSH server's host key
+	 */
+	public ServerHostKey getHostKey() {
+		return hostKey;
+	}
 
 	/**
 	 * Sets a new host key verifier
@@ -474,6 +631,16 @@ public class SSHService implements ConnectionMonitor {
 	}
 
 	/**
+	 * Sets the user password.
+	 * @param sshUserPassword the sshUserPassword to set
+	 * @return this services
+	 */	
+	public SSHService sshUserPassword(String sshUserPassword) {
+		setSshUserPassword(sshUserPassword);
+		return this;
+	}
+
+	/**
 	 * Sets the ssh private key passphrase
 	 * @param sshPassphrase the sshPassphrase to set
 	 */
@@ -496,6 +663,23 @@ public class SSHService implements ConnectionMonitor {
 	public void setConnectionTimeout(int connectionTimeout) {
 		this.connectionTimeout = connectionTimeout;
 	}
+	
+	/**
+	 * Indicates if this is a shared connection
+	 * @return true if this is a shared connection, false if it is dedicated.
+	 */
+	public boolean isSharedConnection() {
+		return sharedConnection.get();
+	}
+	
+	/**
+	 * Indicates connection creates shared port forwards
+	 * @return true if this is connection creates shared port forwards, false if it creates dedicated ones.
+	 */
+	public boolean isSharedPortForwards() {
+		return sharedConnection.get() && sharedPortForwards.get();
+	}
+	
 
 
 	/**
