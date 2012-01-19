@@ -25,6 +25,7 @@
 package org.helios.net.ssh;
 
 import java.io.CharArrayWriter;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -33,6 +34,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.InetAddress;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
+import org.helios.helpers.Banner;
 import org.helios.net.ssh.portforward.LocalPortForward;
 
 import ch.ethz.ssh2.Connection;
@@ -59,7 +62,7 @@ import ch.ethz.ssh2.ServerHostKeyVerifier;
  * <p><code>org.helios.net.ssh.SSHService</code></p>
  */
 
-public class SSHService implements ConnectionMonitor {
+public class SSHService implements ConnectionMonitor, Closeable {
 	/** Instance logger */
 	protected Logger log = Logger.getLogger(getClass());
 	/** The remote SSH server host name or IP address */
@@ -208,8 +211,10 @@ public class SSHService implements ConnectionMonitor {
 		synchronized(connected) {
 			validate();
 			log.info(this + "  Connecting....");
+			
 			sshConnection = new Connection(host, port);
-			connectionInfo = sshConnection.connect(hostKeyVerifier, connectionTimeout, connectionTimeout);			
+			connectionInfo = sshConnection.connect(hostKeyVerifier, connectionTimeout, connectionTimeout);
+			log.info("Remaining Auth Methods:" + Arrays.toString(sshConnection.getRemainingAuthMethods(sshUserName)));
 			hostKey = ServerHostKey.newInstance(this); 
 			
 			if(isSharedConnection()) {
@@ -218,16 +223,17 @@ public class SSHService implements ConnectionMonitor {
 					synchronized(keyedServices) {
 						sharedService = keyedServices.get(hostKey);
 						if(sharedService==null) {
-							completeAuthentication();
+							completeAuthentication();							
 							svc = this;
+							svc.shareCount.incrementAndGet();
 						}
 					}
 				}
 				if(sharedService!=null) {
-					this._close();
-					sharedService.shareCount.incrementAndGet();
+					this._close();					
 					log.info("Returning shared service for " + sharedService.hostKey);
 					svc = sharedService;
+					svc.shareCount.incrementAndGet();
 				}
 			} else {
 				completeAuthentication();
@@ -262,12 +268,18 @@ public class SSHService implements ConnectionMonitor {
 	public static void main(String[] args) {
 		BasicConfigurator.configure();
 		Logger LOG = Logger.getLogger(SSHService.class);
-		LOG.info("Shared SSHService Test");
+		LOG.info(Banner.banner("=", 3, 10, "Shared SSHService Test"));
+		String[] localConfig = LocalConfig.read();
+		String userName = localConfig[0];
+		String userPass = localConfig[1];
+		String hostName = localConfig[2];
 		int key1 = -1, key2 = -1;
 		try {
-			SSHService sshService1 = SSHService.createSSHService("localhost", 22, "nwhitehead").sshUserPassword("mypasswd").connect();
+			LOG.info("\t**** Connecting Svc 1 ****");
+			SSHService sshService1 = SSHService.createSSHService(hostName, 22, userName).sshUserPassword(userPass).connect();
 			key1 = System.identityHashCode(sshService1);
-			SSHService sshService2 = SSHService.createSSHService("localhost", 22, "nwhitehead").sshUserPassword("mypasswd").connect();
+			LOG.info("\t**** Connecting Svc 2 ****");
+			SSHService sshService2 = SSHService.createSSHService(hostName, 22, userName).sshUserPassword(userPass).connect();
 			key2 = System.identityHashCode(sshService2);
 			LOG.info("Key 1 = Key 2:" + (key1==key2));
 			sshService1.close();
@@ -276,14 +288,16 @@ public class SSHService implements ConnectionMonitor {
 			LOG.info("Service 2 Connected ?:" + sshService2.isConnected());
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-		LOG.info("Dedicated SSHService Test");
+		}		
+		LOG.info(Banner.banner("=", 3, 10, "Dedicated SSHService Test"));
 		key1 = -1;
 		key2 = -1;
 		try {
-			SSHService sshService1 = SSHService.createSSHService("localhost", 22, "nwhitehead", false, false).sshUserPassword("mypasswd").connect();
+			LOG.info("\t**** Connecting Svc 1 ****");
+			SSHService sshService1 = SSHService.createSSHService(hostName, 22, userName, false, false).sshUserPassword(userPass).connect();
 			key1 = System.identityHashCode(sshService1);
-			SSHService sshService2 = SSHService.createSSHService("localhost", 22, "nwhitehead").sshUserPassword("mypasswd").connect();
+			LOG.info("\t**** Connecting Svc 2 ****");
+			SSHService sshService2 = SSHService.createSSHService(hostName, 22, userName, false, false).sshUserPassword(userPass).connect();
 			key2 = System.identityHashCode(sshService2);
 			LOG.info("Key 1 = Key 2:" + (key1==key2));
 			sshService1.close();
