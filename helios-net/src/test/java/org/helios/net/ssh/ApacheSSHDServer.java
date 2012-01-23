@@ -44,18 +44,18 @@ import org.apache.sshd.server.shell.ProcessShellFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
- * <p>Title: TestSSHServer</p>
+ * <p>Title: ApacheSSHDServer</p>
  * <p>Description: </p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.net.ssh.TestSSHServer</code></p>
+ * <p><code>org.helios.net.ssh.ApacheSSHDServer</code></p>
  */
-public class TestSSHServer {
-	static final Logger LOG = Logger.getLogger(TestSSHServer.class);
+public class ApacheSSHDServer {
+	static final Logger LOG = Logger.getLogger(ApacheSSHDServer.class);
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(String...args) {
 		BasicConfigurator.configure();
 		Logger.getRootLogger().setLevel(Level.INFO);
 		LOG.info("Starting SSHd Server");
