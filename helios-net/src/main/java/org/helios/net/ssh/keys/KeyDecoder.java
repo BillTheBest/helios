@@ -178,8 +178,12 @@ public class KeyDecoder {
      */
     private String[] decodeUser(String line) {
     	String name = line.split("== ")[1];
-    	if(name.trim().isEmpty() || !name.contains("@")) return NULL_USER;
-    	return name.trim().split("@");
+    	try {
+    		if(name.trim().isEmpty() || !name.contains("@")) return NULL_USER;
+    		return name.trim().split("@");
+    	} catch (Exception e) {
+    		return NULL_USER;
+    	}
     }
     
     private String decodeType() {
