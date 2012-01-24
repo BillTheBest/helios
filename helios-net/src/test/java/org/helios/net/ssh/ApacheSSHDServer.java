@@ -26,6 +26,7 @@ package org.helios.net.ssh;
 
 import java.io.File;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -40,6 +41,7 @@ import org.apache.log4j.Logger;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.PasswordAuthenticator;
+import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.UserAuth;
 import org.apache.sshd.server.auth.UserAuthPassword;
 import org.apache.sshd.server.auth.UserAuthPublicKey;
@@ -107,6 +109,7 @@ public class ApacheSSHDServer {
 		//sshd.setUserAuthFactories(userAuthFactories);
 		sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(System.getProperty("java.io.tmpdir") + File.separator + "hostkey.ser"));
 		sshd.setPasswordAuthenticator(NO_AUTH);
+		sshd.setPublickeyAuthenticator(NO_KEY_AUTH);
 //		sshd.setPasswordAuthenticator(new PropFilePasswordAuthenticator("./src/test/resources/auth/password/credentials.properties"));
 //		sshd.setPublickeyAuthenticator(new KeyDirectoryPublickeyAuthenticator("./src/test/resources/auth/keys"));
 		
@@ -153,7 +156,14 @@ public class ApacheSSHDServer {
 		return sshd.getPort();
 	}
 	
-	/** Passthrough authenticator. Always authenticates. */
+	
+	/** Passthrough key authenticator. Always authenticates. */
+	static final PublickeyAuthenticator NO_KEY_AUTH = new PublickeyAuthenticator() {
+		public boolean authenticate(String username, PublicKey key, ServerSession session) {
+			return true;
+		}		
+	};	
+	/** Passthrough password authenticator. Always authenticates. */
 	static final PasswordAuthenticator NO_AUTH = new PasswordAuthenticator() {
 		public boolean authenticate(String username, String password, ServerSession session) {
 			return true;
@@ -171,7 +181,7 @@ public class ApacheSSHDServer {
 		SshServer sshd = server.get();
 		if(sshd==null) throw new IllegalStateException("The SSHd server is not running", new Throwable());
 		sshd.setPasswordAuthenticator(NO_AUTH);
-		sshd.setPublickeyAuthenticator(null);
+		sshd.setPublickeyAuthenticator(NO_KEY_AUTH);
 	}
 	
 	/**
@@ -184,7 +194,7 @@ public class ApacheSSHDServer {
 		if(active) {
 			sshd.setPasswordAuthenticator(PW_AUTH);
 		} else {
-			sshd.setPasswordAuthenticator(null);
+			sshd.setPasswordAuthenticator(NO_AUTH);
 		}
 	}
 	
@@ -198,7 +208,7 @@ public class ApacheSSHDServer {
 		if(active) {
 			sshd.setPublickeyAuthenticator(KEY_AUTH);
 		} else {
-			sshd.setPublickeyAuthenticator(null);
+			sshd.setPublickeyAuthenticator(NO_KEY_AUTH);
 		}
 	}
 	
