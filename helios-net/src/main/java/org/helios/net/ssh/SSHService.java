@@ -39,6 +39,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -95,6 +96,10 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	protected final AtomicInteger shareCount = new AtomicInteger(0);
 	/** Connection state indicator */
 	protected final AtomicBoolean connected = new AtomicBoolean(false);
+	/** Authenticated state indicator */
+	protected final AtomicBoolean authenticated = new AtomicBoolean(false);
+	/** A transient stack of remaining authentication methods for this connection */
+	protected final Stack<String> remainingAuthMethods = new Stack<String>();
 	/** A static map of created SSHServices keyed by ServerHostKey */
 	protected static final Map<ServerHostKey, SSHService> keyedServices = new ConcurrentHashMap<ServerHostKey, SSHService>();
 	/** A map of created local port forwards for this connection */
@@ -209,7 +214,66 @@ public class SSHService implements ConnectionMonitor, Closeable {
 		return createSSHService(host, 22, System.getProperty("user.name"), true, true);
 	}
 	
-	
+	/**
+	 * Connects this SSHService
+	 * @return a connected service which may be the same instance or a shared instance connected to the same SSH server.
+	 * @throws SSHConnectionException
+	 */
+	public SSHService connect() throws SSHConnectionException {
+		if(connected.get()) return this;
+		SSHService svc = null;
+		synchronized(connected) {
+			try { validate(); } catch (Exception e) { throw new SSHConnectionException("SSHConnection failed pre-connect validation", e); }
+			log.info(this + "  Connecting....");
+			
+			sshConnection = new Connection(host, port);
+			try {
+				connectionInfo = sshConnection.connect(hostKeyVerifier, connectionTimeout, connectionTimeout);
+				for(String authMethod: sshConnection.getRemainingAuthMethods(sshUserName)) {
+					remainingAuthMethods.push(authMethod);
+				}				
+				log.info("Remaining Auth Methods:" + Arrays.toString(sshConnection.getRemainingAuthMethods(sshUserName)));
+				hostKey = ServerHostKey.newInstance(this);
+			} catch (Exception e) {
+				throw new SSHConnectionException("SSHConnection failed to connect to [" + host + ":" + port + "]", e );
+			}
+			
+			if(isSharedConnection()) {
+				SSHService sharedService = keyedServices.get(hostKey);
+				if(sharedService==null) {
+					synchronized(keyedServices) {
+						sharedService = keyedServices.get(hostKey);
+						if(sharedService==null) {													
+							svc = this;
+							svc.shareCount.incrementAndGet();
+							keyedServices.put(hostKey, this);
+							log.info("Connected to [" + this + "]");
+							try { sshConnection.setTCPNoDelay(true); } catch (Exception e) {}
+							sshConnection.addConnectionMonitor(this);
+							connected.set(true);							
+							connectTime = new Date();									
+						}
+					}
+				}
+				if(sharedService!=null) {
+					this._close();					
+					log.info("Returning shared service for " + sharedService.hostKey);
+					svc = sharedService;
+					svc.shareCount.incrementAndGet();
+				}
+			} else {				
+				svc = this;
+				svc.shareCount.incrementAndGet();
+				keyedServices.put(hostKey, this);
+				log.info("Connected to [" + this + "]");
+				try { sshConnection.setTCPNoDelay(true); } catch (Exception e) {}
+				sshConnection.addConnectionMonitor(this);
+				connected.set(true);							
+				connectTime = new Date();									
+			}			
+		}
+		return svc;
+	}
 	
 	/**
 	 * Connects and authenticates to the SSH server.
@@ -224,66 +288,43 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * <li>If a private key and a password have been supplied, public key authentication will be attempted using the password as the private key passphrase.</li>
 	 * </ol>
 	 * @return A connected and authenticated SSHService connected to the requested SSH server. May not be the same instance.
-	 * @throws Exception An exception is thrown if the connection or authentication or host key verification fails. 
+	 * @throws SSHAuthenticationException Thrown if the connection cannot authenticate or host key verification fails. 
 	 */
-	public SSHService connect() throws Exception {
-		if(connected.get()) return this;
-		SSHService svc = null;
-		synchronized(connected) {
-			validate();
-			log.info(this + "  Connecting....");
-			
-			sshConnection = new Connection(host, port);
-			connectionInfo = sshConnection.connect(hostKeyVerifier, connectionTimeout, connectionTimeout);
-			log.info("Remaining Auth Methods:" + Arrays.toString(sshConnection.getRemainingAuthMethods(sshUserName)));
-			hostKey = ServerHostKey.newInstance(this); 
-			
-			if(isSharedConnection()) {
-				SSHService sharedService = keyedServices.get(hostKey);
-				if(sharedService==null) {
-					synchronized(keyedServices) {
-						sharedService = keyedServices.get(hostKey);
-						if(sharedService==null) {
-							completeAuthentication();							
-							svc = this;
-							svc.shareCount.incrementAndGet();
-						}
-					}
-				}
-				if(sharedService!=null) {
-					this._close();					
-					log.info("Returning shared service for " + sharedService.hostKey);
-					svc = sharedService;
-					svc.shareCount.incrementAndGet();
-				}
-			} else {
-				completeAuthentication();
-				svc = this;
-			}			
+	public SSHService authenticate() throws SSHAuthenticationException {
+		if(!connected.get()) {
+			try { 
+				connect();
+			} catch (SSHConnectionException she) {
+				throw new SSHAuthenticationException("SSHService was not connected and connect failed in authentication phase", she);
+			}
 		}
-		return svc;
+		if(authenticated.get()) return this;
+		try {
+			completeAuthentication();
+			return this;
+		} catch (Exception e) {
+			try { this.close(); } catch (Exception e2) {}
+			if(e instanceof SSHAuthenticationException) throw (SSHAuthenticationException)e;
+			throw new SSHAuthenticationException("Unknown authentication failure", e);
+		}
+		
 	}
 	
 	/**
 	 * Completes authentication on this service
 	 * @throws Exception thrown on any error comleting authentication and configuring the connection
 	 */
-	protected void completeAuthentication() throws Exception {
-		log.info(this + "  Connected. Starting authentication....");
-		Map<String, Exception> exceptions = authenticate();
-		if(exceptions!=null) {				
-			connected.set(false);
-			throw new Exception("Failed to authenticate to [" + this + "] using any method");
+	protected void completeAuthentication() throws SSHAuthenticationException {
+		log.info(this + "Starting authentication....");
+		Map<String, Exception> exceptions = doAuthenticate();
+		if(exceptions!=null) {							
+			throw new SSHAuthenticationException("Failed to authenticate to [" + this + "]", exceptions);
 		}
 		if(!sshConnection.isAuthenticationComplete()) {				
-			throw new Exception("Authentication incomplete for [" + this + "] after successful methods");
+			throw new SSHAuthenticationException("Authentication incomplete for [" + this + "] after successful methods");
 		}
-		log.info("Connected to [" + this + "]");
-		sshConnection.setTCPNoDelay(true);
-		sshConnection.addConnectionMonitor(this);
-		connected.set(true);
-		keyedServices.put(hostKey, this);
-		connectTime = new Date();		
+		log.info("Authenticated [" + this + "]");
+		authenticated.set(true);
 	}
 	
 	public static void main(String[] args) {
@@ -355,14 +396,21 @@ public class SSHService implements ConnectionMonitor, Closeable {
 		return connected.get();
 	}
 	
+	/**
+	 * Indicates the authentication status
+	 * @return true if authenticated, false if not
+	 */
+	public boolean isAuthenticated() {
+		return authenticated.get();
+	}
 	
 	/**
 	 * Executes the stacked authentication process. If the return is null, authentication succeeded.
 	 * @return a map of exceptions keyed by the authentication type name attempted.
 	 */
-	protected Map<String, Exception> authenticate() {
+	protected Map<String, Exception> doAuthenticate() {
 		Map<String, Exception> exceptionMap = new HashMap<String, Exception>();
-		try { noAuth(); return null; } catch (Exception e) {exceptionMap.put("NoAuth", e); }
+		try { noAuth(); return null; } catch (Exception e) {}
 		try { keyAuthFull(); return null; } catch (Exception e) {exceptionMap.put("KeyAuthFull", e); }
 		try { keyAuthNoPass(); return null; } catch (Exception e) {exceptionMap.put("KeyAuthNoPass", e); }
 		try { authPassword(); return null; } catch (Exception e) {exceptionMap.put("PasswordAuth", e); }
@@ -463,14 +511,24 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * Closes the SSHService and all associated services.
 	 */
 	public void close() {
-		if(sharedConnection.get()) {
+		if(connected.get()) {
 			int _sharedCount = shareCount.decrementAndGet();
-			if(_sharedCount < 1) {
+			if(sharedConnection.get()) {			
+				if(_sharedCount < 1) {
+					_close();
+				}
+			} else {
 				_close();
 			}
-		} else {
-			_close();
 		}
+	}
+	
+	/**
+	 * Returns the current shared count for this connection
+	 * @return the current shared count for this connection
+	 */
+	public int getSharedCount() {
+		return shareCount.get();
 	}
 	
 	/**
@@ -478,9 +536,12 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * This will be called when a non-shared connection is closed, or the last reference to a shared connection is closed and the share count drops to zero.
 	 */
 	protected void _close() {
+		authenticated.set(false);
 		if(connected.get()) {
 			try { sshConnection.close(); } catch (Exception e) {}
-		}
+			connected.set(false);
+		}		
+		shareCount.set(0);
 		keyedServices.remove(hostKey);		
 	}
 	
