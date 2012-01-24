@@ -47,15 +47,13 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  */
 
 public class AuthorizedKeysDecoder {
-    private byte[] bytes;
-    private int pos;
     
     /**
      * @param publicKeyFile
      * @return
      * @throws Exception
      */
-    public PublicKey decodePublicKey(File publicKeyFile) throws Exception {
+    public static PublicKey decodePublicKey(File publicKeyFile) throws Exception {
     	if(publicKeyFile==null) throw new IllegalArgumentException("The passed file was null", new Throwable());
     	if(!publicKeyFile.canRead()) throw new IllegalArgumentException("The passed file [" + publicKeyFile + "] cannot be read", new Throwable());
     	FileInputStream fis = null;
@@ -73,12 +71,9 @@ public class AuthorizedKeysDecoder {
     	}
     }
 
-    public PublicKey decodePublicKey(String keyLine) throws Exception {
-        bytes = null;
-        pos = 0;
-
-        // look for the Base64 encoded part of the line to decode
-        // both ssh-rsa and ssh-dss begin with "AAAA" due to the length bytes
+    public static PublicKey decodePublicKey(String keyLine) throws Exception {
+        byte[] bytes = null;
+        int pos = 0;
         for (String part : keyLine.split(" ")) {
             if (part.startsWith("AAAA")) {
                 bytes = Base64.decodeBase64(part);
@@ -109,19 +104,19 @@ public class AuthorizedKeysDecoder {
         }
     }
 
-    private String decodeType() {
+    private static String decodeType(byte[] bytes, int pos) {
         int len = decodeInt();
         String type = new String(bytes, pos, len);
         pos += len;
         return type;
     }
 
-    private int decodeInt() {
+    private static int decodeInt(byte[] bytes, int pos) {
         return ((bytes[pos++] & 0xFF) << 24) | ((bytes[pos++] & 0xFF) << 16)
                 | ((bytes[pos++] & 0xFF) << 8) | (bytes[pos++] & 0xFF);
     }
 
-    private BigInteger decodeBigInt() {
+    private static BigInteger decodeBigInt() {
         int len = decodeInt();
         byte[] bigIntBytes = new byte[len];
         System.arraycopy(bytes, pos, bigIntBytes, 0, len);

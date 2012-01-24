@@ -71,6 +71,14 @@ public class FileHelper {
 		}
 	}
 	
+	public static byte[] getBytesFromFile(File file) {
+		try {
+			return getBytesFromUrl(file.toURI().toURL());
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read bytes from File [" + file + "]", e);
+		}
+	}
+	
 	
 	/**
 	 * Replaces the textual content of a file with the passed content

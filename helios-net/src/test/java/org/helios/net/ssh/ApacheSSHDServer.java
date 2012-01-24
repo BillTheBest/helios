@@ -27,14 +27,20 @@ package org.helios.net.ssh;
 import java.io.File;
 import java.security.Provider;
 import java.security.Security;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sshd.SshServer;
+import org.apache.sshd.common.NamedFactory;
+import org.apache.sshd.server.UserAuth;
+import org.apache.sshd.server.auth.UserAuthPassword;
+import org.apache.sshd.server.auth.UserAuthPublicKey;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.shell.ProcessShellFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -69,6 +75,10 @@ public class ApacheSSHDServer {
 		LOG.info("Listening Port [" + port + "]");
 		Provider provider = new BouncyCastleProvider();
 		Security.addProvider(provider);
+		List<NamedFactory<UserAuth>> userAuthFactories = new ArrayList<NamedFactory<UserAuth>>();
+		userAuthFactories.add(new UserAuthPublicKey.Factory());		
+		userAuthFactories.add(new UserAuthPassword.Factory());
+		sshd.setUserAuthFactories(userAuthFactories);
 		sshd.setPasswordAuthenticator(new PropFilePasswordAuthenticator("./src/test/resources/auth/password/credentials.properties"));
 		sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(System.getProperty("java.io.tmpdir") + File.separator + "hostkey.ser"));
 		sshd.setPublickeyAuthenticator(new KeyDirectoryPublickeyAuthenticator("./src/test/resources/auth/keys"));
@@ -76,7 +86,7 @@ public class ApacheSSHDServer {
 		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
 			sshd.setShellFactory(new ProcessShellFactory(new String[] { "cmd.exe"}, EnumSet.of(ProcessShellFactory.TtyOptions.Echo, ProcessShellFactory.TtyOptions.ICrNl, ProcessShellFactory.TtyOptions.ONlCr)));
 		} else {
-			sshd.setShellFactory(new ProcessShellFactory(new String[] { "/bin/sh", "-i", "-l" }, EnumSet.of(ProcessShellFactory.TtyOptions.ONlCr)));
+			sshd.setShellFactory(new ProcessShellFactory(new String[] { "/bin/bash", "-i", "-l" }, EnumSet.of(ProcessShellFactory.TtyOptions.ONlCr)));
 		}
 		
 		try {

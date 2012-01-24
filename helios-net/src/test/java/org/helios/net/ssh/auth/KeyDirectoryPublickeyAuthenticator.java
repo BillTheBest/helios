@@ -31,10 +31,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.apache.sshd.common.SessionListener;
 import org.apache.sshd.common.keyprovider.FileKeyPairProvider;
 import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
+import org.helios.net.ssh.keys.AuthorizedKeysDecoder;
 
 /**
  * <p>Title: KeyDirectoryPublickeyAuthenticator</p>
@@ -48,6 +48,8 @@ public class KeyDirectoryPublickeyAuthenticator implements PublickeyAuthenticato
 	protected final File keyDir;
 	/** The key pair provider */
 	protected final FileKeyPairProvider keyPairProvider;
+	/** The loaded public keys */
+	protected final Set<PublicKey> pks = new HashSet<PublicKey>();
 	/** The instance logger */
 	protected final Logger log = Logger.getLogger(getClass());
 	
@@ -62,18 +64,21 @@ public class KeyDirectoryPublickeyAuthenticator implements PublickeyAuthenticato
 		if(keyDir==null) throw new IllegalArgumentException("The passed directory was null", new Throwable());
 		if(!keyDir.exists()) throw new IllegalArgumentException("The passed directory [" + keyDir + "] does not exist.", new Throwable());
 		if(!keyDir.isDirectory()) throw new IllegalArgumentException("The passed file [" + keyDir + "] is not a directory.", new Throwable());
-		this.keyDir = keyDir;		
-		Set<String> files = new HashSet<String>();
+		this.keyDir = keyDir;				
+		AuthorizedKeysDecoder akd = new AuthorizedKeysDecoder();
 		for(File f: keyDir.listFiles()) {
 			if(f.getName().contains("rsa") || f.getName().contains("dsa")) {
 				if(f.getName().toLowerCase().endsWith(".pub")) {
-//			if(f.getName().contains("sally")) {
-				files.add(f.getAbsolutePath());
+					try {
+						pks.add(akd.decodePublicKey(f));
+					} catch (Exception e) {
+						e.printStackTrace(System.err);
+					}
 				}
 			}
 		}
-		log.info("Adding [" + files.size() + "] keys to auth provider");
-		keyPairProvider = new FileKeyPairProvider(files.toArray(new String[files.size()]));
+		log.info("Adding [" + pks.size() + "] keys to auth provider");
+		keyPairProvider = null;
 	}
 
 	/**
@@ -84,7 +89,7 @@ public class KeyDirectoryPublickeyAuthenticator implements PublickeyAuthenticato
 		this(new File(keyDir.toString()));
 	}
 	
-
+	
 
 
 	/**
@@ -95,36 +100,18 @@ public class KeyDirectoryPublickeyAuthenticator implements PublickeyAuthenticato
 	public boolean authenticate(String username, PublicKey key, ServerSession session) {
 		if(username==null) throw new IllegalArgumentException("The passed user name was null", new Throwable());
 		if(key==null) throw new IllegalArgumentException("The passed key was null", new Throwable());
-		int fails = 0;		
-		byte[] h = session.getKex().getH();
-		byte[] k = session.getKex().getK();
-		for(KeyPair kp: keyPairProvider.loadKeys()) {
-
-				try {
-					if(key.equals(kp.getPublic())) return true;
-				} catch (Throwable e) {}
-				fails++;
-				log.info("Auth PK Fails for [" + username + "]:" + fails);
-		}
-		log.warn("Failed to match PK for [" + username + "] after [" + fails + "] attempts");
-		return false;
-		
-//		String extension = null;
-//		if("DSA".equals(key.getAlgorithm())) {
-//			extension = "_dsa.pub";
-//		} else if("DSA".equals(key.getAlgorithm())) {
-//			extension = "_rsa.pub";
-//		} else {
-//			log.warn("Unrecognized algorithm for key [" + key.getAlgorithm() + "]");
-//			return false;
-//		}
-//		File keyFile = new File(keyDir.getAbsolutePath() + File.separator + username + extension );
-//		if(!keyFile.exists()) {
-//			log.warn("No key file for [" + keyFile.getAbsolutePath() + "]");
-//			return false;
-//		}
-//		byte[] passedKeyBytes = key.getEncoded();
-		//return false;
+		String keyType = key.getAlgorithm();
+		File keyFile = new File(keyDir.getAbsolutePath() + File.separator + username + "_" + keyType.toLowerCase() + ".pub");
+		log.info("Testing file [" + keyFile + "]");
+		if(!keyFile.exists()) return false;
+		PublicKey loadedKey = null;
+		try {
+			loadedKey = new AuthorizedKeysDecoder().decodePublicKey(keyFile);
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+			return false;
+		}			
+		return loadedKey.equals(key);
 	}
 	
 //	protected byte[] getKeyBytes(File f) {
