@@ -37,7 +37,7 @@ import java.security.PublicKey;
 import java.security.spec.DSAPublicKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
-import org.apache.commons.codec.binary.Base64;
+import ch.ethz.ssh2.crypto.Base64;
 /**
  * <p>Title: KeyDecoder</p>
  * <p>Description: Utility class to decode public keys. Instances are not thread safe.</p> 
@@ -144,7 +144,7 @@ public class KeyDecoder {
         pos = 0;
         for (String part : keyLine.split(" ")) {
             if (part.startsWith("AAAA")) {
-                bytes = Base64.decodeBase64(part);
+                bytes = Base64.decode(part.toCharArray());
                 break;
             }
         }
