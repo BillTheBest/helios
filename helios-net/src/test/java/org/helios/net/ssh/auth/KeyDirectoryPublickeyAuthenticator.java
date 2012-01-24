@@ -113,16 +113,24 @@ public class KeyDirectoryPublickeyAuthenticator implements PublickeyAuthenticato
 	public boolean authenticate(String username, PublicKey key, ServerSession session) {
 		if(username==null) throw new IllegalArgumentException("The passed user name was null", new Throwable());
 		if(key==null) throw new IllegalArgumentException("The passed key was null", new Throwable());
+		if(log.isDebugEnabled()) log.debug("Authenticating [" + username + "]");
 		Set<PublicKey> userKeys = pks.get(username);
 		if(userKeys==null) {
 			synchronized(pks) {
 				userKeys = pks.get(username);
 				if(userKeys==null) {
+					log.info("Authentication failed for [" + username + "]. No authorized keys found.");
 					return false;
 				}
 			}
 		}
-		return userKeys.contains(key);
+		if(userKeys.contains(key)) {			
+			log.info("Authenticated [" + username + "]");
+			return true;
+		}
+		log.info("Authentication failed for [" + username + "]. No authorized keys matched.");
+		return false;
+		
 	}
 	
 //	protected byte[] getKeyBytes(File f) {

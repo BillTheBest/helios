@@ -32,16 +32,20 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
+import org.apache.sshd.common.util.SecurityUtils;
 import org.apache.sshd.server.UserAuth;
 import org.apache.sshd.server.auth.UserAuthPassword;
 import org.apache.sshd.server.auth.UserAuthPublicKey;
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
+import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.shell.ProcessShellFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.helios.net.ssh.auth.KeyDirectoryPublickeyAuthenticator;
@@ -55,24 +59,47 @@ import org.helios.net.ssh.auth.PropFilePasswordAuthenticator;
  * <p><code>org.helios.net.ssh.ApacheSSHDServer</code></p>
  */
 public class ApacheSSHDServer {
+	/** Static class logger */
 	static final Logger LOG = Logger.getLogger(ApacheSSHDServer.class);
+	/** The server instance */
+	static final AtomicReference<SshServer> server = new AtomicReference<SshServer>(null);
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String...args) {
 		BasicConfigurator.configure();
 		Logger.getRootLogger().setLevel(Level.INFO);
+		//Logger.getLogger(ChannelSession.class).setLevel(Level.WARN);
+		Logger.getLogger("org.apache").setLevel(Level.WARN);
+		//Logger.getLogger(ServerSession.class).setLevel(Level.WARN);
+		//Logger.getLogger(SecurityUtils.class).setLevel(Level.WARN);
+
+		SshServer sshd = server.get();
+		if(sshd==null) {
+			synchronized(server) {
+				sshd = server.get();
+				if(sshd!=null) {
+					LOG.info("Server already running on port [" + sshd.getPort() + "]");
+					return;
+				} else {
+					sshd = SshServer.setUpDefaultServer();
+					server.set(sshd);
+				}
+			}
+		}		
+
 		LOG.info("Starting SSHd Server");
-		SshServer sshd = SshServer.setUpDefaultServer();
+		
 		int port = -1;
 		try {
 			port = Integer.parseInt(args[0]);
 		} catch (Exception e) {
-			port = 22;
+			port = 0;
 		}
 		sshd.setPort(port);
 		sshd.setHost("0.0.0.0");
-		LOG.info("Listening Port [" + port + "]");
+		//LOG.info("Listening Port [" + port + "]");
 		Provider provider = new BouncyCastleProvider();
 		Security.addProvider(provider);
 		List<NamedFactory<UserAuth>> userAuthFactories = new ArrayList<NamedFactory<UserAuth>>();
@@ -83,19 +110,68 @@ public class ApacheSSHDServer {
 		sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(System.getProperty("java.io.tmpdir") + File.separator + "hostkey.ser"));
 		sshd.setPublickeyAuthenticator(new KeyDirectoryPublickeyAuthenticator("./src/test/resources/auth/keys"));
 		//sshd.setPublickeyAuthenticator(null);
+		
 		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-			sshd.setShellFactory(new ProcessShellFactory(new String[] { "cmd.exe"}, EnumSet.of(ProcessShellFactory.TtyOptions.Echo, ProcessShellFactory.TtyOptions.ICrNl, ProcessShellFactory.TtyOptions.ONlCr)));
+			boolean useBash = false;
+			if(System.getenv().containsKey("Path")) {
+				for(String pathEntry: System.getenv().get("Path").split(";")) {
+					File bashFile = new File(pathEntry + File.separator + "bash.exe");
+					if(bashFile.exists() && bashFile.canExecute()) {
+						useBash = true;
+						break;
+					}
+				}
+			}
+			if(useBash) {
+				LOG.info("Windows shell is bash");
+				sshd.setShellFactory(new ProcessShellFactory(new String[] { "bash.exe", "-i", "-l"}, EnumSet.of(ProcessShellFactory.TtyOptions.ONlCr)));				
+			} else {
+				LOG.info("Windows shell is cmd");
+				sshd.setShellFactory(new ProcessShellFactory(new String[] { "cmd.exe"}, EnumSet.of(ProcessShellFactory.TtyOptions.Echo, ProcessShellFactory.TtyOptions.ICrNl, ProcessShellFactory.TtyOptions.ONlCr)));
+			}
+			
 		} else {
 			sshd.setShellFactory(new ProcessShellFactory(new String[] { "/bin/bash", "-i", "-l" }, EnumSet.of(ProcessShellFactory.TtyOptions.ONlCr)));
 		}
 		
 		try {
 			sshd.start();
-			LOG.info("Server started");
+			LOG.info("Server started on port [" + sshd.getPort() + "]");
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 		}
-
+	}
+	
+	/**
+	 * Returns the port of the running server
+	 * @return the port of the running server
+	 */
+	public static int getPort() {
+		SshServer sshd = server.get();
+		if(sshd==null) throw new IllegalStateException("The SSHd server is not running", new Throwable());
+		return sshd.getPort();
+	}
+	
+	/**
+	 * Stops the SSHd server immediately
+	 */
+	public static void stop() {
+		stop(true);
+	}
+	
+	
+	/**
+	 * Stops the SSHd server
+	 * @param immediately If true, stops the server immediately, otherwise waits for pending requests.
+	 */
+	public static void stop(boolean immediately) {
+		SshServer sshd = server.get();
+		if(sshd==null) throw new IllegalStateException("The SSHd server is not running", new Throwable());
+		try {
+			sshd.stop(immediately);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to stop SSHd server", e);
+		}		
 	}
 	
 	public static String getAlgoList(Provider p) {

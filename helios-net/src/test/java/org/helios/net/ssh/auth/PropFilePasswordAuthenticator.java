@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
 
+import org.apache.log4j.Logger;
 import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
 
@@ -43,7 +44,9 @@ public class PropFilePasswordAuthenticator implements PasswordAuthenticator {
 	final Properties credentials = new Properties();
 	/** The default bad password */
 	final String DEF = "" + System.identityHashCode(this);
-	
+	/** The instance logger */
+	protected final Logger log = Logger.getLogger(getClass());
+
 	/**
 	 * Creates a new PropFilePasswordAuthenticator
 	 * @param fileName The name of the file to read the properties from
@@ -75,8 +78,16 @@ public class PropFilePasswordAuthenticator implements PasswordAuthenticator {
 	 */
 	@Override
 	public boolean authenticate(String username, String password, ServerSession session) {
-		if(username==null || password==null) return false;
-		return password.equals(credentials.getProperty(username, DEF));		
+		if(username==null || password==null) {
+			log.info("Authentication failed for [" + username + "]. No username or password.");
+			return false;
+		}
+		if(!password.equals(credentials.getProperty(username, DEF))) {
+			log.info("Authentication failed for [" + username + "]. Invalid username or password.");
+			return false;
+		}
+		log.info("Authenticated [" + username + "]");
+		return true;
 	}
 
 }
