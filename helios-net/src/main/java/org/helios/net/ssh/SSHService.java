@@ -188,6 +188,27 @@ public class SSHService implements ConnectionMonitor, Closeable {
 		return createSSHService(host, port, userName, true, true);
 	}
 	
+	/**
+	 * Creates a new shared connection SSHService with a target port of 22 that creates shared port forwards. 
+	 * Check to see if it is connected before using it.
+	 * @param host The SSH server host name or IP address
+	 * @param userName The SSH server user name
+	 * @return an SSHService
+	 */
+	public static SSHService createSSHService(String host, String userName) {
+		return createSSHService(host, 22, userName, true, true);
+	}
+	
+	/**
+	 * Creates a new shared connection SSHService with a target port of 22 and the current JVM user that creates shared port forwards. 
+	 * Check to see if it is connected before using it.
+	 * @param host The SSH server host name or IP address
+	 * @return an SSHService
+	 */
+	public static SSHService createSSHService(String host) {
+		return createSSHService(host, 22, System.getProperty("user.name"), true, true);
+	}
+	
 	
 	
 	/**

@@ -166,9 +166,10 @@ public class ApacheSSHDServer {
 	 */
 	public static void stop(boolean immediately) {
 		SshServer sshd = server.get();
-		if(sshd==null) throw new IllegalStateException("The SSHd server is not running", new Throwable());
+		if(sshd==null) return;
 		try {
 			sshd.stop(immediately);
+			server.set(null);
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to stop SSHd server", e);
 		}		
