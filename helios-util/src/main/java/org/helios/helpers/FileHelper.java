@@ -32,8 +32,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.net.URL;
+import java.util.Properties;
 
 
 /**
@@ -78,6 +81,70 @@ public class FileHelper {
 			throw new RuntimeException("Failed to read bytes from File [" + file + "]", e);
 		}
 	}
+	
+	/**
+	 * Returns properties loaded from the passed file
+	 * @param file The file to read the properties from
+	 * @return a loaded properties instance
+	 */
+	public static Properties loadProperties(File file) {
+		if(file==null) throw new IllegalArgumentException("The passed file was null", new Throwable());
+		if(!file.canRead()) throw new IllegalArgumentException("The passed file [" + file + "] cannot be read", new Throwable());
+		try {
+			return loadProperties(new FileInputStream(file), file.getName().toLowerCase().endsWith(".xml"));
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException("Failed to read file [" + file + "]", e);
+		}
+	}
+	
+	/**
+	 * Returns properties loaded from the passed URL
+	 * @param url The URL to read the properties from
+	 * @return a loaded properties instance
+	 */
+	public static Properties loadProperties(URL url) {
+		if(url==null) throw new IllegalArgumentException("The passed url was null", new Throwable());
+		try {
+			return loadProperties(url.openStream());
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read URL [" + url + "]", e);
+		}
+	}
+	
+	
+	
+	/**
+	 * Returns properties loaded from the passed input stream
+	 * @param is The input stream to read the properties from
+	 * @param xml If true, the inputstream is XML, otherwise is java properties
+	 * @return a loaded properties instance
+	 */
+	public static Properties loadProperties(InputStream is, boolean xml) {
+		if(is==null) throw new IllegalArgumentException("The passed input stream was null", new Throwable());
+		Properties p = new Properties();
+		try {
+			if(xml) {
+				p.loadFromXML(is);
+			} else {
+				p.load(is);
+			}			
+			return p;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to load properties from stream", e);
+		} finally {
+			try { is.close(); } catch (Exception e) {}
+		}
+	}
+	
+	/**
+	 * Returns properties loaded from the passed input stream in java props format
+	 * @param is The input stream to read the properties from
+	 * @return a loaded properties instance
+	 */
+	public static Properties loadProperties(InputStream is) {
+		return loadProperties(is, false);
+	}
+	
 	
 	
 	/**
