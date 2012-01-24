@@ -413,7 +413,7 @@ public class SSHService implements ConnectionMonitor, Closeable {
 		try { noAuth(); return null; } catch (Exception e) {}
 		try { keyAuthFull(); return null; } catch (Exception e) {exceptionMap.put("KeyAuthFull", e); }
 		try { keyAuthNoPass(); return null; } catch (Exception e) {exceptionMap.put("KeyAuthNoPass", e); }
-		try { authPassword(); return null; } catch (Exception e) {exceptionMap.put("PasswordAuth", e); }
+		if(this.sshUserPassword!=null) try { authPassword(); return null; } catch (Exception e) {exceptionMap.put("PasswordAuth", e); }
 		try { keyAuthPassword(); return null; } catch (Exception e) {exceptionMap.put("KeyPasswordAuth", e); }		
 		return exceptionMap;
 	}
@@ -483,7 +483,7 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * @throws Exception on an authentication failire
 	 */
 	protected void keyAuthPassword() throws Exception {
-		if(sshConnection.authenticateWithPublicKey(sshUserName, pemPrivateKey, sshUserPassword)) {
+		if(sshConnection.authenticateWithPublicKey(sshUserName, pemPrivateKey, sshPassphrase)) {
 			if(log.isDebugEnabled()) log.debug("KeyAuthPass succeeded");
 		} else {
 			throw new Exception();
@@ -625,6 +625,19 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	
 	
 	/**
+	 * Writes the SSH private key from the passed File
+	 * @param file The private key file
+	 * @return this service
+	 */
+	public SSHService pemPrivateKeyFile(File file) {
+		if(!isAuthenticated()) {
+			setPemPrivateKeyFile(file);
+		}
+		return this;
+	}
+	
+	
+	/**
 	 * Writes the SSH private key from the passed URL
 	 * @param url a URL resolving to the private key
 	 */
@@ -729,10 +742,12 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	/**
 	 * Sets the user password.
 	 * @param sshUserPassword the sshUserPassword to set
-	 * @return this services
+	 * @return this service
 	 */	
 	public SSHService sshUserPassword(String sshUserPassword) {
-		setSshUserPassword(sshUserPassword);
+		if(!isAuthenticated()) {
+			setSshUserPassword(sshUserPassword);
+		}
 		return this;
 	}
 
@@ -743,6 +758,19 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	public void setSshPassphrase(String sshPassphrase) {
 		this.sshPassphrase = sshPassphrase;
 	}
+	
+	/**
+	 * Sets the ssh private key passphrase
+	 * @param sshPassphrase the sshPassphrase to set
+	 * @return this service
+	 */
+	public SSHService sshPassphrase(String sshPassphrase) {
+		if(!isAuthenticated()) {
+			this.sshPassphrase = sshPassphrase;
+		}
+		return this;
+	}
+	
 
 	/**
 	 * Returns the connection timeout in ms.
