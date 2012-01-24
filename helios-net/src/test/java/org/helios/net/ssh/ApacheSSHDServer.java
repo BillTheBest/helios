@@ -39,11 +39,10 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.common.util.SecurityUtils;
+import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.UserAuth;
 import org.apache.sshd.server.auth.UserAuthPassword;
 import org.apache.sshd.server.auth.UserAuthPublicKey;
-import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.shell.ProcessShellFactory;
@@ -105,11 +104,13 @@ public class ApacheSSHDServer {
 		List<NamedFactory<UserAuth>> userAuthFactories = new ArrayList<NamedFactory<UserAuth>>();
 		userAuthFactories.add(new UserAuthPublicKey.Factory());		
 		userAuthFactories.add(new UserAuthPassword.Factory());
-		sshd.setUserAuthFactories(userAuthFactories);
-		sshd.setPasswordAuthenticator(new PropFilePasswordAuthenticator("./src/test/resources/auth/password/credentials.properties"));
+		//sshd.setUserAuthFactories(userAuthFactories);
 		sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(System.getProperty("java.io.tmpdir") + File.separator + "hostkey.ser"));
-		sshd.setPublickeyAuthenticator(new KeyDirectoryPublickeyAuthenticator("./src/test/resources/auth/keys"));
-		//sshd.setPublickeyAuthenticator(null);
+		sshd.setPasswordAuthenticator(NO_AUTH);
+//		sshd.setPasswordAuthenticator(new PropFilePasswordAuthenticator("./src/test/resources/auth/password/credentials.properties"));
+//		sshd.setPublickeyAuthenticator(new KeyDirectoryPublickeyAuthenticator("./src/test/resources/auth/keys"));
+		
+		
 		
 		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
 			boolean useBash = false;
@@ -151,6 +152,57 @@ public class ApacheSSHDServer {
 		if(sshd==null) throw new IllegalStateException("The SSHd server is not running", new Throwable());
 		return sshd.getPort();
 	}
+	
+	/** Passthrough authenticator. Always authenticates. */
+	static final PasswordAuthenticator NO_AUTH = new PasswordAuthenticator() {
+		public boolean authenticate(String username, String password, ServerSession session) {
+			return true;
+		}		
+	};
+	/** Property file driven password authenticator */
+	static final PropFilePasswordAuthenticator PW_AUTH = new PropFilePasswordAuthenticator("./src/test/resources/auth/password/credentials.properties");
+	/** Public key file driven authenticator */
+	static final KeyDirectoryPublickeyAuthenticator KEY_AUTH = new KeyDirectoryPublickeyAuthenticator("./src/test/resources/auth/keys");
+	
+	/**
+	 * Removes all authenticators and activates the NO_AUTH 
+	 */
+	public static void resetAuthenticators() {
+		SshServer sshd = server.get();
+		if(sshd==null) throw new IllegalStateException("The SSHd server is not running", new Throwable());
+		sshd.setPasswordAuthenticator(NO_AUTH);
+		sshd.setPublickeyAuthenticator(null);
+	}
+	
+	/**
+	 * Enables or disables the property file driven password authenticator
+	 * @param active If true, enables the property file driven password authenticator, otherwise disables password based authentication
+	 */
+	public static void activatePasswordAuthenticator(boolean active) {
+		SshServer sshd = server.get();
+		if(sshd==null) throw new IllegalStateException("The SSHd server is not running", new Throwable());
+		if(active) {
+			sshd.setPasswordAuthenticator(PW_AUTH);
+		} else {
+			sshd.setPasswordAuthenticator(null);
+		}
+	}
+	
+	/**
+	 * Enables or disables the key based authenticator
+	 * @param active If true, enables the key authenticator, otherwise disables key based authentication
+	 */
+	public static void activateKeyAuthenticator(boolean active) {
+		SshServer sshd = server.get();
+		if(sshd==null) throw new IllegalStateException("The SSHd server is not running", new Throwable());
+		if(active) {
+			sshd.setPublickeyAuthenticator(KEY_AUTH);
+		} else {
+			sshd.setPublickeyAuthenticator(null);
+		}
+	}
+	
+	
 	
 	/**
 	 * Stops the SSHd server immediately
