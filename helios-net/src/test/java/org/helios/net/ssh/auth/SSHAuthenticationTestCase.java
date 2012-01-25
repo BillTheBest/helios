@@ -487,7 +487,21 @@ public class SSHAuthenticationTestCase {
 			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
 			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
+			ssh.close();
+			
+			// DSA Public Key Authentication
+			ApacheSSHDServer.addPublicKey(LocalConfig.getDsaPub(user));
+			ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false, false)				
+					.connect()
+					.pemPrivateKey(LocalConfig.getDsaPk(user))
+					.sshPassphrase(LocalConfig.getDsaPassphrase(user))
+					.authenticate();
+			Assert.assertEquals("The SSHService [" + user + "] shared count", 1, ssh.getSharedCount());
+			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
+			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
+			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
 			ssh.close();		
+			
 			usersTested++;
 		}
 		Assert.assertTrue("Tested at least 1 user", usersTested > 0);
