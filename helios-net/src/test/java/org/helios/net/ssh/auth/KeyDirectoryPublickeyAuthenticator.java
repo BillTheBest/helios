@@ -57,7 +57,27 @@ public class KeyDirectoryPublickeyAuthenticator implements PublickeyAuthenticato
 	protected final Logger log = Logger.getLogger(getClass());
 	
 	
-	
+	/**
+	 * Adds a public key to the directory
+	 * @param key The key in string form
+	 * @return the public key
+	 */
+	public UserAwarePublicKey addPublicKey(String key) {
+		if(key==null) throw new IllegalArgumentException("The passed key was null", new Throwable());
+		try {
+			UserAwarePublicKey pubKey = KeyDecoder.getInstance().decodePublicKey(key);
+			Set<PublicKey> userPks = pks.get(pubKey.getUserName());
+			if(userPks==null) {
+				userPks = new CopyOnWriteArraySet<PublicKey>();
+				pks.put(pubKey.getUserName(), userPks);
+			}
+			userPks.add(pubKey.getPublicKey());
+			log.info("Added public key [" + pubKey.getAlgorithm() + "] for user [" + pubKey.getFullName() + "]");
+			return pubKey;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to add public key", e);
+		}
+	}
 	
 	/**
 	 * Creates a new KeyDirectoryPublickeyAuthenticator

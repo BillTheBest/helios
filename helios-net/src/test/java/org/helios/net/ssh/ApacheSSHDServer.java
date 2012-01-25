@@ -51,6 +51,7 @@ import org.apache.sshd.server.shell.ProcessShellFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.helios.net.ssh.auth.KeyDirectoryPublickeyAuthenticator;
 import org.helios.net.ssh.auth.PropFilePasswordAuthenticator;
+import org.helios.net.ssh.keys.UserAwarePublicKey;
 
 /**
  * <p>Title: ApacheSSHDServer</p>
@@ -173,6 +174,17 @@ public class ApacheSSHDServer {
 	static final PropFilePasswordAuthenticator PW_AUTH = new PropFilePasswordAuthenticator("./src/test/resources/auth/password/credentials.properties");
 	/** Public key file driven authenticator */
 	static final KeyDirectoryPublickeyAuthenticator KEY_AUTH = new KeyDirectoryPublickeyAuthenticator("./src/test/resources/auth/keys");
+	
+	
+	/**
+	 * Adds a public key to the directory
+	 * @param key The key in string form
+	 * @return the public key
+	 */
+	public static UserAwarePublicKey addPublicKey(String key) {
+		return KEY_AUTH.addPublicKey(key);
+	}
+	
 	
 	/**
 	 * Removes all authenticators and activates the NO_AUTH 

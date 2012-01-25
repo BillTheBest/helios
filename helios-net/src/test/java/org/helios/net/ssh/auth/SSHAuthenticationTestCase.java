@@ -25,17 +25,21 @@
 package org.helios.net.ssh.auth;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.log4j.Logger;
 import org.helios.helpers.FileHelper;
 import org.helios.net.ssh.ApacheSSHDServer;
+import org.helios.net.ssh.LocalConfig;
 import org.helios.net.ssh.SSHAuthenticationException;
 import org.helios.net.ssh.SSHService;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -59,14 +63,27 @@ public class SSHAuthenticationTestCase {
 	protected static final Logger LOG = Logger.getLogger(SSHAuthenticationTestCase.class);
 	
 	/** Known good credentials  */
-	static Map<Object, Object> goodPasswordAuths = FileHelper.loadProperties(new File("./src/test/resources/auth/password/credentials.properties"));
+	static Map<Object, Object> goodPasswordAuths = loadProperties(new File("./src/test/resources/auth/password/credentials.properties"));
 	/** Private Key Passphrases  */
-	static Map<Object, Object> pkPassphrases = FileHelper.loadProperties(new File("./src/test/resources/auth/keys/passphrases.properties"));
+	static Map<Object, Object> pkPassphrases = loadProperties(new File("./src/test/resources/auth/keys/passphrases.properties"));
 	/** SSA Private Key Files keyed by user name */
 	static Map<String, File> dsaPks = new HashMap<String, File>();	
 	/** RSA Private Key Files keyed by user name */
 	static Map<String, File> rsaPks = new HashMap<String, File>();
 	
+	private static Properties loadProperties(File f) {
+		Properties p = new Properties();
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(f);
+			p.load(fis);
+			return p;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to load properties from file [" + f + "]", e);
+		} finally {
+			try { fis.close(); } catch (Exception e) {}
+		}
+	}
 	
 	/**
 	 * Starts the test SSHD server
@@ -439,6 +456,42 @@ public class SSHAuthenticationTestCase {
 		Assert.assertTrue("Tested at least 1 user", usersTested > 0);
 	}
 	
-
-	
+	/**
+	 * Tests authentication against a native SSH server
+	 * @throws Exception thrown on any error
+	 */
+	@Test
+	public void testNativeSimplePasswordSSHLogin() throws Exception {	
+		Assume.assumeTrue(LocalConfig.LOCAL_CONFIG.canRead());
+		LocalConfig.load();
+		int usersTested = 0;
+		for(String user: LocalConfig.getUsers()) {
+			// Password Authorization
+			SSHService ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false, false)				
+					.connect()
+					.sshUserPassword(LocalConfig.getPassword(user))
+					.authenticate();
+			Assert.assertEquals("The SSHService [" + user + "] shared count", 1, ssh.getSharedCount());
+			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
+			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
+			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
+			ssh.close();
+			// RSA Public Key Authentication
+			ApacheSSHDServer.addPublicKey(LocalConfig.getRsaPub(user));
+			ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false, false)				
+					.connect()
+					.pemPrivateKey(LocalConfig.getRsaPk(user))
+					.sshPassphrase(LocalConfig.getRsaPassphrase(user))
+					.authenticate();
+			Assert.assertEquals("The SSHService [" + user + "] shared count", 1, ssh.getSharedCount());
+			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
+			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
+			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
+			ssh.close();		
+			usersTested++;
+		}
+		Assert.assertTrue("Tested at least 1 user", usersTested > 0);
+		
+		
+	}
 }

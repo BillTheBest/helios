@@ -177,8 +177,9 @@ public class KeyDecoder {
      * @return a string array with 0=user name and 1=user domain
      */
     private String[] decodeUser(String line) {
-    	String name = line.split("== ")[1];
     	try {
+    		String reversed = new StringBuilder(line).reverse().toString();
+    		String name = new StringBuilder(reversed.split(" ")[0]).reverse().toString();    	
     		if(name.trim().isEmpty() || !name.contains("@")) return NULL_USER;
     		return name.trim().split("@");
     	} catch (Exception e) {

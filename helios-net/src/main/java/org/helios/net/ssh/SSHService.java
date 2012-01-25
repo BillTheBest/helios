@@ -327,49 +327,6 @@ public class SSHService implements ConnectionMonitor, Closeable {
 		authenticated.set(true);
 	}
 	
-	public static void main(String[] args) {
-		BasicConfigurator.configure();
-		Logger LOG = Logger.getLogger(SSHService.class);
-		LOG.info(Banner.banner("=", 3, 10, "Shared SSHService Test"));
-		String[] localConfig = LocalConfig.read();
-		String userName = localConfig[0];
-		String userPass = localConfig[1];
-		String hostName = localConfig[2];
-		int key1 = -1, key2 = -1;
-		try {
-			LOG.info("\t**** Connecting Svc 1 ****");
-			SSHService sshService1 = SSHService.createSSHService(hostName, 22, userName).sshUserPassword(userPass).connect();
-			key1 = System.identityHashCode(sshService1);
-			LOG.info("\t**** Connecting Svc 2 ****");
-			SSHService sshService2 = SSHService.createSSHService(hostName, 22, userName).sshUserPassword(userPass).connect();
-			key2 = System.identityHashCode(sshService2);
-			LOG.info("Key 1 = Key 2:" + (key1==key2));
-			sshService1.close();
-			LOG.info("Service 2 Connected ?:" + sshService2.isConnected());
-			sshService2.close();
-			LOG.info("Service 2 Connected ?:" + sshService2.isConnected());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}		
-		LOG.info(Banner.banner("=", 3, 10, "Dedicated SSHService Test"));
-		key1 = -1;
-		key2 = -1;
-		try {
-			LOG.info("\t**** Connecting Svc 1 ****");
-			SSHService sshService1 = SSHService.createSSHService(hostName, 22, userName, false, false).sshUserPassword(userPass).connect();
-			key1 = System.identityHashCode(sshService1);
-			LOG.info("\t**** Connecting Svc 2 ****");
-			SSHService sshService2 = SSHService.createSSHService(hostName, 22, userName, false, false).sshUserPassword(userPass).connect();
-			key2 = System.identityHashCode(sshService2);
-			LOG.info("Key 1 = Key 2:" + (key1==key2));
-			sshService1.close();
-			sshService2.close();
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-	}
 	
 	/**
 	 * Returns the actual SSH connection
@@ -602,6 +559,19 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	public void setPemPrivateKey(char[] pemPrivateKey) {
 		this.pemPrivateKey = pemPrivateKey;
 	}
+	
+	/**
+	 * Sets the private key character array
+	 * @param pemPrivateKey the private key character array to set
+	 * @return this SSHService
+	 */
+	public SSHService pemPrivateKey(char[] pemPrivateKey) {
+		if(!isAuthenticated()) {
+			this.pemPrivateKey = pemPrivateKey;
+		}
+		return this;
+	}
+	
 	
 	/**
 	 * Sets the private key characters from the characters in the passed CharSequence
