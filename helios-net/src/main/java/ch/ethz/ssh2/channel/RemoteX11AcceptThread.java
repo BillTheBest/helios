@@ -7,6 +7,11 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.helios.net.ssh.instrumentedio.BytesInMetric;
+import org.helios.net.ssh.instrumentedio.BytesInProvider;
+import org.helios.net.ssh.instrumentedio.BytesOutMetric;
+import org.helios.net.ssh.instrumentedio.BytesOutProvider;
+
 import ch.ethz.ssh2.log.Logger;
 import ch.ethz.ssh2.util.StringEncoder;
 
@@ -16,14 +21,11 @@ import ch.ethz.ssh2.util.StringEncoder;
  * @author Christian Plattner
  * @version 2.50, 03/15/10
  */
-public class RemoteX11AcceptThread extends Thread
-{
+public class RemoteX11AcceptThread extends Thread implements BytesInProvider, BytesOutProvider {
 	private static final Logger log = Logger.getLogger(RemoteX11AcceptThread.class);
 
 	Channel c;
 	
-	final AtomicLong bytesTransferredR2L = new AtomicLong(0L);
-	final AtomicLong bytesTransferredL2R = new AtomicLong(0L);
 	
 
 	String remoteOriginatorAddress;
@@ -198,8 +200,8 @@ public class RemoteX11AcceptThread extends Thread
 
 			/* Start forwarding traffic */
 
-			StreamForwarder r2l = new StreamForwarder(c, null, null, remote_is, x11_os, "RemoteToX11", bytesTransferredR2L);
-			StreamForwarder l2r = new StreamForwarder(c, null, null, x11_is, remote_os, "X11ToRemote", bytesTransferredL2R);
+			StreamForwarder r2l = new StreamForwarder(c, null, null, remote_is, x11_os, "RemoteToX11");
+			StreamForwarder l2r = new StreamForwarder(c, null, null, x11_is, remote_os, "X11ToRemote");
 
 			/* No need to start two threads, one can be executed in the current thread */
 
@@ -246,16 +248,21 @@ public class RemoteX11AcceptThread extends Thread
 		}
 	}
 	
-	public long getRemoteToLocalBytesTransferred() {
-		return bytesTransferredR2L.get();
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesOutProvider#getBytesOutMetric()
+	 */
+	@Override
+	public BytesOutMetric getBytesOutMetric() {
+		return c.getBytesOutMetric();
 	}
-	
-	public long getLocalToRemoteBytesTransferred() {
-		return bytesTransferredL2R.get();
-	}
-	
-	public void resetBytesTransferred() {
-		bytesTransferredR2L.set(0L);
-		bytesTransferredL2R.set(0L);
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesInProvider#getBytesInMetric()
+	 */
+	@Override
+	public BytesInMetric getBytesInMetric() {
+		return c.getBytesInMetric();
 	}	
 }

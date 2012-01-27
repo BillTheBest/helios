@@ -44,8 +44,10 @@ import ch.ethz.ssh2.util.TimeoutService.TimeoutToken;
 public class Connection
 {
 	
-	/** A set of registered and open port forwarders  */
-	protected final Set<LocalPortForwarder> forwarders = new CopyOnWriteArraySet<LocalPortForwarder>();
+	/** A set of registered and open local port  Forwarders  */
+	protected final Set<LocalPortForwarder> localPortForwarders = new CopyOnWriteArraySet<LocalPortForwarder>();
+	/** A set of registered and open remote stream Forwarders  */
+	protected final Set<LocalStreamForwarder> localStreamForwarders = new CopyOnWriteArraySet<LocalStreamForwarder>();
 	
 	/**
 	 * The identifier presented to the SSH-2 server.
@@ -786,8 +788,8 @@ public class Connection
 			throw new IllegalStateException("Cannot forward ports, connection is not authenticated.");
 
 		LocalPortForwarder lpf =  new LocalPortForwarder(cm, local_port, host_to_connect, port_to_connect, streamListener );
-		lpf.setForwarderRegistry(forwarders);
-		forwarders.add(lpf);
+		lpf.setForwarderRegistry(localPortForwarders);
+		localPortForwarders.add(lpf);
 		return lpf;
 		
 	}
@@ -817,8 +819,8 @@ public class Connection
 			throw new IllegalStateException("Cannot forward ports, connection is not authenticated.");
 
 		LocalPortForwarder lpf =  new LocalPortForwarder(cm, addr, host_to_connect, port_to_connect, streamListener );
-		lpf.setForwarderRegistry(forwarders);
-		forwarders.add(lpf);
+		lpf.setForwarderRegistry(localPortForwarders);
+		localPortForwarders.add(lpf);
 		return lpf;
 	}
 
@@ -1374,8 +1376,8 @@ public class Connection
 	 */
 	public long getRemoteToLocalBytesTransferred() {
 		long totalBytes = 0;
-		for(LocalPortForwarder lpf: forwarders) {
-			totalBytes += lpf.getRemoteToLocalBytesTransferred();
+		for(LocalPortForwarder lpf: localPortForwarders) {
+			//totalBytes += lpf.getRemoteToLocalBytesTransferred();
 		}
 		return totalBytes;
 	}
@@ -1386,18 +1388,18 @@ public class Connection
 	 */	
 	public long getLocalToRemoteBytesTransferred() {
 		long totalBytes = 0;
-		for(LocalPortForwarder lpf: forwarders) {
-			totalBytes += lpf.getLocalToRemoteBytesTransferred();
+		for(LocalPortForwarder lpf: localPortForwarders) {
+			//totalBytes += lpf.getLocalToRemoteBytesTransferred();
 		}
 		return totalBytes;
 	}
 	
 	/**
-	 * Resets the byte transferred counts in all open port forwarders
+	 * Resets the byte transferred counts in all open port localPortForwarders
 	 */
 	public void resetBytesTransferred() {
-		for(LocalPortForwarder lpf: forwarders) {
-			lpf.resetBytesTransferred();
+		for(LocalPortForwarder lpf: localPortForwarders) {
+			//lpf.resetBytesTransferred();
 		}
 		
 	}

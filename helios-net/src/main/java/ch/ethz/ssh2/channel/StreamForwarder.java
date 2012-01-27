@@ -28,11 +28,11 @@ public class StreamForwarder extends Thread
 	Socket s;
 	String mode;
 	
-	final AtomicLong bytesTransferred;
+	
 	
 	
 
-	StreamForwarder(Channel c, StreamForwarder sibling, Socket s, InputStream is, OutputStream os, String mode, AtomicLong bytesTransferred )
+	StreamForwarder(Channel c, StreamForwarder sibling, Socket s, InputStream is, OutputStream os, String mode )
 			throws IOException
 	{
 		this.is = is;
@@ -40,8 +40,7 @@ public class StreamForwarder extends Thread
 		this.mode = mode;
 		this.c = c;
 		this.sibling = sibling;
-		this.s = s;
-		this.bytesTransferred = bytesTransferred;
+		this.s = s;		
 	}
 	
 	
@@ -56,8 +55,7 @@ public class StreamForwarder extends Thread
 				if (len <= 0)
 					break;
 				os.write(buffer, 0, len);
-				os.flush();
-				bytesTransferred.addAndGet(len);
+				os.flush();				
 			}
 		}
 		catch (IOException ignore)

@@ -85,6 +85,7 @@ public class LocalPortForward implements LocalAcceptThreadStateListener {
 			this.remotePort = this.portForwarder.getRemotePort();
 			this.hostAddress = remoteAddress.getHostAddress();
 			this.portForwardKey = LocalPortForwardKey.newInstance(this.service.getHostKey(), this.remotePort);
+			log.info("PortForward [" + this.localPort + ":" + service.getHost() + ":" + this.remotePort + "]:" + portForwarder.isBound());
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to initialize LocalPortForward", e);
 		}
@@ -161,8 +162,8 @@ public class LocalPortForward implements LocalAcceptThreadStateListener {
 	 * Returns the number of bytes transferred from the local to the remote
 	 * @return the number of bytes transferred from the local to the remote
 	 */
-	public long getLocalToRemoteBytesTransferred() {
-		return portForwarder.getLocalToRemoteBytesTransferred();
+	public long getLocalToRemoteBytesTransferred() {		
+		return portForwarder.getBytesOutMetric().getBytesOut();
 	}
 	
 	/**
@@ -170,14 +171,15 @@ public class LocalPortForward implements LocalAcceptThreadStateListener {
 	 * @return the number of bytes transferred from the remote to the local
 	 */
 	public long getRemoteToLocalBytesTransferred() {
-		return portForwarder.getRemoteToLocalBytesTransferred();
+		return portForwarder.getBytesInMetric().getBytesIn();
 	}
 	
 	/**
 	 * Resets the bytes transferred counters
 	 */
-	public void resetTransferCounters() {
-		portForwarder.resetBytesTransferred();
+	public void resetTransferCounters() {		
+		portForwarder.getBytesInMetric().resetMetrics();
+		portForwarder.getBytesOutMetric().resetMetrics();
 	}
 
 	/**

@@ -9,6 +9,11 @@ import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Set;
 
+import org.helios.net.ssh.instrumentedio.BytesInMetric;
+import org.helios.net.ssh.instrumentedio.BytesInProvider;
+import org.helios.net.ssh.instrumentedio.BytesOutMetric;
+import org.helios.net.ssh.instrumentedio.BytesOutProvider;
+
 import ch.ethz.ssh2.channel.ChannelManager;
 import ch.ethz.ssh2.channel.LocalAcceptThread;
 import ch.ethz.ssh2.channel.LocalAcceptThreadStateListener;
@@ -22,7 +27,7 @@ import ch.ethz.ssh2.channel.LocalAcceptThreadStateListener;
  * @author Christian Plattner
  * @version 2.50, 03/15/10
  */
-public class LocalPortForwarder
+public class LocalPortForwarder implements BytesInProvider, BytesOutProvider
 {
 	ChannelManager cm;
 	
@@ -67,27 +72,6 @@ public class LocalPortForwarder
 		lat.start();
 	}
 	
-	public long getRemoteToLocalBytesTransferred() {
-		if(lat!=null) {
-			return lat.getRemoteToLocalBytesTransferred();
-		} else {
-			return 0;
-		}
-	}
-	
-	public long getLocalToRemoteBytesTransferred() {
-		if(lat!=null) {
-			return lat.getLocalToRemoteBytesTransferred();
-		} else {
-			return 0;
-		}
-	}
-	
-	public void resetBytesTransferred() {
-		if(lat!=null) {
-			lat.resetBytesTransferred();
-		}
-	}
 	
 
 	/**
@@ -197,5 +181,23 @@ public class LocalPortForwarder
 	 */
 	public void setStreamListener(LocalAcceptThreadStateListener streamListener) {
 		this.streamListener = streamListener;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesOutProvider#getBytesOutMetric()
+	 */
+	@Override
+	public BytesOutMetric getBytesOutMetric() {
+		return lat.getBytesOutMetric();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesInProvider#getBytesInMetric()
+	 */
+	@Override
+	public BytesInMetric getBytesInMetric() {
+		return lat.getBytesInMetric();
 	}	
 }

@@ -503,13 +503,26 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	}
 	
 	/**
-	 * Creates a new loca port forward in this connection to the connection's SSH host if one does not exist already.
+	 * Creates a new local port forward in this connection using an ephemeral local port to the connection's SSH host if one does not exist already.
+	 * If the connection is not open, will attempt to connect and authenticate. 
+	 * @param remote_port The remote port to forward to
+	 * @return The local port forwarder
+	 * @throws Exception Thrown if the connection fails or the port forward request fails.
+	 */
+	public LocalPortForward localPortForward(int remote_port)  throws Exception {
+		return localPortForward(0, remote_port);
+	}
+	
+	
+	/**
+	 * Creates a new local port forward in this connection to the connection's SSH host if one does not exist already.
 	 * If the connection is not open, will attempt to connect and authenticate. 
 	 * @param local_port The local port to listen on
 	 * @param remote_port The remote port to forward to
+	 * @return The local port forwarder
 	 * @throws Exception Thrown if the connection fails or the port forward request fails.
 	 */
-	public void localPortForward(int local_port,  int remote_port)  throws Exception {
+	public LocalPortForward localPortForward(int local_port,  int remote_port)  throws Exception {
 		try {
 			if(!connected.get()) {
 				connect(); 
@@ -523,10 +536,11 @@ public class SSHService implements ConnectionMonitor, Closeable {
 					if(lpf==null) {
 						lpf = new LocalPortForward(this, local_port, remote_port); 							
 						localPortForwarders.put(portForwardKey, lpf);
-						log.info("Created New Loca Port Forward [" + portForwardKey + "]");
+						log.info("Created New Local Port Forward [" + portForwardKey + "]");
 					}
 				}
 			}
+			return lpf;
 		} catch (Exception e) {
 			log.error("Failed to create local portforward", e);
 			throw e;

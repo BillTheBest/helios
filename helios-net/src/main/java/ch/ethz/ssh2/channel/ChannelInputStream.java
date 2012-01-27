@@ -4,25 +4,42 @@ package ch.ethz.ssh2.channel;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.helios.net.ssh.instrumentedio.BytesInMetric;
+import org.helios.net.ssh.instrumentedio.BytesInProvider;
+import org.helios.net.ssh.instrumentedio.StreamInstrumentationSupport;
+
 /**
  * ChannelInputStream.
  * 
  * @author Christian Plattner
  * @version 2.50, 03/15/10
  */
-public final class ChannelInputStream extends InputStream
-{
+public final class ChannelInputStream extends InputStream implements BytesInProvider {
 	Channel c;
-
+	protected final StreamInstrumentationSupport instr;
+	
 	boolean isClosed = false;
 	boolean isEOF = false;
 	boolean extendedFlag = false;
+	
+	public BytesInMetric getBytesInMetric() {
+		return instr;
+	}
 
 	ChannelInputStream(Channel c, boolean isExtended)
 	{
 		this.c = c;
 		this.extendedFlag = isExtended;
+		instr  = new StreamInstrumentationSupport();
 	}
+	
+	ChannelInputStream(Channel c, boolean isExtended, StreamInstrumentationSupport instr)
+	{
+		this.c = c;
+		this.extendedFlag = isExtended;
+		this.instr  = instr==null ? new StreamInstrumentationSupport() : instr;
+	}
+	
 
 	public int available() throws IOException
 	{
@@ -61,13 +78,16 @@ public final class ChannelInputStream extends InputStream
 		{
 			isEOF = true;
 		}
-
+		
+		if(ChannelManager.instrumentedChannels)instr.read(ret);
 		return ret;
 	}
 
 	public int read(byte[] b) throws IOException
 	{
-		return read(b, 0, b.length);
+		
+		int read = read(b, 0, b.length);
+		return read;
 	}
 
 	public int read() throws IOException
@@ -79,8 +99,7 @@ public final class ChannelInputStream extends InputStream
 		int ret = read(b, 0, 1);
 
 		if (ret != 1)
-			return -1;
-
+			return -1;		
 		return b[0] & 0xff;
 	}
 }

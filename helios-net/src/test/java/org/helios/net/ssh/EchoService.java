@@ -27,6 +27,7 @@ package org.helios.net.ssh;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import org.apache.log4j.Logger;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IoSession;
@@ -41,6 +42,7 @@ import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
  */
 public class EchoService {
 	static volatile NioSocketAcceptor acceptor = null;
+	static final Logger LOG = Logger.getLogger(EchoService.class);
 	/**
 	 * @param args
 	 */
@@ -58,16 +60,18 @@ public class EchoService {
 	
 	public static void stop() {
 		if(acceptor!=null) {
-			System.out.println("Stopping...");
+			System.out.println("Stopping EchoService");
 			acceptor.unbind();
 			acceptor.dispose();
 			acceptor = null;
-			System.out.println("Stopped...");
+			LOG.info("Stopped EchoService");
+			
 		}
 	}
 	
 	public static int start() throws IOException {
 		if(acceptor!=null) throw new IllegalStateException("Acceptor already started");
+		LOG.info("Starting EchoService");
         acceptor = new NioSocketAcceptor();
         acceptor.setHandler(new IoHandlerAdapter() {
             @Override
@@ -82,8 +86,10 @@ public class EchoService {
         acceptor.setReuseAddress(true);
         InetSocketAddress sockAdd = new InetSocketAddress(0);
         acceptor.bind(sockAdd);
-        acceptor.setCloseOnDeactivation(true);        
-        return acceptor.getLocalAddress().getPort();
+        acceptor.setCloseOnDeactivation(true);
+        int port = acceptor.getLocalAddress().getPort();
+        LOG.info("Started EchoService on [" + acceptor.getLocalAddress().getHostName() + ":" + port +  "]");
+        return port;
                
 	}
 

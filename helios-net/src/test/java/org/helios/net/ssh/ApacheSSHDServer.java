@@ -25,6 +25,7 @@
 package org.helios.net.ssh;
 
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
@@ -40,6 +41,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
+import org.apache.sshd.server.ForwardingFilter;
 import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.UserAuth;
@@ -111,6 +113,23 @@ public class ApacheSSHDServer {
 		sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(System.getProperty("java.io.tmpdir") + File.separator + "hostkey.ser"));
 		sshd.setPasswordAuthenticator(NO_AUTH);
 		sshd.setPublickeyAuthenticator(NO_KEY_AUTH);
+        sshd.setForwardingFilter(new ForwardingFilter() {
+            public boolean canForwardAgent(ServerSession session) {
+                return true;
+            }
+
+            public boolean canForwardX11(ServerSession session) {
+                return true;
+            }
+
+            public boolean canListen(InetSocketAddress address, ServerSession session) {
+                return true;
+            }
+
+            public boolean canConnect(InetSocketAddress address, ServerSession session) {
+                return true;
+            }
+        });
 //		sshd.setPasswordAuthenticator(new PropFilePasswordAuthenticator("./src/test/resources/auth/password/credentials.properties"));
 //		sshd.setPublickeyAuthenticator(new KeyDirectoryPublickeyAuthenticator("./src/test/resources/auth/keys"));
 		

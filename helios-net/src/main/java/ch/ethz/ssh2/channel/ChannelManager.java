@@ -50,6 +50,8 @@ public class ChannelManager implements MessageHandler
 	private Vector listenerThreads = new Vector();
 
 	private boolean listenerThreadsAllowed = true;
+	
+	public static boolean instrumentedChannels = true;
 
 	public ChannelManager(TransportManager tm)
 	{

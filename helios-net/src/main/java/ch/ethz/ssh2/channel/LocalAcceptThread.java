@@ -9,7 +9,11 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
-import java.util.concurrent.atomic.AtomicLong;
+
+import org.helios.net.ssh.instrumentedio.BytesInMetric;
+import org.helios.net.ssh.instrumentedio.BytesInProvider;
+import org.helios.net.ssh.instrumentedio.BytesOutMetric;
+import org.helios.net.ssh.instrumentedio.BytesOutProvider;
 
 /**
  * LocalAcceptThread.
@@ -17,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Christian Plattner
  * @version 2.50, 03/15/10
  */
-public class LocalAcceptThread extends Thread implements IChannelWorkerThread
+public class LocalAcceptThread extends Thread implements IChannelWorkerThread, BytesInProvider, BytesOutProvider
 {
 	ChannelManager cm;
 	String host_to_connect;
@@ -25,8 +29,6 @@ public class LocalAcceptThread extends Thread implements IChannelWorkerThread
 	StreamForwarder r2l = null;
 	StreamForwarder l2r = null;
 	
-	final AtomicLong bytesTransferredR2L = new AtomicLong(0L);
-	final AtomicLong bytesTransferredL2R = new AtomicLong(0L);
 
 	final ServerSocket ss;
 	protected volatile LocalAcceptThreadStateListener streamListener = null;
@@ -115,8 +117,8 @@ public class LocalAcceptThread extends Thread implements IChannelWorkerThread
 
 			try
 			{
-				r2l = new StreamForwarder(cn, null, null, cn.stdoutStream, s.getOutputStream(), "RemoteToLocal", bytesTransferredR2L);
-				l2r = new StreamForwarder(cn, r2l, s, s.getInputStream(), cn.stdinStream, "LocalToRemote", bytesTransferredL2R);
+				r2l = new StreamForwarder(cn, null, null, cn.stdoutStream, s.getOutputStream(), "RemoteToLocal");
+				l2r = new StreamForwarder(cn, r2l, s, s.getInputStream(), cn.stdinStream, "LocalToRemote");
 			}
 			catch (IOException e)
 			{
@@ -140,18 +142,6 @@ public class LocalAcceptThread extends Thread implements IChannelWorkerThread
 		}
 	}
 	
-	public long getRemoteToLocalBytesTransferred() {
-		return bytesTransferredR2L.get();
-	}
-	
-	public long getLocalToRemoteBytesTransferred() {
-		return bytesTransferredL2R.get();
-	}
-	
-	public void resetBytesTransferred() {
-		bytesTransferredR2L.set(0L);
-		bytesTransferredL2R.set(0L);
-	}
 	
 
 	public void stopWorking()
@@ -248,5 +238,23 @@ public class LocalAcceptThread extends Thread implements IChannelWorkerThread
 	public boolean isClosed() {
 		if(ss==null) return false;
 		return ss.isClosed();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesOutProvider#getBytesOutMetric()
+	 */
+	@Override
+	public BytesOutMetric getBytesOutMetric() {
+		return l2r.c.getBytesOutMetric();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesInProvider#getBytesInMetric()
+	 */
+	@Override
+	public BytesInMetric getBytesInMetric() {
+		return r2l.c.getBytesInMetric();
 	}
 }

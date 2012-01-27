@@ -1,14 +1,19 @@
 
 package ch.ethz.ssh2.channel;
 
+import org.helios.net.ssh.instrumentedio.BytesInMetric;
+import org.helios.net.ssh.instrumentedio.BytesInProvider;
+import org.helios.net.ssh.instrumentedio.BytesOutMetric;
+import org.helios.net.ssh.instrumentedio.BytesOutProvider;
+import org.helios.net.ssh.instrumentedio.StreamInstrumentationSupport;
+
 /**
  * Channel.
  * 
  * @author Christian Plattner
  * @version 2.50, 03/15/10
  */
-public class Channel
-{
+public class Channel implements BytesOutProvider, BytesInProvider {
 	/*
 	 * OK. Here is an important part of the JVM Specification:
 	 * (http://java.sun.com/docs/books/vmspec/2nd-edition/html/Threads.doc.html#22214)
@@ -90,6 +95,29 @@ public class Channel
 
 	final Object channelSendLock = new Object();
 	boolean closeMessageSent = false;
+	
+	/** Output bytes metrics */
+	final StreamInstrumentationSupport outStreamInstrumentation = new StreamInstrumentationSupport();
+	/** Intput bytes metrics */
+	final StreamInstrumentationSupport inStreamInstrumentation = new StreamInstrumentationSupport();
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesInProvider#getBytesInMetric()
+	 */
+	@Override
+	public BytesInMetric getBytesInMetric() {
+		return inStreamInstrumentation;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesOutProvider#getBytesOutMetric()
+	 */
+	@Override
+	public BytesOutMetric getBytesOutMetric() {
+		return outStreamInstrumentation;
+	}	
 
 	/*
 	 * Stop memory fragmentation by allocating this often used buffer.
@@ -150,9 +178,9 @@ public class Channel
 		this.localWindow = CHANNEL_BUFFER_SIZE;
 		this.localMaxPacketSize = 35000 - 1024; // leave enough slack
 
-		this.stdinStream = new ChannelOutputStream(this);
-		this.stdoutStream = new ChannelInputStream(this, false);
-		this.stderrStream = new ChannelInputStream(this, true);
+		this.stdinStream = new ChannelOutputStream(this, outStreamInstrumentation);
+		this.stdoutStream = new ChannelInputStream(this, false, inStreamInstrumentation);
+		this.stderrStream = new ChannelInputStream(this, true, inStreamInstrumentation);
 	}
 
 	/* Methods to allow access from classes outside of this package */
@@ -204,4 +232,6 @@ public class Channel
 				this.reasonClosed = reasonClosed;
 		}
 	}
+
+
 }

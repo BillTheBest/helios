@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
-import org.helios.helpers.FileHelper;
 import org.helios.net.ssh.ApacheSSHDServer;
 import org.helios.net.ssh.LocalConfig;
 import org.helios.net.ssh.SSHAuthenticationException;
@@ -53,92 +52,7 @@ import org.junit.rules.TestName;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.net.ssh.auth.SSHAuthenticationTestCase</code></p>
  */
-public class SSHAuthenticationTestCase {
-	/** The port the test server is listening on */
-	protected static int SSHD_PORT = -1;
-	/** Tracks the test name */
-	@Rule
-    public TestName testName= new TestName();
-	/** Instance logger */
-	protected static final Logger LOG = Logger.getLogger(SSHAuthenticationTestCase.class);
-	
-	/** Known good credentials  */
-	static Map<Object, Object> goodPasswordAuths = loadProperties(new File("./src/test/resources/auth/password/credentials.properties"));
-	/** Private Key Passphrases  */
-	static Map<Object, Object> pkPassphrases = loadProperties(new File("./src/test/resources/auth/keys/passphrases.properties"));
-	/** SSA Private Key Files keyed by user name */
-	static Map<String, File> dsaPks = new HashMap<String, File>();	
-	/** RSA Private Key Files keyed by user name */
-	static Map<String, File> rsaPks = new HashMap<String, File>();
-	
-	private static Properties loadProperties(File f) {
-		Properties p = new Properties();
-		FileInputStream fis = null;
-		try {
-			fis = new FileInputStream(f);
-			p.load(fis);
-			return p;
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to load properties from file [" + f + "]", e);
-		} finally {
-			try { fis.close(); } catch (Exception e) {}
-		}
-	}
-	
-	/**
-	 * Starts the test SSHD server
-	 * @throws java.lang.Exception
-	 */
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
-		ApacheSSHDServer.main();
-		SSHD_PORT = ApacheSSHDServer.getPort(); 
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			public void run() {
-				System.out.println("\n\tStopping ApacheSSHDServer");
-				try { ApacheSSHDServer.stop(true); } catch (Exception e) {} 
-			}
-		});
-		// Load the RSA private keys
-		for(File pk: new File("./src/test/resources/auth/keys").listFiles(new FilenameFilter(){
-				public boolean accept(File dir, String name) {
-					return name.endsWith("_rsa");
-				}
-			})) {
-			rsaPks.put(pk.getName().replace("_rsa", ""), pk);
-		}
-		LOG.info("Loaded [" + rsaPks.size() + "] RSA Private Keys");
-		// Load the DSA private keys
-		for(File pk: new File("./src/test/resources/auth/keys").listFiles(new FilenameFilter(){
-				public boolean accept(File dir, String name) {
-					return name.endsWith("_dsa");
-				}
-			})) {
-			dsaPks.put(pk.getName().replace("_dsa", ""), pk);
-		}
-		LOG.info("Loaded [" + dsaPks.size() + "] DSA Private Keys");
-		
-	}
-
-	/**
-	 * Stops the test SSHD server
-	 * @throws java.lang.Exception
-	 */
-	@AfterClass
-	public static void tearDownAfterClass() {
-		try { ApacheSSHDServer.stop(true); } catch (Exception e) {} 
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see junit.framework.TestCase#setUp()
-	 */	
-	@Before
-	public void setUp() {
-		ApacheSSHDServer.resetAuthenticators();
-		String methodName = testName.getMethodName();
-		LOG.debug("\n\t******\n\t Test [" + getClass().getSimpleName() + "." + methodName + "]\n\t******");
-	}	
+public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 
 	/**
 	 * Tests authentication with no credentials
@@ -487,7 +401,38 @@ public class SSHAuthenticationTestCase {
 			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
 			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
-			ssh.close();		
+			ssh.close();
+			
+			// DSA Public Key Authentication
+			ApacheSSHDServer.addPublicKey(LocalConfig.getDsaPub(user));
+			ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false, false)				
+					.connect()
+					.pemPrivateKey(LocalConfig.getDsaPk(user))
+					.sshPassphrase(LocalConfig.getDsaPassphrase(user))
+					.authenticate();
+			Assert.assertEquals("The SSHService [" + user + "] shared count", 1, ssh.getSharedCount());
+			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
+			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
+			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
+			ssh.close();
+			
+			// RSA Public Key Authentication, No Passphrase
+			// ==================================================
+			//  Not supported yet 
+			// ==================================================
+			
+//			ApacheSSHDServer.addPublicKey(LocalConfig.getRsaPub(user));
+//			ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false, false)				
+//					.connect()
+//					.sshPassphrase(LocalConfig.getRsaPassphrase(user))
+//					.authenticate();
+//			Assert.assertEquals("The SSHService [" + user + "] shared count", 1, ssh.getSharedCount());
+//			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
+//			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
+//			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
+//			ssh.close();
+			
+			
 			usersTested++;
 		}
 		Assert.assertTrue("Tested at least 1 user", usersTested > 0);

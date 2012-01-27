@@ -4,14 +4,15 @@ package ch.ethz.ssh2;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.nio.channels.ServerSocketChannel;
+import java.util.Date;
+
+import org.helios.net.ssh.instrumentedio.BytesInMetric;
+import org.helios.net.ssh.instrumentedio.BytesInProvider;
+import org.helios.net.ssh.instrumentedio.BytesOutMetric;
+import org.helios.net.ssh.instrumentedio.BytesOutProvider;
 
 import ch.ethz.ssh2.channel.Channel;
 import ch.ethz.ssh2.channel.ChannelManager;
-import ch.ethz.ssh2.channel.LocalAcceptThread;
 
 /**
  * A <code>LocalStreamForwarder</code> forwards an Input- and Outputstream
@@ -21,13 +22,11 @@ import ch.ethz.ssh2.channel.LocalAcceptThread;
  * @author Christian Plattner
  * @version 2.50, 03/15/10
  */
-public class LocalStreamForwarder
-{
+public class LocalStreamForwarder implements BytesInProvider, BytesOutProvider {
 	ChannelManager cm;
 
 	String host_to_connect;
 	int port_to_connect;
-	LocalAcceptThread lat;
 
 	Channel cn;
 
@@ -43,13 +42,23 @@ public class LocalStreamForwarder
 	
 
 	/**
-	 * @return An <code>InputStream</code> object.
+	 * @return An <code>InputStream</code> object for the standard out IO
 	 * @throws IOException
 	 */
 	public InputStream getInputStream() throws IOException
 	{
 		return cn.getStdoutStream();
 	}
+	
+	/**
+	 * @return An <code>InputStream</code> object for the standard out IO
+	 * @throws IOException
+	 */
+	public InputStream getErrorStream() throws IOException
+	{
+		return cn.getStderrStream();
+	}
+	
 
 	/**
 	 * Get the OutputStream. Please be aware that the implementation MAY use an
@@ -80,114 +89,32 @@ public class LocalStreamForwarder
 	{
 		cm.closeChannel(cn, "Closed due to user request.", true);
 	}
-	
+
+
+
 	/**
-	 * Returns the number of bytes transferred from remote to local
-	 * @return the number of bytes transferred from remote to local
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesOutProvider#getBytesOutMetric()
 	 */
-	public long getRemoteToLocalBytesTransferred() {
-		if(lat!=null) {
-			return lat.getRemoteToLocalBytesTransferred();
-		} else {
-			return -1;
-		}
+	@Override
+	public BytesOutMetric getBytesOutMetric() {
+		return cn.getBytesOutMetric();
 	}
-	
+
+
+
 	/**
-	 * Returns the number of bytes transferred from local to remote
-	 * @return the number of bytes transferred from local to remote
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.instrumentedio.BytesInProvider#getBytesInMetric()
 	 */
-	public long getLocalToRemoteBytesTransferred() {
-		if(lat!=null) {
-			return lat.getLocalToRemoteBytesTransferred();
-		} else {
-			return -1;
-		}
+	@Override
+	public BytesInMetric getBytesInMetric() {
+		return cn.getBytesInMetric();
 	}
-	
-	/**
-	 * Resets the bytes transferred count.
-	 */
-	public void resetBytesTransferred() {
-		if(lat!=null) {
-			lat.resetBytesTransferred();
-		}
-	}	
+
+
 	
 	
-	/**
-	 * @return
-	 * @see java.net.ServerSocket#getChannel()
-	 */
-	public ServerSocketChannel getChannel() {		
-		return lat.getChannel();
-	}
 
-	/**
-	 * @return
-	 * @see java.net.ServerSocket#getInetAddress()
-	 */
-	public InetAddress getInetAddress() {
-		return lat.getInetAddress();
-	}
-
-	/**
-	 * @return
-	 * @see java.net.ServerSocket#getLocalPort()
-	 */
-	public int getLocalPort() {
-		return lat.getLocalPort();
-	}
-
-	/**
-	 * @return
-	 * @see java.net.ServerSocket#getLocalSocketAddress()
-	 */
-	public SocketAddress getLocalSocketAddress() {
-		return lat.getLocalSocketAddress();
-	}
-
-	/**
-	 * @return
-	 * @throws SocketException
-	 * @see java.net.ServerSocket#getReceiveBufferSize()
-	 */
-	public int getReceiveBufferSize() throws SocketException {
-		return lat.getReceiveBufferSize();
-	}
-
-	/**
-	 * @return
-	 * @throws SocketException
-	 * @see java.net.ServerSocket#getReuseAddress()
-	 */
-	public boolean getReuseAddress() throws SocketException {
-		return lat.getReuseAddress();
-	}
-
-	/**
-	 * @return
-	 * @throws IOException
-	 * @see java.net.ServerSocket#getSoTimeout()
-	 */
-	public int getSoTimeout() throws IOException {
-		return lat.getSoTimeout();
-	}
-
-	/**
-	 * @return
-	 * @see java.net.ServerSocket#isBound()
-	 */
-	public boolean isBound() {
-		return lat.isBound();
-	}
-
-	/**
-	 * @return
-	 * @see java.net.ServerSocket#isClosed()
-	 */
-	public boolean isClosed() {
-		return lat.isClosed();
-	}
 	
 }
