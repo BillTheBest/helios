@@ -25,25 +25,15 @@
 package org.helios.net.ssh.auth;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
-import org.apache.log4j.Logger;
 import org.helios.net.ssh.ApacheSSHDServer;
 import org.helios.net.ssh.LocalConfig;
 import org.helios.net.ssh.SSHAuthenticationException;
 import org.helios.net.ssh.SSHService;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
 /**
  * <p>Title: SSHAuthenticationTestCase</p>
@@ -414,6 +404,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
 			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
+
 			ssh.close();
 			
 			// RSA Public Key Authentication, No Passphrase
@@ -432,6 +423,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 //			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
 //			ssh.close();
 			
+			ssh.close();		
 			
 			usersTested++;
 		}
