@@ -78,7 +78,7 @@ public class EchoService {
             public void messageReceived(IoSession session, Object message) throws Exception {
                 IoBuffer recv = (IoBuffer) message;
                 IoBuffer sent = IoBuffer.allocate(recv.remaining());
-                sent.put(recv);
+                sent.put(recv);                
                 sent.flip();
                 session.write(sent);                
             }

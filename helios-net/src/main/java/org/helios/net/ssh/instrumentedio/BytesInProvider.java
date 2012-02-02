@@ -22,23 +22,20 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.net.ssh.portforward;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.helios.net.ssh.ServerHostKey;
+package org.helios.net.ssh.instrumentedio;
 
 /**
- * <p>Title: PortForwardRegistry</p>
- * <p>Description: A registry of SSH active port forwards, maintained so that new connection requests do 
- * not create multiple redundant port forwards.</p> 
+ * <p>Title: BytesInProvider</p>
+ * <p>Description: Indicates that a class can provide a {@link BytesInMetric} reflecting read IO volume</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.net.ssh.PortForwardRegistry</code></p>
+ * <p><code>org.helios.net.ssh.instrumentedio.BytesInProvider</code></p>
  */
 
-public class PortForwardRegistry {
-	/** A map of port forwards */
-	protected final Map<ServerHostKey, LocalPortForward> portForwards = new ConcurrentHashMap<ServerHostKey, LocalPortForward>();
+public interface BytesInProvider {
+	/**
+	 * Returns the BytesInMetric for this provider
+	 * @return the BytesInMetric for this provider
+	 */
+	public BytesInMetric getBytesInMetric();
 }

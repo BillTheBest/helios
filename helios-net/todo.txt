@@ -1,0 +1,45 @@
+Helios-Net Tasks & Notes, Jan 27, 2012
+======================================
+Portforward listener registration on request.
+Implement stream forwarding.
+Implement remote port forwarding.
+Stable soak test for port forwarding  (vs. jsch ?)
+PortForward Identity ?  (Port 0 is a bit weird)
+PortForward Registry ( arbitrary lookups, e.g. SSHRMI )
+Shared Port Forward Tests  (See SSHService shared tests)
+Negative pub-key auth tests
+SSHService listener:  onAuthenticated callback
+Negative Connects (bad port, bad host, slow host ? ---> Connect Timeout ?)
+Periodic host key exchange
+Real host key verifier
+====
+====
+Improved echo service  (native as well ?)
+Error Reporting: No Service Available / Not Authorized for Service
+====
+====
+JMX Items:
+	- Lifecycle for MBeans, Idle Grey Zone, Timeout and unregister
+	- MBean for other services  [ stream forwarding, remote forwarding, X11-blah-blah, SFTP, SCP, Shell ]
+
+====
+====
+HostKey verification from host file or DB.
+SSHService and sub service load init from XML/Properties/JSON etc.
+Known hosts file maintenance
+====
+====
+SSHServiceFactory
+ * Connection / Portforward / User Sharing / Authorization requirements to share
+ * Connect / Read timeouts
+ * Socket buffer size overrides
+ * Known hosts file
+ * Host / Credentials Repository
+ * Reconnect Period
+ * 
+
+====
+====
+Portforward Interceptors
+
+

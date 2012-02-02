@@ -11,6 +11,9 @@ import java.security.SecureRandom;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import ch.ethz.ssh2.auth.AuthenticationManager;
 import ch.ethz.ssh2.channel.ChannelManager;
@@ -890,6 +893,39 @@ public class Connection
 
 		tm.forceKeyExchange(cryptoWishList, dhgexpara);
 	}
+	
+	/**
+	 * Force a synchronous key re-exchange (the call returns when the key exchange completes or times out). The
+	 * latest values set for MAC, Cipher and DH group exchange parameters will
+	 * be used. If a key exchange is currently in progress, then this method has
+	 * the only effect that the so far specified parameters will be used for the
+	 * next (server driven) key exchange.
+	 * <p>
+	 * Note: This implementation will never start a key exchange (other than the initial one)
+	 * unless you or the SSH-2 server ask for it.
+	 * @param timeout The timeout period for waiting on the key exchange to complete
+	 * @param unit The unit of the timeout
+	 * @throws IOException In case of any failure behind the scenes.
+	 * @throws TimeoutException Thrown if the key exchange does not complete before the timeout period
+	 */
+	public synchronized void waitForKeyExchange(long timeout, TimeUnit unit) throws IOException, TimeoutException
+	{
+		if (tm == null)
+			throw new IllegalStateException("You need to establish a connection first.");
+
+		CountDownLatch latch = tm.registerKeyExchangeWaiter();
+		tm.forceKeyExchange(cryptoWishList, dhgexpara);
+		try {
+			if(!latch.await(timeout, unit)) {
+				throw new TimeoutException("KeyExchange waiter timed out after [" + timeout + "] " + unit.name());
+			}
+			
+		} catch (InterruptedException e) {
+			throw new RuntimeException("KeyExchange waiter thread was interrupted", e);
+		}
+		
+	}
+	
 
 	/**
 	 * Returns the hostname that was passed to the constructor.

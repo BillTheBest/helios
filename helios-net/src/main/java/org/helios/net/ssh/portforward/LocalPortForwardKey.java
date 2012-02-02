@@ -46,25 +46,36 @@ public class LocalPortForwardKey implements Serializable {
 	private final ServerHostKey hostKey;
 	/** The remote port that is being forwarded to */
 	private final int remotePort;
+	/** The remote host that is being forwarded to */
+	private final String remoteHost;	
+	/** The local port that was allocated */
+	private final int localPortAllocated;;
+	
 	
 	/**
 	 * Creates a new LocalPortForwardKey
 	 * @param hostKey The host key that uniquely identifies the underlying {@link org.helios.net.ssh.SSHService}
+	 * @param remoteHost The remote host that is beng forwarded to
 	 * @param remotePort The remote port that is being forwarded to
+	 * @param localPortAllocated The port that was allocated
 	 * @return a new LocalPortForwardKey
 	 */
-	public static LocalPortForwardKey newInstance(ServerHostKey hostKey, int remotePort) {
-		return new LocalPortForwardKey(hostKey, remotePort);
+	public static LocalPortForwardKey newInstance(ServerHostKey hostKey, String remoteHost, int remotePort, int localPortRequested, int localPortAllocated) {
+		return new LocalPortForwardKey(hostKey, remoteHost, remotePort, localPortAllocated);
 	}
 	
 	/**
 	 * Creates a new LocalPortForwardKey
 	 * @param hostKey The host key that uniquely identifies the underlying {@link org.helios.net.ssh.SSHService}
+	 * @param remoteHost The remote host that is beng forwarded to 
 	 * @param remotePort The remote port that is being forwarded to
+	 * @param localPortAllocated The port that was allocated
 	 */
-	private LocalPortForwardKey(ServerHostKey hostKey, int remotePort) {
+	private LocalPortForwardKey(ServerHostKey hostKey, String remoteHost, int remotePort, int localPortAllocated) {
 		this.hostKey = hostKey;
+		this.remoteHost = remoteHost;
 		this.remotePort = remotePort;
+		this.localPortAllocated = localPortAllocated;
 	}
 
 	/**
@@ -82,6 +93,46 @@ public class LocalPortForwardKey implements Serializable {
 	public int getRemotePort() {
 		return remotePort;
 	}
+	
+	
+	/**
+	 * Returns the local port that was allocated
+	 * @return the local port that was allocated
+	 */
+	public int getLocalPortAllocated() {
+		return localPortAllocated;
+	}
+
+
+	/**
+	 * Returns the remote host that is being forwarded to
+	 * @return the remote host that is being forwarded to
+	 */
+	public String getRemoteHost() {
+		return remoteHost;
+	}
+
+	
+	/**
+	 * Constructs a <code>String</code> with key attributes in name = value format.
+	 * @return a <code>String</code> representation of this object.
+	 */
+	@Override
+	public String toString() {
+	    final String TAB = "\n\t";
+	    StringBuilder retValue = new StringBuilder("LocalPortForwardKey [")
+	    	.append(TAB).append("keyType = ").append(hostKey.getKeyType())
+	        .append(TAB).append("hostKey = ").append(KnownHosts.createHexFingerprint(hostKey.getKeyType(), hostKey.getHostKey()))
+	        .append(TAB).append("created = ").append(new Date(hostKey.getCreated()))
+	        .append(TAB).append("hostName = ").append(hostKey.getHostName())
+	        .append(TAB).append("userName = ").append(hostKey.getUserName())
+	        .append(TAB).append("sshd port = ").append(hostKey.getPort())
+	        .append(TAB).append("forwarded host = ").append(remoteHost)
+	        .append(TAB).append("forwarded port = ").append(remotePort)
+	        .append(TAB).append("local port = ").append(localPortAllocated)
+	        .append("\n]");    
+	    return retValue.toString();
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -92,6 +143,9 @@ public class LocalPortForwardKey implements Serializable {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((hostKey == null) ? 0 : hostKey.hashCode());
+		result = prime * result + localPortAllocated;
+		result = prime * result
+				+ ((remoteHost == null) ? 0 : remoteHost.hashCode());
 		result = prime * result + remotePort;
 		return result;
 	}
@@ -114,28 +168,21 @@ public class LocalPortForwardKey implements Serializable {
 				return false;
 		} else if (!hostKey.equals(other.hostKey))
 			return false;
+		if (localPortAllocated != other.localPortAllocated)
+			return false;
+		if (remoteHost == null) {
+			if (other.remoteHost != null)
+				return false;
+		} else if (!remoteHost.equals(other.remoteHost))
+			return false;
 		if (remotePort != other.remotePort)
 			return false;
 		return true;
 	}
-	
-	/**
-	 * Constructs a <code>String</code> with key attributes in name = value format.
-	 * @return a <code>String</code> representation of this object.
-	 */
-	@Override
-	public String toString() {
-	    final String TAB = "\n\t";
-	    StringBuilder retValue = new StringBuilder("LocalPortForwardKey [")
-	    	.append(TAB).append("keyType = ").append(hostKey.getKeyType())
-	        .append(TAB).append("hostKey = ").append(KnownHosts.createHexFingerprint(hostKey.getKeyType(), hostKey.getHostKey()))
-	        .append(TAB).append("created = ").append(new Date(hostKey.getCreated()))
-	        .append(TAB).append("hostName = ").append(hostKey.getHostName())
-	        .append(TAB).append("userName = ").append(hostKey.getUserName())
-	        .append(TAB).append("sshd port = ").append(hostKey.getPort())
-	        .append(TAB).append("forwarded port = ").append(remotePort)
-	        .append("\n]");    
-	    return retValue.toString();
-	}
+
+
+
+
+
 	
 }

@@ -34,21 +34,26 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.InetAddress;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-import org.helios.helpers.Banner;
+import org.helios.helpers.ConfigurationHelper;
 import org.helios.net.ssh.portforward.LocalPortForward;
+import org.helios.net.ssh.portforward.LocalPortForwardStateListener;
 
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.ConnectionInfo;
@@ -63,7 +68,7 @@ import ch.ethz.ssh2.ServerHostKeyVerifier;
  * <p><code>org.helios.net.ssh.SSHService</code></p>
  */
 
-public class SSHService implements ConnectionMonitor, Closeable {
+public class SSHService implements ConnectionMonitor, Closeable, LocalPortForwardStateListener {
 	/** Instance logger */
 	protected Logger log = Logger.getLogger(getClass());
 	/** The remote SSH server host name or IP address */
@@ -90,8 +95,6 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	protected int connectionTimeout = 10000;
 	/** Indicates if this connection should be shared */
 	protected final AtomicBoolean sharedConnection = new AtomicBoolean(true);
-	/** Indicates if this connection should create shared port forwards */
-	protected final AtomicBoolean sharedPortForwards = new AtomicBoolean(true);
 	/** The number of shared references */
 	protected final AtomicInteger shareCount = new AtomicInteger(0);
 	/** Connection state indicator */
@@ -103,7 +106,8 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	/** A static map of created SSHServices keyed by ServerHostKey */
 	protected static final Map<ServerHostKey, SSHService> keyedServices = new ConcurrentHashMap<ServerHostKey, SSHService>();
 	/** A map of created local port forwards for this connection */
-	protected final Map<String, LocalPortForward> localPortForwarders = new ConcurrentHashMap<String, LocalPortForward>();
+	protected final Set<LocalPortForward> localPortForwarders = new CopyOnWriteArraySet<LocalPortForward>();
+	
 	/** the last connect time */
 	protected Date connectTime = null;
 	/** the last disconnect time */
@@ -113,7 +117,17 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	
 	
 	/** Service listeners to be automatically added to all created instances */
-	protected static final Set<SSHServiceConnectionListener> staticConnectionListeners = new CopyOnWriteArraySet<SSHServiceConnectionListener>();
+	protected static final Set<SSHServiceConnectionListener> globalConnectionListeners = new CopyOnWriteArraySet<SSHServiceConnectionListener>();
+	/** The default host key verifier that accepts all host keys */
+	public static final ServerHostKeyVerifier DEFAULT_VERIFIER = new YesManHostKeyVerifier();
+	/** The system property or env name for the configured connect timeout in ms. */
+	public static final String CONNECT_TIMEOUT_PROP = "org.helios.net.ssh.default.timeout.connect";
+	/** The system property or env name for the configured kex timeout in ms. */
+	public static final String KEX_TIMEOUT_PROP = "org.helios.net.ssh.default.timeout.kex";	
+	/** The default connect timeout in ms. */
+	public static final int DEFAULT_CONNECT_TIMEOUT = 2000;
+	/** The default kex timeout in ms. */
+	public static final int DEFAULT_KEX_TIMEOUT = 5000;
 
 	
 	
@@ -123,14 +137,13 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * @param port The SSH server port 
 	 * @param sshUserName The SSH server user name
 	 * @param sharedConnection Indicates if this connection should be shared
-	 * @param sharedPortForwards Indicates if this connection should create shared port forwards 
 	 */
-	protected SSHService(String host, int port, String sshUserName, boolean sharedConnection, boolean sharedPortForwards) {
+	protected SSHService(String host, int port, String sshUserName, boolean sharedConnection) {
 		this.host = host;
 		this.port = port;
 		this.sshUserName = sshUserName;
 		this.sharedConnection.set(sharedConnection);
-		this.sharedPortForwards.set(sharedPortForwards);
+		connectionListeners.addAll(globalConnectionListeners);
 		log.info("Created SSH Service For " + this  );
 	}
 	
@@ -147,13 +160,24 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	
 	/**
 	 * Generates a visual key describing a port forward
+	 * @param hostName The hostname or IP address to tunnel a port to 
 	 * @param local_port The local port to listen on
 	 * @param remote_port The remote port to forward to
 	 * @return a port forward visual key 
 	 */
-	public String portForwardServiceKey(int local_port,  int remote_port)   {		
-		return new StringBuilder("localhost:").append(local_port).append("-->").append(this).append("[").append(remote_port).append("]").toString();
+	public static String portForwardServiceKey(String hostName, int local_port,  int remote_port)   {		
+		return new StringBuilder("127.0.0.1:").append(local_port).append("-->").append(hostName).append(":").append(remote_port).toString();
 	}
+	
+	/**
+	 * Generates a visual key describing a stream forward
+	 * @param hostName The hostname or IP address to tunnel a stream to 
+	 * @param remote_port The remote port to stream forward to
+	 * @return a stream forward visual key 
+	 */
+	public static String streamForwardServiceKey(String hostName, int remote_port)   {		
+		return new StringBuilder(hostName).append(":").append(remote_port).toString();
+	}	
 	
 
 	/**
@@ -162,11 +186,10 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * @param port The SSH server port 
 	 * @param userName The SSH server user name
 	 * @param sharedConnection Indicates if this connection should be shared
-	 * @param sharedPortForwards Indicates if this connection should create shared port forwards
 	 * @return an SSHService
 	 */
-	public static SSHService createSSHService(String host, int port, String userName, boolean sharedConnection, boolean sharedPortForwards) {
-		return new SSHService(host, port, userName, sharedConnection, sharedPortForwards);
+	public static SSHService createSSHService(String host, int port, String userName, boolean sharedConnection) {
+		return new SSHService(host, port, userName, sharedConnection);
 //		String key = serviceKey(host, port, userName);
 //		SSHService sshService = services.get(key);
 //		if(sshService==null) {
@@ -190,7 +213,7 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * @return an SSHService
 	 */
 	public static SSHService createSSHService(String host, int port, String userName) {
-		return createSSHService(host, port, userName, true, true);
+		return createSSHService(host, port, userName, true);
 	}
 	
 	/**
@@ -201,7 +224,7 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * @return an SSHService
 	 */
 	public static SSHService createSSHService(String host, String userName) {
-		return createSSHService(host, 22, userName, true, true);
+		return createSSHService(host, 22, userName, true);
 	}
 	
 	/**
@@ -211,7 +234,69 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * @return an SSHService
 	 */
 	public static SSHService createSSHService(String host) {
-		return createSSHService(host, 22, System.getProperty("user.name"), true, true);
+		return createSSHService(host, 22, System.getProperty("user.name"), true);
+	}
+	
+	/**
+	 * Returns the number of cached SSHService instances
+	 * @return the number of cached SSHService instances
+	 */
+	public static int getSSHServiceInstanceCount() {
+		return keyedServices.size();
+	}
+	
+	/**
+	 * Indicates if the service cache contains a shared SSHService instance for the passed SSH server host and port
+	 * @param host The target SSH server host name or IP Address
+	 * @param port The target SSH server listening port
+	 * @return true if the cache has such an instance, false otherwise
+	 */
+	public static boolean hasSharedServiceFor(String host, int port) {
+		if(host==null) throw new IllegalArgumentException("The passed host was null", new Throwable());
+		for(SSHService service: keyedServices.values()) {
+			if(service.getHost().equals(host) && service.getPort()==port) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Indicates if the service cache contains a shared SSHService instance for the passed SSH server host and port 22
+	 * @param host The target SSH server host name or IP Address
+	 * @return true if the cache has such an instance, false otherwise
+	 */
+	public static boolean hasSharedServiceFor(String host) {
+		return hasSharedServiceFor(host, 22);
+	}
+	
+	
+	/**
+	 * Returns the number of shared cached SSHService instances
+	 * @return the number of shared cached SSHService instances
+	 */
+	public static int getSharedSSHServiceInstanceCount() {
+		int cnt = 0;
+		for(ServerHostKey key: keyedServices.keySet()) {
+			if(key.isShared()) {
+				cnt++;
+			}
+		}
+		return cnt++;
+	}
+	
+	/**
+	 * Returns the number of unshared cached SSHService instances
+	 * @return the number of unshared cached SSHService instances
+	 */
+	public static int getExclusiveSSHServiceInstanceCount() {
+		int cnt = 0;
+		for(ServerHostKey key: keyedServices.keySet()) {
+			if(!key.isShared()) {
+				cnt++;
+			}
+		}
+		return cnt++;
 	}
 	
 	/**
@@ -234,6 +319,9 @@ public class SSHService implements ConnectionMonitor, Closeable {
 				}				
 				log.info("Remaining Auth Methods:" + Arrays.toString(sshConnection.getRemainingAuthMethods(sshUserName)));
 				hostKey = ServerHostKey.newInstance(this);
+				for(SSHServiceConnectionListener listener: connectionListeners) {
+					listener.onConnect(this);
+				}
 			} catch (Exception e) {
 				throw new SSHConnectionException("SSHConnection failed to connect to [" + host + ":" + port + "]", e );
 			}
@@ -256,7 +344,8 @@ public class SSHService implements ConnectionMonitor, Closeable {
 					}
 				}
 				if(sharedService!=null) {
-					this._close();					
+					
+					this.sshConnection.close();					
 					log.info("Returning shared service for " + sharedService.hostKey);
 					svc = sharedService;
 					svc.shareCount.incrementAndGet();
@@ -273,6 +362,92 @@ public class SSHService implements ConnectionMonitor, Closeable {
 			}			
 		}
 		return svc;
+	}
+	
+	/**
+	 * Attempts to reconnect this disconnected SSHService
+	 * @return true if connection was re-established, false otherwise.
+	 */
+	public boolean reconnect() {
+		if(connected.get()) return true;
+		try {
+			connectionInfo = sshConnection.connect(hostKeyVerifier, connectionTimeout, connectionTimeout);
+			connected.set(true);
+			connectTime = new Date();
+			completeAuthentication();
+			// reconnect local port forwards
+			// remove SSHService from keyedServices using old key
+			// and reinsert using new key
+			hostKey = ServerHostKey.newInstance(this);
+			for(SSHServiceConnectionListener listener: connectionListeners) {
+				listener.onReconnect(this);
+			}
+
+			return true;
+		} catch (Exception e) {
+			log.warn("Reconnect failed", e);
+		}
+		return false;
+	}
+	
+
+	/**
+	 * Attempts to find an existing shared SSHService that is already connected to the passed SSH server.
+	 * Implements the connect and kex timeouts defined in {@literal CONNECT_TIMEOUT_PROP} and {@literal KEX_TIMEOUT_PROP}
+	 * If either are not defined, they default to {@value SSHService#DEFAULT_CONNECT_TIMEOUT} and {@value SSHService#DEFAULT_KEX_TIMEOUT} respectively. 
+	 * @param host The host name or IP address of the target SSH server
+	 * @param port The listening port of the target SSH server
+	 * @return an already existing and connected SSHService to the target SSH server, or null if one was not found
+	 * @throws SSHConnectionException Thrown if initial connection fails to be established
+	 */
+	public static SSHService findServiceFor(String host, int port) throws SSHConnectionException {
+		return findServiceFor(host, port, 
+				ConfigurationHelper.getIntSystemThenEnvProperty(CONNECT_TIMEOUT_PROP, DEFAULT_CONNECT_TIMEOUT),
+				ConfigurationHelper.getIntSystemThenEnvProperty(KEX_TIMEOUT_PROP, DEFAULT_KEX_TIMEOUT)
+		);
+	}
+	
+	/**
+	 * Attempts to find an existing shared SSHService that is already connected to the passed SSH server on port 22.
+	 * Implements the connect and kex timeouts defined in {@literal CONNECT_TIMEOUT_PROP} and {@literal KEX_TIMEOUT_PROP}
+	 * If either are not defined, they default to {@value SSHService#DEFAULT_CONNECT_TIMEOUT} and {@value SSHService#DEFAULT_KEX_TIMEOUT} respectively. 
+	 * @param host The host name or IP address of the target SSH server
+	 * @return an already existing and connected SSHService to the target SSH server, or null if one was not found
+	 * @throws SSHConnectionException Thrown if initial connection fails to be established
+	 */
+	public static SSHService findServiceFor(String host) throws SSHConnectionException {
+		return findServiceFor(host, 22, 
+				ConfigurationHelper.getIntSystemThenEnvProperty(CONNECT_TIMEOUT_PROP, DEFAULT_CONNECT_TIMEOUT),
+				ConfigurationHelper.getIntSystemThenEnvProperty(KEX_TIMEOUT_PROP, DEFAULT_KEX_TIMEOUT)
+		);
+	}
+	
+	/**
+	 * Attempts to find an existing shared SSHService that is already connected to the passed SSH server.
+	 * @param host The host name or IP address of the target SSH server
+	 * @param port The listening port of the target SSH server
+	 * @param connectTimeout Connect the underlying TCP socket to the server with the given timeout value (non-negative, in milliseconds). Zero means no timeout. 
+	 * @param kexTimeout Timeout for complete connection establishment (non-negative, in milliseconds). Zero means no timeout. 
+	 * @return an already existing and connected SSHService to the target SSH server, or null if one was not found
+	 * @throws SSHConnectionException Thrown if initial connection fails to be established
+	 */
+	public static SSHService findServiceFor(String host, int port, int connectTimeout, int kexTimeout) throws SSHConnectionException {
+		Connection temporaryConnection = null;
+		try {
+			temporaryConnection = new Connection(host, port);
+			ConnectionInfo cInfo = null;
+			try {
+				cInfo = temporaryConnection.connect(DEFAULT_VERIFIER, connectTimeout, kexTimeout);
+			} catch (Exception e) {
+				throw new SSHConnectionException("Failed to connect to SSH Server at [" + host + ":" + port + "]", e);
+			}		
+			ServerHostKey shk = ServerHostKey.newInstance(cInfo.serverHostKey);
+			return keyedServices.get(shk);
+		} finally {
+			if(temporaryConnection!=null) {
+				try { temporaryConnection.close(); } catch (Exception e) {}
+			}
+		}
 	}
 	
 	/**
@@ -380,10 +555,42 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * @param reason The root cause of the connection loss.
 	 * @see ch.ethz.ssh2.ConnectionMonitor#connectionLost(java.lang.Throwable)
 	 */
+	@Override
 	public void connectionLost(java.lang.Throwable reason) {
-		connected.set(false);
-		disconnectTime = new Date();
+		for(SSHServiceConnectionListener listener: connectionListeners) {
+			listener.onConnectionFailure(reason, this);
+		}
+		testConnection();
 	}
+	
+	/**
+	 * Tests the connection. If this fails, the connection is hard closed.
+	 * @param timeout The timeout period to wait for the connection test
+	 * @param unit The unit of the timeout
+	 * @return true if the service is connected, false if the connection test failed and was hard closed.
+	 */
+	public boolean testConnection(long timeout, TimeUnit unit) {
+		try {
+			sshConnection.waitForKeyExchange(timeout, unit);
+			return true;
+		} catch (TimeoutException tex) {
+			log.error("Test connection failed after timeout of [" + timeout + " " +  unit.name()+ "]. Will be scheduled for reconnect", tex);
+			_disconnect();			
+		} catch (Exception e) {
+			log.error("Failed to validate connection after connection loss for " + this + ". Will be scheduled for reconnect", e);
+			_disconnect();
+		}				
+		return false;
+	}
+	
+	/**
+	 * Tests the connection uisng the service's configured timeout. If this fails, the connection is hard closed.
+	 * @return true if the service is connected, false if the connection test failed and was hard closed.
+	 */
+	public boolean testConnection() {
+		return testConnection(this.connectionTimeout, TimeUnit.MILLISECONDS);
+	}
+	
 	
 	/**
 	 * Attempts authentication with user name only
@@ -467,9 +674,13 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	/**
 	 * Closes the SSHService and all associated services.
 	 */
+	@Override
 	public void close() {
 		if(connected.get()) {
 			int _sharedCount = shareCount.decrementAndGet();
+			for(SSHServiceConnectionListener listener: connectionListeners) {
+				listener.onConnectionSoftClosed(this, _sharedCount);
+			}
 			if(sharedConnection.get()) {			
 				if(_sharedCount < 1) {
 					_close();
@@ -494,13 +705,42 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 */
 	protected void _close() {
 		authenticated.set(false);
+		disconnectTime = new Date();
+		for(LocalPortForward  lpf: localPortForwarders) {   ////  NEEDS TO CALL HARD CLOSE ON LISTENERS
+				lpf.close();
+		}
+		localPortForwarders.clear();
 		if(connected.get()) {
 			try { sshConnection.close(); } catch (Exception e) {}
 			connected.set(false);
+		}
+		for(SSHServiceConnectionListener listener: connectionListeners) {
+			listener.onConnectionHardClosed(this);
 		}		
 		shareCount.set(0);
-		keyedServices.remove(hostKey);		
+		if(this.isSharedConnection()) {						
+			SSHService removedService = keyedServices.remove(ServerHostKey.newInstance(this.hostKey.getHostKey()));
+			assert removedService!=null;
+		} else {
+			SSHService removedService = keyedServices.remove(this.hostKey);
+			assert removedService!=null;
+		}
+		
 	}
+	
+	/**
+	 * Cleans up the state of this SSHService when there is an unintentional disconnect and there is some expectation that reconnect will be successful.
+	 */
+	protected void _disconnect() {
+		disconnectTime = new Date();
+		connected.set(false);
+		try { sshConnection.close(); } catch (Exception e) {}
+		for(SSHServiceConnectionListener listener: connectionListeners) {
+			listener.onConnectionHardClosed(this);
+		}		
+		Reconnector.getInstance().scheduleReconnect(this);
+	}
+	
 	
 	/**
 	 * Creates a new local port forward in this connection using an ephemeral local port to the connection's SSH host if one does not exist already.
@@ -513,7 +753,6 @@ public class SSHService implements ConnectionMonitor, Closeable {
 		return localPortForward(0, remote_port);
 	}
 	
-	
 	/**
 	 * Creates a new local port forward in this connection to the connection's SSH host if one does not exist already.
 	 * If the connection is not open, will attempt to connect and authenticate. 
@@ -523,23 +762,39 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	 * @throws Exception Thrown if the connection fails or the port forward request fails.
 	 */
 	public LocalPortForward localPortForward(int local_port,  int remote_port)  throws Exception {
+		return localPortForward(getHost(), local_port, remote_port);
+	}
+	
+	/**
+	 * Creates a new local port forward in this connection to the specified host if one does not exist already.
+	 * If the connection is not open, will attempt to connect and authenticate. 
+	 * @param hostName The host name or IP address to forward to 
+	 * @param remote_port The remote port to forward to
+	 * @return The local port forwarder
+	 * @throws Exception Thrown if the connection fails or the port forward request fails.
+	 */
+	public LocalPortForward localPortForward(String hostName, int remote_port)  throws Exception {
+		return localPortForward(hostName, 0, remote_port);
+	}
+	
+	/**
+	 * Creates a new local port forward in this connection to the specified host if one does not exist already.
+	 * If the connection is not open, will attempt to connect and authenticate. 
+	 * @param hostName The host name or IP address to forward to 
+	 * @param local_port The local port to listen on
+	 * @param remote_port The remote port to forward to
+	 * @return The local port forwarder
+	 * @throws Exception Thrown if the connection fails or the port forward request fails.
+	 */
+	public LocalPortForward localPortForward(String hostName, int local_port,  int remote_port)  throws Exception {
 		try {
 			if(!connected.get()) {
 				connect(); 
 			}
-			String portForwardKey = portForwardServiceKey(local_port, remote_port);
-			LocalPortForward lpf  = localPortForwarders.get(portForwardKey);
-			
-			if(lpf==null) {
-				synchronized(localPortForwarders) {
-					lpf = localPortForwarders.get(portForwardKey);
-					if(lpf==null) {
-						lpf = new LocalPortForward(this, local_port, remote_port); 							
-						localPortForwarders.put(portForwardKey, lpf);
-						log.info("Created New Local Port Forward [" + portForwardKey + "]");
-					}
-				}
-			}
+			LocalPortForward lpf = new LocalPortForward(this, local_port, remote_port);
+			String portForwardKey = portForwardServiceKey(hostName, local_port, remote_port);
+			log.info("Created New Local Port Forward [" + portForwardKey + "]");
+			localPortForwarders.add(lpf);
 			return lpf;
 		} catch (Exception e) {
 			log.error("Failed to create local portforward", e);
@@ -548,6 +803,23 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	}
 	
 	
+	/**
+	 * Returns the number of current local port forwards
+	 * @return the number of current local port forwards
+	 */
+	public int getLocalPortForwardCount() {
+		return localPortForwarders.size();
+	}
+	
+	/**
+	 * Returns an unmodifiable list of the current local port forwards
+	 * @return an unmodifiable list of the current local port forwards
+	 */
+	public List<LocalPortForward> getLocalPortForwards() {
+		return Collections.unmodifiableList(new ArrayList<LocalPortForward>(localPortForwarders));
+	}
+	
+
 
 	/**
 	 * Constructs a <code>String</code> with all attributes in name = value format.
@@ -781,16 +1053,6 @@ public class SSHService implements ConnectionMonitor, Closeable {
 	}
 	
 	/**
-	 * Indicates connection creates shared port forwards
-	 * @return true if this is connection creates shared port forwards, false if it creates dedicated ones.
-	 */
-	public boolean isSharedPortForwards() {
-		return sharedConnection.get() && sharedPortForwards.get();
-	}
-	
-
-
-	/**
 	 * @return the Object hashcode
 	 * @see java.lang.Object#hashCode()
 	 */
@@ -833,7 +1095,53 @@ public class SSHService implements ConnectionMonitor, Closeable {
 			return false;
 		return true;
 	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.net.ssh.portforward.LocalPortForwardStateListener#onClose(org.helios.net.ssh.portforward.LocalPortForward)
+	 */
+	@Override
+	public void onClose(LocalPortForward lpf) {
+		localPortForwarders.remove(lpf.getPortForwardKey());		
+	}
 	
+	/**
+	 * Registers a global SSHServiceConnectionListener that will be registered with every new SSHService
+	 * @param listener the global listener to register
+	 */
+	public static void addGlobalListener(SSHServiceConnectionListener listener) {
+		if(listener==null) throw new IllegalArgumentException("The passed listener was null", new Throwable());
+		globalConnectionListeners.add(listener);
+	}
+	
+	/**
+	 * Unregisters a global SSHServiceConnectionListener
+	 * @param listener the global listener to unregister
+	 */
+	public static void removeGlobalListener(SSHServiceConnectionListener listener) {
+		if(listener!=null) {
+			globalConnectionListeners.remove(listener);
+		}
+	}
+	
+	/**
+	 * Registers a SSHServiceConnectionListener for this instance
+	 * @param listener the listener to register
+	 */
+	public void addListener(SSHServiceConnectionListener listener) {
+		if(listener==null) throw new IllegalArgumentException("The passed listener was null", new Throwable());
+		connectionListeners.add(listener);
+	}
+	
+	/**
+	 * Unregisters a SSHServiceConnectionListener from this instance
+	 * @param listener The listener to unregister
+	 */
+	public void removeListener(SSHServiceConnectionListener listener) {
+		if(listener!=null) {
+			connectionListeners.remove(listener);
+		}
+	}
 	
 	
 }

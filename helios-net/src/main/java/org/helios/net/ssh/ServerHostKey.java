@@ -65,6 +65,16 @@ public class ServerHostKey implements Serializable {
 	public static ServerHostKey newInstance(SSHService sshService) {
 		return new ServerHostKey(sshService);
 	}
+
+	/**
+	 * Creates a new ServerHostKey purely for the purpose of being a key to locate
+	 * SSHServices with the same host key.
+	 * @param hostKey The host key to search for
+	 * @return a ServerHostKey that will match the ServerHostKeys of existing, shared SSHServices.
+	 */	
+	public static ServerHostKey newInstance(byte[] hostKey) {
+		return new ServerHostKey(hostKey);
+	}
 	
 	
 	/**
@@ -79,6 +89,21 @@ public class ServerHostKey implements Serializable {
 		userName = sshService.getSshUserName();
 		port = sshService.getPort();
 		shared = sshService.isSharedConnection();
+	}
+	
+	/**
+	 * Creates a new ServerHostKey purely for the purpose of being a key to locate
+	 * SSHServices with the same host key.
+	 * @param hostKey The host key to search for
+	 */
+	private ServerHostKey(byte[] hostKey) {
+		created = System.currentTimeMillis();
+		this.hostKey = hostKey;
+		keyType = null;
+		hostName = null;
+		userName = null;
+		port = -1;
+		shared = true;		
 	}
 
 	/**

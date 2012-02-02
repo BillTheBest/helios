@@ -22,17 +22,21 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.net.ssh;
+package org.helios.net.ssh.instrumentedio;
 
 /**
- * <p>Title: PortForwardRegistry</p>
- * <p>Description: A registry of SSH active port forwards, maintained so that new connection requests do 
- * not create multiple redundant port forwards.</p> 
+ * <p>Title: BytesOutProvider</p>
+ * <p>Description: Indicates that a class can provide a {@link BytesInMetric} reflecting written IO volume</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.net.ssh.PortForwardRegistry</code></p>
+ * <p><code>org.helios.net.ssh.instrumentedio.BytesOutProvider</code></p>
  */
 
-public class PortForwardRegistry {
+public interface BytesOutProvider {
+	/**
+	 * Returns the BytesOutMetric for this provider
+	 * @return the BytesOutMetric for this provider
+	 */
+	public BytesOutMetric getBytesOutMetric();
 
 }

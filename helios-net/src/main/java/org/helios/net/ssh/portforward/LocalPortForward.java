@@ -24,15 +24,20 @@
  */
 package org.helios.net.ssh.portforward;
 
+import java.io.Closeable;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.helios.net.ssh.SSHService;
-import org.helios.net.ssh.ServerHostKey;
 
 import ch.ethz.ssh2.LocalPortForwarder;
 import ch.ethz.ssh2.channel.LocalAcceptThreadStateListener;
@@ -45,7 +50,7 @@ import ch.ethz.ssh2.channel.LocalAcceptThreadStateListener;
  * <p><code>org.helios.net.ssh.LocalPortForward</code></p>
  */
 
-public class LocalPortForward implements LocalAcceptThreadStateListener {
+public class LocalPortForward implements LocalAcceptThreadStateListener, Closeable {
 	/** Instance logger */
 	protected Logger log = Logger.getLogger(getClass());	
 	/** The wrapped port forwarder */
@@ -60,32 +65,79 @@ public class LocalPortForward implements LocalAcceptThreadStateListener {
 	protected final String hostAddress;	
 	/** The parent SSH Service */
 	protected final SSHService service;
+	
 	/** The LocalPortForwardKey used to uniquely identify this port forward */
 	protected final LocalPortForwardKey portForwardKey;
 	
+	/** The connect latch released when the service thread makes the start callback */
+	protected final AtomicReference<CountDownLatch> connectLatch = new AtomicReference<CountDownLatch>(new CountDownLatch(1)); 
+	/** The timeout while waiting on the portforward service thread to callback */
+	protected long startTimeOut = 2000;
 	/** the last connect time */
 	protected Date connectTime = null;
 	/** the last disconnect time */
 	protected Date disconnectTime = null;
 	/** Connection state indicator */
 	protected final  AtomicBoolean connected = new AtomicBoolean(false);
+	
+	/** Port forward listeners for this instance */
+	protected final Set<LocalPortForwardStateListener> portForwardListeners = new CopyOnWriteArraySet<LocalPortForwardStateListener>();
+	/** Port forward listeners installed in all listeners */
+	protected static final Set<LocalPortForwardStateListener> globalPortForwardListeners = new CopyOnWriteArraySet<LocalPortForwardStateListener>();
+	
 
 	/**
-	 * Creates a new LocalPortForward
+	 * Creates a new shared LocalPortForward with an ephemeral local port 
+	 * @param service The {@link SSHService} through which the port forward is created
+	 * @param remoteHost The host to forward to
+	 * @param remotePort The remote port
+	 */
+	public LocalPortForward(SSHService service, String remoteHost, int remotePort) {
+		this(service, remoteHost, 0, remotePort);
+	}
+	
+	/**
+	 * Creates a new shared LocalPortForward to the SSH host with an ephemeral local port 
+	 * @param service The {@link SSHService} through which the port forward is created
+	 * @param remotePort The remote port
+	 */
+	public LocalPortForward(SSHService service, int remotePort) {
+		this(service, service.getHost(), 0, remotePort);
+	}
+	
+	/**
+	 * Creates a new LocalPortForward to the SSH host
 	 * @param service The {@link SSHService} through which the port forward is created
 	 * @param localPort The local port
 	 * @param remotePort The remote port
 	 */
 	public LocalPortForward(SSHService service, int localPort, int remotePort) {
+		this(service, service.getHost(), localPort, remotePort);
+	}
+	
+	/**
+	 * Creates a new LocalPortForward
+	 * @param service The {@link SSHService} through which the port forward is created
+	 * @param remoteHost The host to forward to
+	 * @param localPort The local port
+	 * @param remotePort The remote port
+	 */
+	public LocalPortForward(SSHService service, String remoteHost, int localPort, int remotePort) {
 		try {
-			this.portForwarder = service.getConnection().createLocalPortForwarder(localPort, service.getHost(), remotePort, this);
+			this.portForwarder = service.getConnection().createLocalPortForwarder(localPort, remoteHost, remotePort, this);
+			boolean started = connectLatch.get().await(startTimeOut, TimeUnit.MILLISECONDS);
+			if(!started) {
+				throw new Exception("Portforward start wait timed out after [" + startTimeOut + "] ms");
+			}
+			connectLatch.set(new CountDownLatch(1));
 			this.service = service;
 			this.remoteAddress = InetAddress.getByName(this.portForwarder.getRemoteHost());
 			this.localPort = portForwarder.getLocalPort();
 			this.remotePort = this.portForwarder.getRemotePort();
 			this.hostAddress = remoteAddress.getHostAddress();
-			this.portForwardKey = LocalPortForwardKey.newInstance(this.service.getHostKey(), this.remotePort);
-			log.info("PortForward [" + this.localPort + ":" + service.getHost() + ":" + this.remotePort + "]:" + portForwarder.isBound());
+			this.portForwardKey = LocalPortForwardKey.newInstance(this.service.getHostKey(), remoteHost, this.remotePort, localPort, this.portForwarder.getLocalPort());
+			portForwardListeners.addAll(globalPortForwardListeners);
+			log.info("PortForward [" + this.localPort + ":" + remoteHost + ":" + this.remotePort + "]:" + portForwarder.isBound());
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to initialize LocalPortForward", e);
 		}
@@ -99,6 +151,7 @@ public class LocalPortForward implements LocalAcceptThreadStateListener {
 		
 	}
 	
+	
 	/**
 	 * Reconnects the port forward, reconnecting the parent service if necessary.
 	 * @throws Exception thrown on reconnect failure
@@ -111,6 +164,11 @@ public class LocalPortForward implements LocalAcceptThreadStateListener {
 				service.connect();
 			}
 			portForwarder = service.getConnection().createLocalPortForwarder(localPort, hostAddress, remotePort, this);
+			boolean started = connectLatch.get().await(startTimeOut, TimeUnit.MILLISECONDS);
+			if(!started) {
+				throw new Exception("Portforward start wait timed out after [" + startTimeOut + "] ms");
+			}
+			connectLatch.set(new CountDownLatch(1));
 		}
 	}
 
@@ -182,14 +240,20 @@ public class LocalPortForward implements LocalAcceptThreadStateListener {
 		portForwarder.getBytesOutMetric().resetMetrics();
 	}
 
+	
 	/**
-	 * Closes the port forward
+	 * Executes a close on the local port forward
 	 * @see ch.ethz.ssh2.LocalPortForwarder#close()
 	 */
-	public void close()  {
+	@Override
+	public void close() {
 		try {
-			portForwarder.close();
-		} catch (Exception e) {}
+			portForwarder.close();	
+			connected.set(false);
+			for(LocalPortForwardStateListener listener: portForwardListeners) {
+				listener.onClose(this);
+			}
+		} catch (Exception e) {}		
 	}
 
 	/**
@@ -229,9 +293,10 @@ public class LocalPortForward implements LocalAcceptThreadStateListener {
 	 * @see ch.ethz.ssh2.channel.LocalAcceptThreadStateListener#onStart()
 	 */
 	@Override
-	public void onStart() {
+	public void onStart() {		
 		connected.set(true);		
 		connectTime = new Date();
+		connectLatch.get().countDown();
 	}
 
 	/**
@@ -277,5 +342,46 @@ public class LocalPortForward implements LocalAcceptThreadStateListener {
 		return portForwardKey;
 	}
 
+	/**
+	 * Registers a global LocalPortForwardStateListener that will be registered with every new local port forward
+	 * @param listener the global listener to register
+	 */
+	public static void addGlobalListener(LocalPortForwardStateListener listener) {
+		if(listener==null) throw new IllegalArgumentException("The passed listener was null", new Throwable());
+		globalPortForwardListeners.add(listener);
+	}
+	
+	/**
+	 * Unregisters a global LocalPortForwardStateListener
+	 * @param listener the global listener to unregister
+	 */
+	public static void removeGlobalListener(LocalPortForwardStateListener listener) {
+		if(listener!=null) {
+			globalPortForwardListeners.remove(listener);
+		}
+	}
+	
+	/**
+	 * Registers a LocalPortForwardStateListener for this instance
+	 * @param listener the listener to register
+	 */
+	public void addListener(LocalPortForwardStateListener listener) {
+		if(listener==null) throw new IllegalArgumentException("The passed listener was null", new Throwable());
+		portForwardListeners.add(listener);
+	}
+	
+	/**
+	 * Unregisters a LocalPortForwardStateListener from this instance
+	 * @param listener The listener to unregister
+	 */
+	public void removeListener(LocalPortForwardStateListener listener) {
+		if(listener!=null) {
+			portForwardListeners.remove(listener);
+		}
+	}
+
+
+	
+	
 
 }

@@ -68,11 +68,15 @@ public class ApacheSSHDServer {
 	/** The server instance */
 	static final AtomicReference<SshServer> server = new AtomicReference<SshServer>(null);
 	
+	static {
+		BasicConfigurator.configure();
+	}
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String...args) {
-		BasicConfigurator.configure();
+		
 		Logger.getRootLogger().setLevel(Level.INFO);
 		//Logger.getLogger(ChannelSession.class).setLevel(Level.WARN);
 		Logger.getLogger("org.apache").setLevel(Level.WARN);
@@ -267,6 +271,23 @@ public class ApacheSSHDServer {
 			throw new RuntimeException("Failed to stop SSHd server", e);
 		}		
 	}
+	
+	/**
+	 * Indicates if the server is started
+	 * @return true if the server is started, false otherwise
+	 */
+	public static boolean isStarted() {
+		return server.get()!=null;
+	}
+	
+	/**
+	 * Recycles the server
+	 */
+	public static void restart() {
+		try { stop(); } catch (Exception e) {};
+		main();
+	}
+	
 	
 	public static String getAlgoList(Provider p) {
 		StringBuilder b = new StringBuilder();

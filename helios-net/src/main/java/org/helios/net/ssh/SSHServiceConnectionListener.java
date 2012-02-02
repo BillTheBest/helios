@@ -40,10 +40,18 @@ public interface SSHServiceConnectionListener {
 	public void onConnectionFailure(Throwable t, SSHService sshService);
 	
 	/**
-	 * Callback from an {@link SSHService} when the connection is closed.
+	 * Callback from an {@link SSHService} when shared connection is soft closed (but not really)
+	 * @param sshService The {@link SSHService} that closed
+	 * @param sharesRemaining The number of shares left on the connection
+	 */
+	public void onConnectionSoftClosed(SSHService sshService, int sharesRemaining);
+	
+	
+	/**
+	 * Callback from an {@link SSHService} when the connection is <i>really</i> closed.
 	 * @param sshService The {@link SSHService} that closed
 	 */
-	public void onConnectionClosed(SSHService sshService);
+	public void onConnectionHardClosed(SSHService sshService);
 	
 	/**
 	 * Callback from an {@link SSHService} when the connection is initially made

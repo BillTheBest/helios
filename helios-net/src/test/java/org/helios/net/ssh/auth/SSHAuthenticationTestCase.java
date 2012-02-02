@@ -57,7 +57,9 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 		Assert.assertEquals("The SSHService shared count", 1, ssh.getSharedCount());
 		Assert.assertTrue("The SSHService is connected", ssh.isConnected());
 		Assert.assertTrue("The SSHService is authenticated", ssh.isAuthenticated());
-		ssh.close();
+		Assert.assertTrue("The SSHService cache has a shared instance", SSHService.hasSharedServiceFor("localhost", SSHD_PORT));
+		closeSSHService(ssh, false);
+		Assert.assertFalse("The SSHService cache has a shared instance", SSHService.hasSharedServiceFor("localhost", SSHD_PORT));
 		Assert.assertEquals("The SSHService shared count", 0, ssh.getSharedCount());
 		Assert.assertFalse("The SSHService is connected", ssh.isConnected());
 		Assert.assertFalse("The SSHService is authenticated", ssh.isAuthenticated());		
@@ -88,10 +90,12 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 				.sshUserPassword(creds.getValue().toString())
 				.connect()
 				.authenticate();
+				Assert.assertTrue("The SSHService cache has a shared instance", SSHService.hasSharedServiceFor("localhost", SSHD_PORT));
 				Assert.assertEquals("The SSHService shared count", 1, ssh.getSharedCount());
 				Assert.assertTrue("The SSHService is connected", ssh.isConnected());
 				Assert.assertTrue("The SSHService is authenticated", ssh.isAuthenticated());
-				ssh.close();
+				closeSSHService(ssh, false);
+				Assert.assertFalse("The SSHService cache has a shared instance", SSHService.hasSharedServiceFor("localhost", SSHD_PORT));
 				Assert.assertEquals("The SSHService shared count", 0, ssh.getSharedCount());
 				Assert.assertFalse("The SSHService is connected", ssh.isConnected());
 				Assert.assertFalse("The SSHService is authenticated", ssh.isAuthenticated());					
@@ -103,32 +107,39 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 	 * @throws Exception
 	 */
 	@Test()
-	public void testSharedPasswordSSHLogin() throws Exception {
+	public void testMultiPasswordSSHLogin() throws Exception {
 		ApacheSSHDServer.activatePasswordAuthenticator(true);		
 		Map.Entry<Object, Object> creds = goodPasswordAuths.entrySet().iterator().next();
+		Assert.assertEquals("Test for existing shared SSHService", true, null==SSHService.findServiceFor("localhost", SSHD_PORT));
 		SSHService ssh = SSHService.createSSHService("localhost", SSHD_PORT, creds.getKey().toString())				
 				.connect()
 				.sshUserPassword(creds.getValue().toString())
 				.authenticate();
+		Assert.assertTrue("The SSHService cache has a shared instance", SSHService.hasSharedServiceFor("localhost", SSHD_PORT));
+		Assert.assertEquals("The SSHService cached instance count", 1, SSHService.getSSHServiceInstanceCount());
 		Assert.assertEquals("The SSHService1 shared count", 1, ssh.getSharedCount());
 		Assert.assertTrue("The SSHService1 is shared connection", ssh.isSharedConnection());
 		Assert.assertTrue("The SSHService1 is connected", ssh.isConnected());
 		Assert.assertTrue("The SSHService1 is authenticated", ssh.isAuthenticated());
+		Assert.assertEquals("Test for existing shared SSHService", true, null!=SSHService.findServiceFor("localhost", SSHD_PORT, 0, 0));
+		Assert.assertEquals("The SSHService cached instance count", 1, SSHService.getSSHServiceInstanceCount());
 		
 		SSHService ssh2 = SSHService.createSSHService("localhost", SSHD_PORT, creds.getKey().toString())				
 				.connect()
 				.sshUserPassword(creds.getValue().toString())
 				.authenticate();
+		
 		Assert.assertEquals("The SSHService2 shared count", 2, ssh2.getSharedCount());	
 		Assert.assertTrue("The SSHService2 is shared connection", ssh2.isSharedConnection());
 		Assert.assertTrue("The SSHService2 is connected", ssh2.isConnected());
 		Assert.assertTrue("The SSHService2 is authenticated", ssh2.isAuthenticated());
-
+		Assert.assertEquals("The SSHService cached instance count", 1, SSHService.getSSHServiceInstanceCount());
 		Assert.assertEquals("The SSHService1 shared count", 2, ssh.getSharedCount());		
 		Assert.assertTrue("The SSHService1 is connected", ssh.isConnected());
 		Assert.assertTrue("The SSHService1 is authenticated", ssh.isAuthenticated());
 		
-		ssh.close();
+		closeSSHService(ssh, false);
+		Assert.assertEquals("The SSHService cached instance count", 1, SSHService.getSSHServiceInstanceCount());
 		
 		Assert.assertEquals("The SSHService2 shared count", 1, ssh2.getSharedCount());		
 		Assert.assertTrue("The SSHService2 is connected", ssh2.isConnected());
@@ -138,7 +149,8 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 		Assert.assertTrue("The SSHService1 is connected", ssh.isConnected());
 		Assert.assertTrue("The SSHService1 is authenticated", ssh.isAuthenticated());
 		
-		ssh2.close();
+		closeSSHService(ssh2, false);
+		Assert.assertEquals("The SSHService cached instance count", 0, SSHService.getSSHServiceInstanceCount());
 		
 		Assert.assertEquals("The SSHService2 shared count", 0, ssh2.getSharedCount());		
 		Assert.assertFalse("The SSHService2 is connected", ssh2.isConnected());
@@ -158,19 +170,21 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 	public void testExclusivePasswordSSHLogin() throws Exception {
 		ApacheSSHDServer.activatePasswordAuthenticator(true);
 		Map.Entry<Object, Object> creds = goodPasswordAuths.entrySet().iterator().next();		
-		SSHService ssh = SSHService.createSSHService("localhost", SSHD_PORT, creds.getKey().toString(), false, false)				
+		SSHService ssh = SSHService.createSSHService("localhost", SSHD_PORT, creds.getKey().toString(), false)				
 				.connect()
 				.sshUserPassword(creds.getValue().toString())
 				.authenticate();
+		Assert.assertEquals("The SSHService cached instance count", 1, SSHService.getSSHServiceInstanceCount());
 		Assert.assertEquals("The SSHService1 shared count", 1, ssh.getSharedCount());
 		Assert.assertFalse("The SSHService1 is shared connection", ssh.isSharedConnection());
 		Assert.assertTrue("The SSHService1 is connected", ssh.isConnected());
 		Assert.assertTrue("The SSHService1 is authenticated", ssh.isAuthenticated());
 		
-		SSHService ssh2 = SSHService.createSSHService("localhost", SSHD_PORT, creds.getKey().toString(), false, false)				
+		SSHService ssh2 = SSHService.createSSHService("localhost", SSHD_PORT, creds.getKey().toString(), false)				
 				.connect()
 				.sshUserPassword(creds.getValue().toString())
 				.authenticate();
+		Assert.assertEquals("The SSHService cached instance count", 2, SSHService.getSSHServiceInstanceCount());
 		Assert.assertEquals("The SSHService2 shared count", 1, ssh2.getSharedCount());
 		Assert.assertFalse("The SSHService2 is shared connection", ssh2.isSharedConnection());
 		Assert.assertTrue("The SSHService2 is connected", ssh2.isConnected());
@@ -180,6 +194,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 				.connect()
 				.sshUserPassword(creds.getValue().toString())
 				.authenticate();
+		Assert.assertEquals("The SSHService cached instance count", 3, SSHService.getSSHServiceInstanceCount());
 		Assert.assertEquals("The SSHService3 shared count", 1, ssh3.getSharedCount());
 		Assert.assertTrue("The SSHService3 is shared connection", ssh3.isSharedConnection());
 		Assert.assertTrue("The SSHService3 is connected", ssh3.isConnected());
@@ -189,12 +204,15 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 				.connect()
 				.sshUserPassword(creds.getValue().toString())
 				.authenticate();
+		Assert.assertEquals("The SSHService cached instance count", 3, SSHService.getSSHServiceInstanceCount());
 		Assert.assertEquals("The SSHService4 shared count", 2, ssh4.getSharedCount());
 		Assert.assertTrue("The SSHService4 is shared connection", ssh4.isSharedConnection());
 		Assert.assertTrue("The SSHService4 is connected", ssh4.isConnected());
 		Assert.assertTrue("The SSHService4 is authenticated", ssh4.isAuthenticated());
 		
-		ssh3.close();
+		closeSSHService(ssh3, false);		
+		Assert.assertEquals("The SSHService cached instance count", 3, SSHService.getSSHServiceInstanceCount());
+		
 		
 		Assert.assertEquals("The SSHService3 shared count", 1, ssh3.getSharedCount());
 		Assert.assertTrue("The SSHService3 is connected", ssh3.isConnected());
@@ -204,7 +222,8 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 		Assert.assertTrue("The SSHService4 is connected", ssh4.isConnected());
 		Assert.assertTrue("The SSHService4 is authenticated", ssh4.isAuthenticated());
 		
-		ssh4.close();
+		closeSSHService(ssh4, false);		
+		Assert.assertEquals("The SSHService cached instance count", 2, SSHService.getSSHServiceInstanceCount());
 
 		Assert.assertEquals("The SSHService3 shared count", 0, ssh3.getSharedCount());
 		Assert.assertFalse("The SSHService3 is connected", ssh3.isConnected());
@@ -213,13 +232,13 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 		Assert.assertEquals("The SSHService4 shared count", 0, ssh4.getSharedCount());
 		Assert.assertFalse("The SSHService4 is connected", ssh4.isConnected());
 		Assert.assertFalse("The SSHService4 is authenticated", ssh4.isAuthenticated());
+		closeSSHService(ssh2, false);
 		
-		ssh2.close();
 		Assert.assertEquals("The SSHService2 shared count", 0, ssh2.getSharedCount());
 		Assert.assertFalse("The SSHService2 is connected", ssh2.isConnected());
 		Assert.assertFalse("The SSHService2 is authenticated", ssh2.isAuthenticated());
 		
-		ssh.close();
+		closeSSHService(ssh, false);
 		Assert.assertEquals("The SSHService1 shared count", 0, ssh.getSharedCount());
 		Assert.assertFalse("The SSHService1 is connected", ssh.isConnected());
 		Assert.assertFalse("The SSHService1 is authenticated", ssh.isAuthenticated());
@@ -250,7 +269,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 			Assert.assertTrue("The SSHService1 [" + userName + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService1 [" + userName + "] is authenticated", ssh.isAuthenticated());
 			
-			ssh.close();
+			closeSSHService(ssh, false);
 
 			Assert.assertEquals("The SSHService1 [" + userName + "] shared count", 0, ssh.getSharedCount());
 			Assert.assertFalse("The SSHService1 [" + userName + "] is connected", ssh.isConnected());
@@ -285,7 +304,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 			Assert.assertTrue("The SSHService1 [" + userName + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService1 [" + userName + "] is authenticated", ssh.isAuthenticated());
 			
-			ssh.close();
+			closeSSHService(ssh, false);
 
 			Assert.assertEquals("The SSHService1 [" + userName + "] shared count", 0, ssh.getSharedCount());
 			Assert.assertFalse("The SSHService1 [" + userName + "] is connected", ssh.isConnected());
@@ -317,7 +336,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 			Assert.assertTrue("The SSHService1 [" + userName + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService1 [" + userName + "] is authenticated", ssh.isAuthenticated());
 			
-			ssh.close();
+			closeSSHService(ssh, false);
 
 			Assert.assertEquals("The SSHService1 [" + userName + "] shared count", 0, ssh.getSharedCount());
 			Assert.assertFalse("The SSHService1 [" + userName + "] is connected", ssh.isConnected());
@@ -349,7 +368,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 			Assert.assertTrue("The SSHService1 [" + userName + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService1 [" + userName + "] is authenticated", ssh.isAuthenticated());
 			
-			ssh.close();
+			closeSSHService(ssh, false);
 
 			Assert.assertEquals("The SSHService1 [" + userName + "] shared count", 0, ssh.getSharedCount());
 			Assert.assertFalse("The SSHService1 [" + userName + "] is connected", ssh.isConnected());
@@ -371,7 +390,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 		int usersTested = 0;
 		for(String user: LocalConfig.getUsers()) {
 			// Password Authorization
-			SSHService ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false, false)				
+			SSHService ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false)				
 					.connect()
 					.sshUserPassword(LocalConfig.getPassword(user))
 					.authenticate();
@@ -379,10 +398,10 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
 			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
-			ssh.close();
+			closeSSHService(ssh, false);
 			// RSA Public Key Authentication
 			ApacheSSHDServer.addPublicKey(LocalConfig.getRsaPub(user));
-			ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false, false)				
+			ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false)				
 					.connect()
 					.pemPrivateKey(LocalConfig.getRsaPk(user))
 					.sshPassphrase(LocalConfig.getRsaPassphrase(user))
@@ -391,11 +410,11 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 			Assert.assertFalse("The SSHService [" + user + "] is shared connection", ssh.isSharedConnection());
 			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
-			ssh.close();
+			closeSSHService(ssh, false);
 			
 			// DSA Public Key Authentication
 			ApacheSSHDServer.addPublicKey(LocalConfig.getDsaPub(user));
-			ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false, false)				
+			ssh = SSHService.createSSHService(LocalConfig.getSSHHost(user), LocalConfig.getSSHPort(user), user, false)				
 					.connect()
 					.pemPrivateKey(LocalConfig.getDsaPk(user))
 					.sshPassphrase(LocalConfig.getDsaPassphrase(user))
@@ -405,7 +424,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 			Assert.assertTrue("The SSHService [" + user + "] is connected", ssh.isConnected());
 			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
 
-			ssh.close();
+			closeSSHService(ssh, false);
 			
 			// RSA Public Key Authentication, No Passphrase
 			// ==================================================
@@ -423,7 +442,7 @@ public class SSHAuthenticationTestCase extends BaseSSHTestCase {
 //			Assert.assertTrue("The SSHService [" + user + "] is authenticated", ssh.isAuthenticated());
 //			ssh.close();
 			
-			ssh.close();		
+			
 			
 			usersTested++;
 		}

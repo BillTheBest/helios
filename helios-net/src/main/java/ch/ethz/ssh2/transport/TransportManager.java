@@ -10,6 +10,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import ch.ethz.ssh2.ConnectionInfo;
 import ch.ethz.ssh2.ConnectionMonitor;
@@ -569,8 +571,27 @@ public class TransportManager
 		{
 			flagKexOngoing = false;
 			connectionSemaphore.notifyAll();
+			CountDownLatch latch = keyExchangeLatch.get();
+			if(latch!=null) {
+				keyExchangeLatch.set(null);
+				latch.countDown();
+			}
 		}
 	}
+	
+	/** A CountDownLatch to allow a thread to wait for a key exchange to complete */
+	protected final AtomicReference<CountDownLatch> keyExchangeLatch = new AtomicReference<CountDownLatch>(null);
+	
+	/**
+	 * Registers a key exchange completion latch
+	 * @return the created latch
+	 */
+	public CountDownLatch registerKeyExchangeWaiter() {
+		keyExchangeLatch.set(new CountDownLatch(1));
+		return keyExchangeLatch.get();
+	}
+	
+	
 
 	public void forceKeyExchange(CryptoWishList cwl, DHGexParameters dhgex) throws IOException
 	{
