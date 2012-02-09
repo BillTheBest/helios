@@ -56,6 +56,11 @@ public class MetaCacheProcessor implements Processor, InitializingBean  {
 	@Qualifier("lastMetricCache")	
 	protected Cache lastMetricCache;
 	
+	/** The metric tree cache */
+	@Autowired(required=true)
+	@Qualifier("metricTreeCache")	
+	protected Cache metricTreeCache;
+	
 	
 	/** The root entry */
 	protected MetricTreeEntry rootEntry;
@@ -88,9 +93,63 @@ public class MetaCacheProcessor implements Processor, InitializingBean  {
 		lastMetricCache.put(new Element(trace.getFQN(), trace));
 		Element elem = metricNameCache.get(trace.getFQN());
 		if(elem==null) {
+			//putHierarchy(trace);
 			elem = new Element(trace.getFQN(), trace.getMetricId());
 			log.info("Processing New Element:[" + trace.getFQN() + "]");
 			metricNameCache.put(elem);
+			MetricTreeEntry currentEntry = rootEntry;
+			String[] segments = trace.getFQN().split("/");
+			StringBuilder keyPref = new StringBuilder();
+			String lastSegment = null;
+			for(String segment: segments) {
+				lastSegment = segment;
+				if(keyPref.length()==0) {
+					keyPref.append(segment);
+				} else {
+					keyPref.append(KEY_DELIM).append(segment);
+				}
+				currentEntry.addSubKey(segment, keyPref);
+				currentEntry = MetricTreeEntry.getOrCreate(keyPref, getParentKey(keyPref), null, metricTreeCache);
+			}			
+			currentEntry.setMetricId(trace.getMetricId());
+			Element parentElement = metricTreeCache.get(currentEntry.getParentKey());
+			MetricTreeEntry mte = (MetricTreeEntry)parentElement.getValue();
+			mte.addNode(lastSegment, trace.getMetricId());
+			metricTreeCache.put(parentElement);			
+		}
+		//MetricTreeEntry entry = MetricTreeEntry.getOrCreate(trace.getFQN(), getParentKey(trace.getFQN()), trace.getMetricId(), metricTreeCache);
+		
+	}
+	
+	/**
+	 * Adds the trace hierarchy to the cache
+	 * @param trace The trace with the name to add
+	 */
+	protected void putHierarchy(ClosedTrace trace) {
+		String[] segments = trace.getFQN().split(KEY_DELIM);
+		int nameSize = trace.getFQN().length();
+		int segSize = segments.length;
+		StringBuilder nodeName = new StringBuilder(nameSize);
+		StringBuilder parentNodeName = new StringBuilder(nameSize);
+		MetricTreeEntry parentEntry = MetricTreeEntry.getOrCreate(segments[0], KEY_DELIM, null, metricTreeCache);
+		
+		parentNodeName.append(segments[0]);
+		nodeName.append(segments[0]);
+		if(rootEntry==null) rootEntry = MetricTreeEntry.getOrCreate("/", "", null, metricTreeCache);
+		rootEntry.addSubKey(nodeName, nodeName);
+		MetricTreeEntry currentEntry = null;
+		for(int i = 1; i < segSize; i++) {
+			nodeName.append(KEY_DELIM).append(segments[i]);
+			if(i==(segSize-1)) {
+				currentEntry = MetricTreeEntry.getOrCreate(nodeName, parentNodeName, trace.getMetricId(), metricTreeCache);
+				parentEntry.addNode(segments[i], trace.getMetricId());
+				currentEntry.addSubKey(segments[i], nodeName);
+			} else {
+				currentEntry = MetricTreeEntry.getOrCreate(nodeName, parentNodeName, null, metricTreeCache);
+				parentEntry.addSubKey(segments[i], nodeName);
+			}
+			parentEntry = currentEntry;
+			parentNodeName.append(KEY_DELIM).append(segments[i]);
 		}
 	}
 	
@@ -101,7 +160,8 @@ public class MetaCacheProcessor implements Processor, InitializingBean  {
 	 */
 	public static String getParentKey(CharSequence path) {
 		if(path==null) throw new IllegalArgumentException("The passed metric path was null", new Throwable());
-		String sPath = path.toString();
+		String sPath = path.toString().toString();
+		if(sPath.equals(KEY_DELIM)) return "";
 		String[] segments = sPath.split(KEY_DELIM);
 		if(segments.length==1) return KEY_DELIM;
 		StringBuilder b = new StringBuilder(sPath).reverse();
@@ -120,14 +180,15 @@ public class MetaCacheProcessor implements Processor, InitializingBean  {
 		return b.toString();
 	}
 
-
+	
+	
 	/**
 	 * {@inheritDoc}
 	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
 	 */
 	@Override
 	public void afterPropertiesSet() throws Exception {
-				
+		rootEntry = MetricTreeEntry.getOrCreate("/", "", null, metricTreeCache);
 	}
 	
 
