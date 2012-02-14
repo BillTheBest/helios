@@ -24,6 +24,7 @@
  */
 package org.helios.server.ot.session.camel.routing;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +33,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.management.ObjectName;
+
 import org.apache.camel.CamelContext;
 import org.apache.camel.CamelContextAware;
 import org.apache.camel.Endpoint;
@@ -39,7 +42,12 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.Route;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.log4j.Logger;
+import org.helios.helpers.JMXHelper;
+import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
+import org.helios.jmx.dynamic.annotations.JMXManagedObject;
+import org.helios.jmx.dynamic.annotations.JMXOperation;
+import org.helios.jmx.dynamic.annotations.JMXParameter;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.server.ot.session.SessionSubscriptionTerminator;
 import org.helios.server.ot.session.camel.routing.annotations.SubRoute;
@@ -54,7 +62,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p><code>org.helios.server.ot.session.camel.routing.AbstractSubscriberRoute</code></p>
  * @param <T> The type of the subscriber route's unique key per session 
  */
-
+@JMXManagedObject(annotated=true, declared=false)
 public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements SessionSubscriptionTerminator, ISubscriberRoute<T>, CamelContextAware {
 	/** The camel route */
 	protected Route route;
@@ -82,7 +90,8 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	protected ProducerTemplate producer = null;
 	/** The size of the producer template cache. If < 0, uses the default */
 	protected int producerTemplateCacheSize = -1;
-	
+	/** The MODB Container */
+	protected final ManagedObjectDynamicMBean modb = new ManagedObjectDynamicMBean(getClass().getSimpleName());
 
 	/** The router registry that manages the creation and cleanup of created routes */
 	@Autowired(required=true)
@@ -95,13 +104,34 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	/** Serial number factory for feed instances */
 	private final AtomicLong feedSerial = new AtomicLong(0L);
 	
+	/** Counter for the number of event emitted from this route */
+	protected final AtomicLong eventCount = new AtomicLong(0L);
 	
 	
+	/**
+	 * Returns the number of events emitted from this router
+	 * @return the number of events emitted from this router
+	 */
+	@JMXAttribute(name="EventCount", description="The number of events emitted from this router", mutability=AttributeMutabilityOption.READ_ONLY)
+	public long getEventCount() {
+		return eventCount.get();
+	}
+
+
+
+
+
 	/** Serial number factory for route ids */
 	protected static final AtomicLong routeSerial = new AtomicLong(0L);
 	
 	/** The route id defined as the type key plus the sessionId */
 	protected final String routeId;
+	/** This router's JMX ObjectName */
+	protected final ObjectName objectName;
+	
+	/** The JMX ObjectName template for this subscriber route */
+	public static final String OBJECT_NAME_TEMPLATE = "org.helios.server.ot.routing.subscribers:service=%s,session=%s";
+
 
 	/**
 	 * Removes a router key representing a unique resource the caller is subscribed to. 
@@ -143,6 +173,7 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * @see org.helios.server.ot.session.SessionSubscriptionTerminator#terminate()
 	 */
 	@Override	
+	@JMXOperation(name="terminate", description="Terminate this subscriber route" )
 	public void terminate() {
 		log.info("Terminating Subscriber Route [" + typeKey + "] for session [" + sessionId + "]");
 		preTerminationCleanup();
@@ -166,6 +197,7 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 		postTerminationCleanup();
 		subFeedKeys.clear();
 		subscribedKeys.clear();
+		JMXHelper.getRuntimeHeliosMBeanServer().unregisterMBean(objectName);
 	}	
 
 
@@ -174,7 +206,8 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * @param properties The caller supplied properties from which the subscriberroute implementation can determine the routerKey
 	 * @return A map of subscriberroute properties that should include the resulting subFeedKey keyed by {@literal HEADER_JUST_ADDED_FEED_KEY} 
 	 */
-	public Map<String, Object> addRouterKey(Map<String, String> properties) {
+	@JMXOperation(name="addRouterKey", description="Adds a router key representing a unique resource the caller is subscribing to" )
+	public Map<String, Object> addRouterKey(@JMXParameter(name="properties", description="A map of key/values defining a router key") Map<String, String> properties) {
 		if(properties==null) throw new IllegalArgumentException("The passed properties was null", new Throwable());
 		T routerKey = extractRouterKey(properties);
 		if(routerKey==null) {
@@ -192,8 +225,9 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * @param properties The caller supplied properties from which the subscriberroute implementation can determine the routerKey or subFeedKey
 	 * @return true of there are remaining router keys, false if not.
 	 */
-	public boolean removeRouterKey(Map<String, String> properties) {
-		if(properties==null) throw new IllegalArgumentException("The passed properties was null", new Throwable());
+	@JMXOperation(name="removeRouterKey", description="Removes a sub feed key one instance of a subscription to a unique resource the caller is subscribed to" )
+	public boolean removeRouterKey(@JMXParameter(name="properties", description="A map of key/values defining a router key") Map<String, String> properties) {
+		if(properties==null) throw new IllegalArgumentException("The passed properties was null", new Throwable()); 
 		T routerKey = null;
 		String subFeedKey = properties.get(HEADER_SUB_FEED_KEY);
 		if(subFeedKey!=null) {
@@ -292,8 +326,16 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 		routeId = String.format("Feed-%s-%s", this.typeKey, this.sessionId);
 		log = Logger.getLogger(getClass().getName() + "." + sessionId);
 		createdTimestamp = System.currentTimeMillis();
-		log.info("Created SubscriberRoute [" + getClass().getName() + "] for session [" + sessionId + "]");		
+		log.info("Created SubscriberRoute [" + getClass().getName() + "] for session [" + sessionId + "]");
+		objectName = JMXHelper.objectName(String.format(OBJECT_NAME_TEMPLATE, getClass().getSimpleName(), sessionId));
+		if(!"PROTOTYPE".equals(sessionId)) {
+			modb.reflectObject(this);
+			JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(modb, objectName);
+		}
+		
 	}
+	
+	
 	
 	/**
 	 * Creates a new AbstractSubscriberRoute
@@ -321,14 +363,16 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * {@inheritDoc}
 	 * @see org.helios.server.ot.session.camel.routing.ISubscriberRoute#getRoute()
 	 */
-	public Route getRoute() {	
+	public Route getRoute() {		
 		return route;
 	}
+	
 
 	/**
 	 * {@inheritDoc}
 	 * @see org.helios.server.ot.session.camel.routing.ISubscriberRoute#getSessionId()
 	 */
+	@JMXAttribute(name="SessionId", description="The ID of the session that initiated this route", mutability=AttributeMutabilityOption.READ_ONLY)
 	public String getSessionId() {
 		return sessionId;
 	}
@@ -337,6 +381,7 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * {@inheritDoc}
 	 * @see org.helios.server.ot.session.camel.routing.ISubscriberRoute#getTypeKey()
 	 */
+	@JMXAttribute(name="TypeKey", description="The type key of this route", mutability=AttributeMutabilityOption.READ_ONLY)
 	public String getTypeKey() {
 		return typeKey;
 	}
@@ -345,9 +390,20 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * {@inheritDoc}
 	 * @see org.helios.server.ot.session.camel.routing.ISubscriberRoute#getCreatedTimestamp()
 	 */
+	@JMXAttribute(name="CreatedTimestamp", description="The UDT timestamp that this route was created at", mutability=AttributeMutabilityOption.READ_ONLY)
 	public long getCreatedTimestamp() {
 		return createdTimestamp;
 	}
+	
+	/**
+	 * Returns the date that this route was created on
+	 * @return the date that this route was created on
+	 */
+	@JMXAttribute(name="CreatedDate", description="The date that this route was created at", mutability=AttributeMutabilityOption.READ_ONLY)
+	public Date getCreatedDate() {
+		return new Date(createdTimestamp);
+	}
+	
 
 	/**
 	 * {@inheritDoc}
@@ -361,6 +417,7 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * Returns the completion size of the aggregating strategy
 	 * @return the completionSize
 	 */
+	@JMXAttribute(name="CompletionSize", description="The completion size of the aggregating strategy", mutability=AttributeMutabilityOption.READ_WRITE)
 	public int getCompletionSize() {
 		return completionSize;
 	}
@@ -377,6 +434,7 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * Returns the completion timeout of the aggregating strategy
 	 * @return the completionTimeout
 	 */
+	@JMXAttribute(name="CompletionTimeout", description="The completion timeout in ms. of the aggregating strategy", mutability=AttributeMutabilityOption.READ_WRITE)
 	public long getCompletionTimeout() {
 		return completionTimeout;
 	}
@@ -439,6 +497,7 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * Returns the route id defined as the type key plus the sessionId 
 	 * @return the routeId
 	 */
+	@JMXAttribute(name="RouteId", description="The ID of the underlying Camel Route", mutability=AttributeMutabilityOption.READ_ONLY)
 	public String getRouteId() {
 		return routeId;
 	}
@@ -480,6 +539,7 @@ public abstract class AbstractSubscriberRoute<T> extends RouteBuilder implements
 	 * Returns the configured size of the producer template cache.
 	 * @return the configured size of the producer template cache
 	 */
+	@JMXAttribute(name="ProducerTemplateCacheSize", description="The configured size of the producer template cache.", mutability=AttributeMutabilityOption.READ_ONLY)
 	public int getProducerTemplateCacheSize() {
 		return producerTemplateCacheSize;
 	}

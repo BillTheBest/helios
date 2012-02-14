@@ -8,7 +8,7 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="org.helios.spring.container.HeliosContainerMain"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-conf ./src/test/resources/server/conf&#13;&#10;-log4j ./src/test/resources/server/conf/log4j/log4j.xml&#13;&#10;-daemon"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-conf ./src/test/resources/server/conf&#10;-conf ${system_property:user.home}/hotdir&#10;-lib ${system_property:user.home}/hotdir&#13;&#10;-log4j ./src/test/resources/server/conf/log4j/log4j.xml&#13;&#10;-daemon"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="helios-ot-server"/>
-<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Dactivemq.base=/home/nwhitehead/libs/java/activemq/5.5.0/apache-activemq-5.5.0&#13;&#10;-Djava.rmi.server.hostname=localhost"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Dactivemq.base=/home/nwhitehead/libs/java/activemq/5.5.0/apache-activemq-5.5.0&#13;&#10;-Djava.rmi.server.hostname=localhost&#10;-Dorg.helios.application.name=HeliosOTServer"/>
 </launchConfiguration>

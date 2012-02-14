@@ -9,16 +9,21 @@
 
 <div id="metricBrowserBody">
 	<div id="metricBrowserTreeExtruder" style="display: none;" class="{title:'Metric Tree'} ui-widget-header" >
+	<!-- 
 		<input id="searchTreeInput" ></input>
 		<div id="metricBrowserTree"></div>
+	-->
 	</div>
-	<table border='0'>
+	<table>
 		<tr>
 			<td width="5%"></td>
 			<td width="80%"><input id="gridMaskInput" size="128"></td>
 		</tr>
 		<tr>
-			<td></td>
+			<td valign="top" >
+				<input id="searchTreeInput" ></input>
+				<div id="metricBrowserTree"></div>			
+			</td>
 			<td valign="top" >
 				<div id="metricBrowserGridContainer">
 					<table id="metricBrowserGrid"><tr><td/></tr></table> 

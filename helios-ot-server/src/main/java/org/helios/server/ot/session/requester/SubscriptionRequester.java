@@ -26,6 +26,7 @@ package org.helios.server.ot.session.requester;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -57,7 +58,6 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.search.Result;
 import net.sf.ehcache.search.Results;
-import net.sf.ehcache.search.expression.ILike;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.CamelContextAware;
@@ -71,9 +71,10 @@ import org.helios.ot.trace.MetricId;
 import org.helios.server.ot.cache.MetricNameLookup;
 import org.helios.server.ot.cache.MetricTreeEntry;
 import org.helios.server.ot.cache.MetricTreeEntry.DynaTreeMetricNode;
+import org.helios.server.ot.jms.pubsub.RegExMatch;
 import org.helios.server.ot.session.OutputFormat;
-import org.helios.server.ot.session.SubscriberSession;
 import org.helios.server.ot.session.OutputFormat.OutputSizeHandler;
+import org.helios.server.ot.session.SubscriberSession;
 import org.helios.server.ot.session.camel.routing.ISubscriberRoute;
 import org.helios.server.ot.session.http.SubscriberSessionHttpSessionListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -551,8 +552,10 @@ public class SubscriptionRequester implements ApplicationContextAware, CamelCont
 	public Collection<ClosedTrace> searchLastTrace(@PathParam("expression") String expression) {
 		if(expression==null || expression.trim().equals("")) return Collections.emptyList();
 		Set<ClosedTrace> traces;		
-		String searchKey = expression.replace('.', '/').replaceAll(">$", "*").replace("%2F", "/");		
-		Results results = lastMetricCache.createQuery().addCriteria(new ILike("key", searchKey)).includeValues().execute();
+//		String searchKey = expression.replace('.', '/').replaceAll(">$", "*").replace("%2F", "/");		
+//		Results results = lastMetricCache.createQuery().addCriteria(new ILike("key", searchKey)).includeValues().execute();
+		URLDecoder decoder = new URLDecoder();
+		Results results = lastMetricCache.createQuery().addCriteria(RegExMatch.getInstance("key", decoder.decode(expression))).includeValues().execute();
 		traces = new HashSet<ClosedTrace>(results.size());
 		for(Result r: results.all()) {
 			traces.add((ClosedTrace)r.getValue());

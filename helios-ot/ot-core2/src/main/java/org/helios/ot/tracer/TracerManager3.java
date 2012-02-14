@@ -64,6 +64,7 @@ import org.helios.ot.endpoint.DefaultEndpoint;
 import org.helios.ot.endpoint.IEndPoint;
 import org.helios.ot.endpoint.InstrumentedEndPointWrapper;
 import org.helios.ot.endpoint.LifecycleAwareIEndPoint;
+import org.helios.ot.instrumentation.AgentJVMMonitor;
 import org.helios.ot.instrumentation.InstrumentationProfile;
 import org.helios.ot.subtracer.IntervalTracer;
 import org.helios.ot.subtracer.PhaseTriggerTracer;
@@ -96,7 +97,7 @@ import org.helios.time.SystemClock;
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * @version $LastChangedRevision$
- * <p><code>org.helios.ot.tracer.TracerManager</code></p>
+ * <p><code>org.helios.ot.tracer.TracerManager3</code></p>
  */
 @JMXManagedObject(annotated=true, declared=true)
 public class TracerManager3 extends ManagedObjectDynamicMBean implements Runnable, ITracerManager, TraceCollectionCloser { 
@@ -304,9 +305,13 @@ public class TracerManager3 extends ManagedObjectDynamicMBean implements Runnabl
 			IntervalTracer.setIntervalAccumulator(intervalAccumulator);
 		}
 //		registerDisruptorMBean();
-		LOG.info(Banner.banner("TracerManager Started"));
-		
-		instance.state.setStarted();			
+		LOG.info(Banner.banner("TracerManager Started"));		
+		instance.state.setStarted();	
+		executor.execute(new Runnable(){
+			public void run() {
+				AgentJVMMonitor.getInstance();
+			}
+		});
 	}
 	
 	/**
@@ -687,7 +692,7 @@ public class TracerManager3 extends ManagedObjectDynamicMBean implements Runnabl
 		 */
 		public void setEndPoints(Collection<IEndPoint> endPoints) {
 			if(endPoints==null) throw new IllegalArgumentException("IEndPoint Collection was null", new Throwable());
-			endPoints.addAll(endPoints);
+			this.endPoints.addAll(endPoints);
 		}
 		
 		

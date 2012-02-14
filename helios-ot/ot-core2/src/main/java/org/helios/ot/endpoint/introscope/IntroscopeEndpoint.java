@@ -64,6 +64,7 @@ import org.helios.helpers.Banner;
  * <p>Description: A concrete endpoint implementation for Introscope. </p> 
  * <p>Company: Helios Development Group</p>
  * @author Sandeep Malhotra (smalhotra@heliosdev.org)
+ * <p><code>org.helios.ot.endpoint.introscope.IntroscopeEndpoint</code></p> 
  */
 @JMXManagedObject (declared=false, annotated=true)
 public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends AbstractEndpoint<T> {

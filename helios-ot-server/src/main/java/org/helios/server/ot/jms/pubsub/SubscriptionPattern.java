@@ -42,6 +42,8 @@ import net.sf.ehcache.Element;
  */
 
 public class SubscriptionPattern implements Serializable {
+	/**  */
+	private static final long serialVersionUID = 8223265708647105989L;
 	/** The number of subscribers to this pattern */
 	protected final AtomicInteger subCount = new AtomicInteger(0);
 	/** The regex pattern */
@@ -51,6 +53,13 @@ public class SubscriptionPattern implements Serializable {
 	
 	/** The topic prefix to strip from the destination */
 	public static final String TOPIC_PREFIX = "topic://helios.metrictree.";
+	
+	
+	/** Regex pattern describing a leading "*" */
+	public static final Pattern LEADING_WILDCARD = Pattern.compile("^\\*");
+	/** Regex pattern describing the ActiveMQ trailing topic multi wildcard */
+	public static final Pattern ACTIVEMQ_WILDCARD = Pattern.compile(".>$");
+	
 	
 	/**
 	 * Creates a new SubscriptionPattern
@@ -72,7 +81,10 @@ public class SubscriptionPattern implements Serializable {
 		pattern = Pattern.compile(topic
 				.replace(TOPIC_PREFIX, "")
 				.replace(".*.", "/.*?/")
-				.replaceAll(".>$", "/.*")				
+				.replaceFirst("^\\*", ".*")
+				.replaceAll(".>$", "/.*")
+		
+				.replaceAll( "[^\\.]\\*", ".*")
 		);		
 	}
 	

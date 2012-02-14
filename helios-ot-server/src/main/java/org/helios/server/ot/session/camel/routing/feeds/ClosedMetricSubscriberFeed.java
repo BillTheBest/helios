@@ -39,6 +39,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
 import javax.jms.Session;
+import javax.management.ObjectName;
 
 import org.apache.activemq.camel.component.ActiveMQComponent;
 import org.apache.camel.CamelExecutionException;
@@ -48,6 +49,8 @@ import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.camel.ProducerTemplate;
 import org.apache.log4j.Logger;
+import org.helios.jmx.dynamic.annotations.JMXAttribute;
+import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.ot.trace.ClosedTrace;
 import org.helios.server.ot.session.camel.routing.AbstractSubscriberRoute;
 import org.helios.server.ot.session.camel.routing.SubscriptionOutputProcessor;
@@ -93,6 +96,25 @@ public class ClosedMetricSubscriberFeed<T> extends AbstractSubscriberRoute<Strin
 	}
 	
 	/**
+	 * Returns the number of registered closed metric listeners registered on behalf of this route
+	 * @return the number of registered closed metric listeners registered on behalf of this route
+	 */
+	@JMXAttribute(name="ListenerCount", description="The number of registered closed metric listeners registered on behalf of this route", mutability=AttributeMutabilityOption.READ_ONLY)
+	public int getListenerCount() {
+		return listeners.size();
+	}
+	
+	/**
+	 * Returns the topic names that this route is subscribed to 
+	 * @return the topic names that this route is subscribed to 
+	 */
+	@JMXAttribute(name="ListenerTopicNames", description="The Topics that this route is subscribed to", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String[] getListenerTopicNames() {
+		return listeners.keySet().toArray(new String[listeners.size()]);
+	}
+	
+	
+	/**
 	 * {@inheritDoc}
 	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
 	 */
@@ -126,7 +148,7 @@ public class ClosedMetricSubscriberFeed<T> extends AbstractSubscriberRoute<Strin
 	 * @version $LastChangedRevision$
 	 * <p><code>org.helios.server.ot.session.camel.routing.feeds.ClosedMetricSubscriberFeed.MetricListener</code></p>
 	 */
-	public static class MetricListener implements MessageListener {
+	public class MetricListener implements MessageListener {
 		/** The JMS Connection */
 		protected Connection connection;
 		/** The JMS Session */
@@ -144,7 +166,7 @@ public class ClosedMetricSubscriberFeed<T> extends AbstractSubscriberRoute<Strin
 		/** The endpoint to forward the message to */
 		protected Endpoint endpoint = null;
 		/** Static class logger */
-		protected static final Logger LOG = Logger.getLogger(MetricListener.class);
+		protected final Logger LOG = Logger.getLogger(MetricListener.class);
 		
 		
 		/**
@@ -176,6 +198,7 @@ public class ClosedMetricSubscriberFeed<T> extends AbstractSubscriberRoute<Strin
 		public void onMessage(javax.jms.Message message) {
 			try {
 				producer.sendBodyAndHeader(endpoint, ((ObjectMessage)message).getObject(), HEADER_SUB_FEED_KEY, subFeedKey);
+				eventCount.incrementAndGet();
 			} catch (IllegalStateException ise) {
 				// Producer is closed.
 				final MetricListener ml = this;
@@ -346,7 +369,7 @@ public class ClosedMetricSubscriberFeed<T> extends AbstractSubscriberRoute<Strin
 		for(MetricListener listener: listeners.values()) {
 			try { listener.terminate(); } catch (Exception e) {}
 		}
-		listeners.clear();
+		listeners.clear();		
 	}
 	
 	/**

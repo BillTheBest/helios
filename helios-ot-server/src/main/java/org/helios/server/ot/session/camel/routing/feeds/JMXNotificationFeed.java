@@ -26,8 +26,8 @@ package org.helios.server.ot.session.camel.routing.feeds;
 
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -39,6 +39,8 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.helios.helpers.JMXHelper;
+import org.helios.jmx.dynamic.annotations.JMXAttribute;
+import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.server.ot.session.camel.routing.AbstractSubscriberRoute;
 import org.helios.server.ot.session.camel.routing.SubscriptionOutputProcessor;
 import org.helios.server.ot.session.camel.routing.annotations.SubRoute;
@@ -153,7 +155,8 @@ public class JMXNotificationFeed<T> extends AbstractSubscriberRoute<ObjectName> 
 				if(source instanceof ObjectName) {
 					notification.setSource(source.toString());
 				}
-				producer.sendBodyAndHeader(endpoint, notification, HEADER_SUB_FEED_KEY, feedSubKey); 
+				producer.sendBodyAndHeader(endpoint, notification, HEADER_SUB_FEED_KEY, feedSubKey);
+				eventCount.incrementAndGet();
 			}
 		};
 		listeners.put(objectName, listener);
@@ -162,6 +165,25 @@ public class JMXNotificationFeed<T> extends AbstractSubscriberRoute<ObjectName> 
 		return listener;
 	}
 	
+	
+	/**
+	 * Returns the number of registered JMX Notification listeners registered on behalf of this route
+	 * @return the number of registered JMX Notification listeners registered on behalf of this route
+	 */
+	@JMXAttribute(name="ListenerCount", description="The number of registered JMX Notification listeners registered on behalf of this route", mutability=AttributeMutabilityOption.READ_ONLY)
+	public int getListenerCount() {
+		return listeners.size();
+	}
+	
+	/**
+	 * Returns the ObjectNames that this route is subscribed to 
+	 * @return the ObjectNames that this route is subscribed to 
+	 */
+	@JMXAttribute(name="ListenerObjectNames", description="The ObjectNames that this route is subscribed to", mutability=AttributeMutabilityOption.READ_ONLY)
+	public ObjectName[] getListenerObjectNames() {
+		return listeners.keySet().toArray(new ObjectName[listeners.size()]);
+	}
+
 	/**
 	 * Determines if the passed notification matches the passed notification type string
 	 * @param notification The notification to test

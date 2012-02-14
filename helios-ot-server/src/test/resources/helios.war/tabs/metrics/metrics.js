@@ -79,6 +79,7 @@ function init_metricsBrowser_ui() {
 	if($("#gridMaskInput").val().trim().length>0) {
 		$("#gridMaskInput").trigger($.Event("keydown", {keyCode: 13}));
 	}
+	/*
 	$("#metricBrowserTreeExtruder").buildMbExtruder({
         positionFixed:true,
         width:350,
@@ -99,7 +100,8 @@ function init_metricsBrowser_ui() {
         slideTimer:300
     });
 	$('#metricBrowserTreeExtruder').show();
-	$('#metricBrowserTreeExtruder div.content').css('overflow' , 'scroll');    				    
+	$('#metricBrowserTreeExtruder div.content').css('overflow' , 'scroll');
+	*/    				    
 	$("#metricBrowserTree").dynatree({
 		onLazyRead: function(node){
 			$.helios.metricPath(node.data.key, function(data) {
@@ -111,7 +113,7 @@ function init_metricsBrowser_ui() {
 			var event = data.shift();
 			console.info("metricBrowserTree onFeedData [%o]", data);
 			$.each(data, function(index, row) {
-				var nodeKey = row.fqn;
+				var nodeKey = row.userData[1];
 				var exists = metricBrowserTree.getNodeByKey(nodeKey)!=null;
 				console.info("Node Key [%s] Exists [%s]", nodeKey, exists); 
 				if(!exists) {

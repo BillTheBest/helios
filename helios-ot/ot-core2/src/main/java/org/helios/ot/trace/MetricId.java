@@ -382,12 +382,7 @@ public class MetricId implements Serializable , Externalizable {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result
-				+ ((agentName == null) ? 0 : agentName.hashCode());
-		result = prime * result
-				+ ((hostName == null) ? 0 : hostName.hashCode());
-		result = prime * result
-				+ ((metricName == null) ? 0 : metricName.hashCode());
-		result = prime * result + ((type == null) ? 0 : type.hashCode());
+				+ ((getFQN() == null) ? 0 : getFQN().hashCode());
 		return result;
 	}
 
@@ -404,27 +399,7 @@ public class MetricId implements Serializable , Externalizable {
 		if (getClass() != obj.getClass())
 			return false;
 		MetricId other = (MetricId) obj;
-		if (agentName == null) {
-			if (other.agentName != null)
-				return false;
-		} else if (!agentName.equals(other.agentName))
-			return false;
-		if (hostName == null) {
-			if (other.hostName != null)
-				return false;
-		} else if (!hostName.equals(other.hostName))
-			return false;
-		if (metricName == null) {
-			if (other.metricName != null)
-				return false;
-		} else if (!metricName.equals(other.metricName))
-			return false;
-		if (type == null) {
-			if (other.type != null)
-				return false;
-		} else if (!type.equals(other.type))
-			return false;
-		return true;
+		return getFQN().equals(other.getFQN());
 	}
 
 	/**

@@ -24,14 +24,28 @@
  */
 package org.helios.scripting.console;
 
+import groovy.lang.Binding;
+import groovy.lang.GroovyClassLoader;
+import groovy.ui.Console;
+
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+
 import javax.management.ObjectName;
+import javax.management.openmbean.TabularData;
 
 import org.apache.log4j.Logger;
 import org.helios.helpers.JMXHelper;
+import org.helios.helpers.StreamHelper;
 import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
+import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.JMXOperation;
-import groovy.ui.Console;
+import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.helios.scripting.manager.ConcurrentBindings;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 /**
  * <p>Title: GroovyService</p>
  * <p>Description: Bootstrap to launch a groovy console inside the Helios JVM.</p> 
@@ -41,7 +55,7 @@ import groovy.ui.Console;
  * <p><code>org.helios.scripting.console.GroovyService</code></p>
  */
 @JMXManagedObject(annotated=true, declared=true, objectName=GroovyService.OBJECT_NAME_STR )
-public class GroovyService extends ManagedObjectDynamicMBean{ 
+public class GroovyService extends ManagedObjectDynamicMBean implements ApplicationContextAware, InitializingBean { 
 	/**  */
 	private static final long serialVersionUID = -2758890352866603234L;
 	/** The default JMX ObjectName for this MBean */
@@ -50,20 +64,32 @@ public class GroovyService extends ManagedObjectDynamicMBean{
 	public static final ObjectName OBJECT_NAME = JMXHelper.objectName(OBJECT_NAME_STR);
 	/** Static logger */
 	protected Logger LOG = Logger.getLogger(GroovyService.class);
+	/** The injected application context */
+	protected ApplicationContext applicationContext = null;
+	/** The useful bindings init script */
+	protected String initScript = null;
+	/** The container for the useful bindings */
+	protected final ConcurrentBindings bindings = new ConcurrentBindings();
+	/** The console class */
+	protected Class<?> consoleClass = null;
+	/** The console class ctor */
+	protected Constructor<?> consoleCtor = null;
+	/** The groovy classloader */
+	protected GroovyClassLoader gcl = null;
 	
-	
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
+	 */
+	public void setApplicationContext(ApplicationContext applicationContext) {
+		this.applicationContext = applicationContext;
+	}
+
 	/**
 	 * Creates a new GroovyService and registers the MBean interface 
 	 */
 	public GroovyService() {
-		LOG.info("\n\t==============================\n\tStarting GroovyService\n\t==============================\n");
-		try {
-//			this.reflectObject(this);
-//			JMXHelper.getHeliosMBeanServer().registerMBean(this, OBJECT_NAME);
-			LOG.info("\n\t==============================\n\tStarted GroovyService\n\t==============================\n");
-		} catch (Exception e) {
-			LOG.error("Failed to start GroovyService", e);
-		}
 		
 	}
 	
@@ -72,8 +98,74 @@ public class GroovyService extends ManagedObjectDynamicMBean{
 	 */
 	@JMXOperation(name="launchConsole", description="Launches an interactive GroovyService UI")
 	public void launchConsole() {
-		Console.main(new String[]{});
+		try {
+			Console console = new Console(gcl, bindings.getGroovyBinding());
+			console.run();
+		} catch (Exception e) {
+			LOG.error("Failed to launch console", e);
+			throw new RuntimeException("Failed to launch console", e);			
+		}
+//		try {
+//			Object console = consoleCtor.newInstance(gcl, bindings.getGroovyBinding());
+//			consoleClass.getDeclaredMethod("run").invoke(console);
+//		} catch (Exception e) {
+//			LOG.error("Failed to launch console", e);
+//			throw new RuntimeException("Failed to launch console", e);
+//		}
+		
 	}
 	
+	/**
+	 * Returns the initialization script
+	 * @return the initialization script
+	 */
+	@JMXAttribute(name="InitScript", description="The useful bindings initialization script", mutability=AttributeMutabilityOption.READ_WRITE)
+	public String getInitScript() {
+		return initScript;
+	}
+	
+	/**
+	 * Returns a view of the bindings
+	 * @return a view of the bindings
+	 */
+	@JMXAttribute(name="Bindings", description="The useful bindings", mutability=AttributeMutabilityOption.READ_ONLY)
+	public TabularData getBindings() {
+		return bindings.getTabularData();
+	}
+
+	/**
+	 * Sets the initialization script
+	 * @param initScript the initialization script
+	 */
+	public void setInitScript(String initScript) {
+		this.initScript = initScript;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>Initializes the useful bindings</p>
+	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
+	 */
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		LOG.info("\n\t==============================\n\tStarting GroovyService\n\t==============================\n");
+		InputStream is = null;
+		try {
+//			this.reflectObject(this);
+//			JMXHelper.getHeliosMBeanServer().registerMBean(this, OBJECT_NAME);
+			
+			is = getClass().getClassLoader().getResourceAsStream("scripts/groovy/Console.groovy");
+			byte[] consoleBytes = StreamHelper.readByteArrayFromStream(is);
+			gcl = new GroovyClassLoader(getClass().getClassLoader());
+			consoleClass = gcl.parseClass(new String(consoleBytes));
+			consoleCtor = consoleClass.getDeclaredConstructor(ClassLoader.class, Binding.class);
+			LOG.info("\n\t==============================\n\tStarted GroovyService\n\t==============================\n");
+		} catch (Exception e) {
+			LOG.error("Failed to start GroovyService", e);
+		} finally {
+			if(is!=null) try { is.close(); } catch (Exception e) {}
+		}
+		
+	}
 	
 }

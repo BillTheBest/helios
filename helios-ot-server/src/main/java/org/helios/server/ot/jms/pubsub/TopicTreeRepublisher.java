@@ -100,6 +100,9 @@ public class TopicTreeRepublisher implements Processor, CamelContextAware {
 		}
 	}
 	
+	
+	// "[^\\.]\\*"
+	
 
 	
 	public void send(Exchange exchange) {

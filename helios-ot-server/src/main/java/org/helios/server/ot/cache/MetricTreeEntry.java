@@ -387,14 +387,15 @@ public class MetricTreeEntry implements Serializable {
 	    		String id = key.getKey();
 	    		retValue.append("\n\t\t").append(id).append(":").append(key.getValue()).append("  Folder:").append(childrenHaveChildren.get(id)).append("  Has/Is Nodes:").append(childrenHaveNodes.get(id));
 	    	}
+	    	retValue.append(TAB).append("]");
 	    	retValue.append(TAB).append("hasNodes = ").append(this.isNodeParent());
 	    	if(isNodeParent()) {
 		        retValue.append(TAB).append("childrenNodes = [");
 		    	for(Map.Entry<String, MetricId> key: childNodes.entrySet()) {
 		    		retValue.append("\n\t\t").append(key.getKey()).append(":").append(key.getValue());
-		    	}	    		
-	    	}
-	    	retValue.append(TAB).append("]");
+		    	}
+		    	retValue.append(TAB).append("]");
+	    	}	    	
 	        retValue.append(TAB).append("nodeEntry = ").append(this.nodeEntry)
 	        .append(TAB).append("isNode = ").append(this.node)	        
 	        .append("\n]");    

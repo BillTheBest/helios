@@ -9,11 +9,11 @@ $.helios = function(options) {
 			/** Turns debug on and off */
 			debug : true,
 			/** The feed subscriber aggregation completion size */
-			feedSubCompletionSize : 10,
+			feedSubCompletionSize : 100,
 			/** The feed subscriber aggregation completion timeout */
 			feedSubCompletionTimeout : 15000,
 			/** The maximim number of feed items to retrieve at a time when polling */
-			pollFeedMaxItems : 10,
+			pollFeedMaxItems : 50,
 			/** The feed polling timeout */
 			pollFeedTimeout : 15000,
 			/** The fixed delay frequency of the feed poller polling operation (ms.) */

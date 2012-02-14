@@ -22,8 +22,8 @@
     	<amq:destinationPolicy>
     		<amq:policyMap>
     			<amq:policyEntries>
-    				<amq:policyEntry queue="helios.agent.in.>" gcInactiveDestinations="true" inactiveTimoutBeforeGC="30000" useCache="false" />
-    				<amq:policyEntry topic="helios.metrictree.>" gcInactiveDestinations="true" inactiveTimoutBeforeGC="30000" useCache="false" />    				
+    				<amq:policyEntry queue="helios.agent.in.>" gcInactiveDestinations="false" inactiveTimoutBeforeGC="30000" useCache="false" />
+    				<amq:policyEntry topic="helios.metrictree.>" gcInactiveDestinations="true" inactiveTimoutBeforeGC="120000" useCache="false" />    				
     			</amq:policyEntries>
     		</amq:policyMap>
     	</amq:destinationPolicy>

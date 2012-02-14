@@ -24,6 +24,8 @@
  */
 package org.helios.scripting.manager;
 
+import groovy.lang.Binding;
+
 import java.io.ObjectStreamException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,12 +53,26 @@ public class ConcurrentBindings extends ConcurrentHashMap<String, Object> implem
 	private static final long serialVersionUID = 4062721271195777376L;
 	/** The OpenType to represent ConcurrentBindings */
 	private static final TabularType tType = getType();
-	
+	/** A groovy binding wrapper of this binding */
+	protected final Binding groovyBinding;
 	/**
 	 * Creates a new ConcurrentBindings
 	 */
 	public ConcurrentBindings() {
 		super();
+		groovyBinding = new Binding(this);
+	}
+	
+	public Object put(String s, Object o) {
+		return super.put(s, o);
+	}
+	
+	/**
+	 * Returns the Groovy binding wrapper for this binding
+	 * @return the Groovy binding wrapper for this binding
+	 */
+	public Binding getGroovyBinding() {
+		return groovyBinding;
 	}
 
 	/**
@@ -68,6 +84,7 @@ public class ConcurrentBindings extends ConcurrentHashMap<String, Object> implem
 	public ConcurrentBindings(int initialCapacity, float loadFactor,
 			int concurrencyLevel) {
 		super(initialCapacity, loadFactor, concurrencyLevel);
+		groovyBinding = new Binding(this);
 	}
 
 	/**
@@ -77,6 +94,7 @@ public class ConcurrentBindings extends ConcurrentHashMap<String, Object> implem
 	 */
 	public ConcurrentBindings(int initialCapacity, float loadFactor) {
 		super(initialCapacity, loadFactor);
+		groovyBinding = new Binding(this);
 	}
 
 
@@ -86,6 +104,7 @@ public class ConcurrentBindings extends ConcurrentHashMap<String, Object> implem
 	 */
 	public ConcurrentBindings(int initialCapacity) {
 		super(initialCapacity);
+		groovyBinding = new Binding(this);
 	}
 	
 	/**

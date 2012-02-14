@@ -61,7 +61,13 @@
 		<constructor-arg value="8003" />
 	</bean>
 	
-	<bean name="GroovyService" class="org.helios.scripting.console.GroovyService" />	
+	<bean name="GroovyService" class="org.helios.scripting.console.GroovyService" >
+		<property name="initScript">
+			<value><![CDATA[
+				FOO
+			]]></value>
+		</property>
+	</bean>	
 
 	<!-- 
 	<bean id="MBeanServerConnector" class="javax.management.remote.JMXConnectorServerFactory"

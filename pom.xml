@@ -103,7 +103,7 @@
 		<jackson.version>1.8.3</jackson.version>
 		<reflections.version>0.9.5</reflections.version>
 		<json-simple.version>1.1</json-simple.version>
-		
+		<statsd.version>1.0.0</statsd.version>
 
 	</properties>
 
@@ -188,6 +188,15 @@
 	      <artifactId>slf4j-log4j12</artifactId>
 	      <version>${slf4j.version}</version>
 	    </dependency>
+
+	    <dependency>
+		    <groupId>org.ubercraft.statsd</groupId>
+		    <artifactId>statsd-over-slf4j</artifactId>
+		    <version>${statsd.version}</version>
+	    </dependency>
+
+
+
 
 		<dependency>
 		  <groupId>org.restlet.jee</groupId>
