@@ -31,7 +31,6 @@ import javax.management.ObjectName;
 
 import org.helios.jmx.threadservices.instrumentation.ThreadInfoCapture;
 import org.helios.ot.subtracer.ISubTracerProvider;
-import org.helios.ot.subtracer.pipeline.Phase;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.Trace.Builder;
 import org.helios.ot.type.MetricType;
@@ -42,7 +41,7 @@ import org.helios.ot.type.MetricType;
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * @version $LastChangedRevision$
- * <p><code>org.helios.tracing.ITracer</code></p>
+ * <p><code>org.helios.ot.tracer.ITracer</code></p>
  */
 
 public interface ITracer extends ISubTracerProvider {
