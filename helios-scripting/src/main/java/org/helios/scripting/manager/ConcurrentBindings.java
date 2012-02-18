@@ -72,7 +72,11 @@ public class ConcurrentBindings extends ConcurrentHashMap<String, Object> implem
 	 * @return the Groovy binding wrapper for this binding
 	 */
 	public Binding getGroovyBinding() {
-		return groovyBinding;
+		Binding binding = new Binding();
+		for(Map.Entry<String, Object> entry: entrySet()) {
+			binding.setProperty(entry.getKey(), entry.getValue());
+		}
+		return binding;
 	}
 
 	/**

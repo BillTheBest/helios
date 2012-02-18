@@ -56,6 +56,7 @@ import java.awt.BorderLayout
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.ThreadInterrupt
+import java.lang.management.ManagementFactory
 
 /**
 * Groovy Swing console.
@@ -173,8 +174,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
    Closure beforeExecution
    Closure afterExecution
 
-   public static String ICON_PATH = '/groovy/ui/ConsoleIcon.png' // used by ObjectBrowser and AST Viewer
-   public static String NODE_ICON_PATH = '/groovy/ui/icons/bullet_green.png' // used by AST Viewer
+   public static String ICON_PATH = '/scripts/groovy/helios-icon.png' // used by ObjectBrowser and AST Viewer
+   public static String NODE_ICON_PATH = '/scripts/groovy/helios-icon.png' // used by AST Viewer
 
    private static groovyFileFilter = new GroovyFileFilter()
    private boolean scriptRunning = false
@@ -246,9 +247,9 @@ options:
    static def frameConsoleDelegates = [
 		   rootContainerDelegate:{
 			   frame(
-				   title: 'GroovyConsole',
+				   title: 'Helios GroovyConsole [' + ManagementFactory.getRuntimeMXBean().getName() + ']',
 				   //location: [100,100], // in groovy 2.0 use platform default location
-				   iconImage: imageIcon("/groovy/ui/ConsoleIcon.png").image,
+				   iconImage: imageIcon("scripts/groovy/helios-icon.png").image,
 				   defaultCloseOperation: JFrame.DO_NOTHING_ON_CLOSE,
 			   ) {
 				   try {
@@ -270,7 +271,7 @@ options:
 			   frame(
 				   title: 'Helios GroovyConsole [' + java.lang.management.ManagementFactory.getRuntimeMXBean().getName() + ']',
 				   //location: [100,100], // in groovy 2.0 use platform default location
-				   //iconImage: imageIcon("/groovy/ui/ConsoleIcon.png").image,
+				   iconImage: imageIcon("/scripts/groovy/helios-icon.png").image,
 				   defaultCloseOperation: JFrame.DO_NOTHING_ON_CLOSE,
 			   ) {
 				   try {

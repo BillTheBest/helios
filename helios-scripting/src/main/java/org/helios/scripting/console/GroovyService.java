@@ -26,7 +26,7 @@ package org.helios.scripting.console;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
-import groovy.ui.Console;
+import groovy.lang.GroovyShell;
 
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
@@ -46,6 +46,8 @@ import org.helios.scripting.manager.ConcurrentBindings;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 /**
  * <p>Title: GroovyService</p>
  * <p>Description: Bootstrap to launch a groovy console inside the Helios JVM.</p> 
@@ -55,7 +57,7 @@ import org.springframework.context.ApplicationContextAware;
  * <p><code>org.helios.scripting.console.GroovyService</code></p>
  */
 @JMXManagedObject(annotated=true, declared=true, objectName=GroovyService.OBJECT_NAME_STR )
-public class GroovyService extends ManagedObjectDynamicMBean implements ApplicationContextAware, InitializingBean { 
+public class GroovyService extends ManagedObjectDynamicMBean implements ApplicationContextAware, InitializingBean, ApplicationListener<ContextRefreshedEvent> { 
 	/**  */
 	private static final long serialVersionUID = -2758890352866603234L;
 	/** The default JMX ObjectName for this MBean */
@@ -99,19 +101,12 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 	@JMXOperation(name="launchConsole", description="Launches an interactive GroovyService UI")
 	public void launchConsole() {
 		try {
-			Console console = new Console(gcl, bindings.getGroovyBinding());
-			console.run();
+			Object console = consoleCtor.newInstance(gcl, bindings.getGroovyBinding());
+			consoleClass.getDeclaredMethod("run").invoke(console);
 		} catch (Exception e) {
 			LOG.error("Failed to launch console", e);
-			throw new RuntimeException("Failed to launch console", e);			
+			throw new RuntimeException("Failed to launch console", e);
 		}
-//		try {
-//			Object console = consoleCtor.newInstance(gcl, bindings.getGroovyBinding());
-//			consoleClass.getDeclaredMethod("run").invoke(console);
-//		} catch (Exception e) {
-//			LOG.error("Failed to launch console", e);
-//			throw new RuntimeException("Failed to launch console", e);
-//		}
 		
 	}
 	
@@ -151,14 +146,23 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 		LOG.info("\n\t==============================\n\tStarting GroovyService\n\t==============================\n");
 		InputStream is = null;
 		try {
-//			this.reflectObject(this);
-//			JMXHelper.getHeliosMBeanServer().registerMBean(this, OBJECT_NAME);
-			
+			// ==================================
+			// Prepare Console Class
+			// ==================================
 			is = getClass().getClassLoader().getResourceAsStream("scripts/groovy/Console.groovy");
 			byte[] consoleBytes = StreamHelper.readByteArrayFromStream(is);
 			gcl = new GroovyClassLoader(getClass().getClassLoader());
-			consoleClass = gcl.parseClass(new String(consoleBytes));
+			gcl.parseClass(new String(consoleBytes));
+			consoleClass =  Class.forName("scripts.groovy.Console", true, gcl);
 			consoleCtor = consoleClass.getDeclaredConstructor(ClassLoader.class, Binding.class);
+			// ==================================
+			// Load useful bindings
+			// ==================================
+			bindings.put("AppCtx", applicationContext);
+			bindings.put("jmxHelper", JMXHelper.class);
+			bindings.put("mserver", JMXHelper.getHeliosMBeanServer());
+			bindings.put("gbindings", bindings);
+			bindings.put("log", LOG);
 			LOG.info("\n\t==============================\n\tStarted GroovyService\n\t==============================\n");
 		} catch (Exception e) {
 			LOG.error("Failed to start GroovyService", e);
@@ -166,6 +170,31 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 			if(is!=null) try { is.close(); } catch (Exception e) {}
 		}
 		
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
+	 */
+	@Override
+	public void onApplicationEvent(ContextRefreshedEvent event) {
+		if(event!=null) {
+			LOG.info("\n\t==============================\n\tProcessing GroovyService Init Bindings\n\t==============================\n");
+			try {
+				// ==================================
+				// Process useful bindings init script
+				// ==================================
+				if(initScript!=null && !initScript.trim().isEmpty()) {
+					Binding binding = bindings.getGroovyBinding();
+					binding.setProperty("AppCtx", event.getApplicationContext());
+					binding.setProperty("gbindings", bindings);
+					GroovyShell shell = new GroovyShell(binding);
+					shell.evaluate(initScript);
+				}
+			} catch (Exception e) {
+				LOG.error("Failed to process bindings init script.", e);
+			}
+		}
 	}
 	
 }
