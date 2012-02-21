@@ -183,11 +183,11 @@ public class SQLMapping implements ApplicationContextAware, BeanNameAware {
 				}
 				if(LOG.isDebugEnabled()) LOG.debug("Reset Scope on Metric Maps");
 				if(LOG.isDebugEnabled()) LOG.debug("Firing Trace on Metric Maps");
-				for(MetricMap mm: metricMaps) {
-					while(prs.next()) {
+				while(prs.next()) {
+					for(MetricMap mm: metricMaps) {					
 						mm.traceMetrics(prs, connMetaData);
 						mm.executeBinds(prs, connMetaData);
-					}
+					}					
 				}
 				if(LOG.isDebugEnabled()) LOG.debug("Fired Trace on Metric Maps");
 				if(LOG.isDebugEnabled()) LOG.debug("Firing Scope Failures on Metric Maps");

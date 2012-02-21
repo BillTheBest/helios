@@ -41,13 +41,10 @@ import org.helios.collectors.jdbc.binding.provider.BindVariableProviderFactory;
 import org.helios.collectors.jdbc.binding.provider.IBindVariableProvider;
 import org.helios.collectors.jdbc.extract.IReadOnlyProcessedResultSet;
 import org.helios.helpers.XMLHelper;
-
-import org.helios.ot.tracer.ITracer;
-import org.helios.ot.tracer.TracerImpl;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.Trace.Builder;
+import org.helios.ot.tracer.ITracer;
 import org.helios.ot.type.MetricType;
-
 import org.w3c.dom.Node;
 
 /**
@@ -189,16 +186,46 @@ public class MetricMap {
 	 */
 	public void traceMetrics(IReadOnlyProcessedResultSet prs, Map<String, Object> connMetaData) {
 		if(!tracerEnabled) return;
-		Builder builder = tracer.trace(
-				nameFormatter.getValue(prs, connMetaData), 
-				valueFormatter.getValue(prs, connMetaData),
-				metricTypeFormatter.getValue(prs, connMetaData))
-		.segment(prefix)
-		.segment(segmentFormatter.getValues(prs, connMetaData))
-		.temporal(temporal);
-		Trace trace = builder.trace();
-		tracer.traceTrace(trace);
-		if(scope != null) {
+		MetricType metricType = MetricType.typeForCode(metricTypeFormatter.getValue(prs, connMetaData));
+//		Builder builder = tracer.trace(
+//				nameFormatter.getValue(prs, connMetaData),  // "Elapsed Time"
+//				valueFormatter.getValue(prs, connMetaData), // String: "7543287"
+//				metricType.name())  // "STICKY_DELTA_LONG_AVG" 
+//		.segment(prefix)  // ["Database"]
+//		.segment(segmentFormatter.getValues(prs, connMetaData))  // [ECS, Oracle, SQL, Statements, SELECT state,event_data from event where event_name=:1]
+//		.temporal(temporal);
+		Trace trace = null;		
+		if(metricType.isDelta()) {
+			if(metricType.isLong()) {
+				if(metricType.isSticky()) {
+					trace = tracer.traceStickyDelta(Long.parseLong(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+				} else {
+					trace = tracer.traceDelta(Long.parseLong(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+				}
+			} else if(metricType.isInt()) {
+				if(metricType.isSticky()) {
+					trace = tracer.traceStickyDelta(Integer.parseInt(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+				} else {
+					trace = tracer.traceDelta(Integer.parseInt(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+				}				
+			}
+		} else {
+			if(metricType.isLong()) {
+				if(metricType.isSticky()) {
+					trace = tracer.traceSticky(Long.parseLong(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+				} else {
+					trace = tracer.trace(Long.parseLong(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+				}
+			} else if(metricType.isInt()) {
+				if(metricType.isSticky()) {
+					trace = tracer.traceSticky(Integer.parseInt(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+				} else {
+					trace = tracer.trace(Integer.parseInt(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+				}				
+			}			
+		}
+		//tracer.traceTrace(trace);
+		if(scope != null && trace!=null) {
 			scopeMap.put(trace.getFQN(), new ScopeState(trace.getMetricType(), true, nameFormatter.getValue(prs, connMetaData), segmentFormatter.getValues(prs, connMetaData)));
 		}
 	}
