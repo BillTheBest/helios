@@ -37,7 +37,6 @@ import org.helios.ot.trace.types.IntTraceValue;
 import org.helios.ot.trace.types.LongTraceValue;
 import org.helios.ot.trace.types.interval.IntIntervalTraceValue;
 import org.helios.ot.tracer.disruptor.TraceCollection;
-import org.ubercraft.statsd.StatsdClient;
 
 /**
  * <p>Title: CollectdEndpoint</p>
@@ -55,9 +54,7 @@ public class CollectdEndpoint<T extends Trace<? extends ITraceValue>> extends Ab
 	/** The server name or ip address that the collectd server is running on */
 	protected String server = "localhost";
 	/** The port that the collectd server is listening on */
-	protected int port = StatsdClient.DEFAULT_PORT;
-	/** The statsd client */
-	protected StatsdClient client = null;
+	protected int port = 8125;
 	
 	/**
 	 * Creates a new CollectdEndpoint
@@ -96,12 +93,12 @@ public class CollectdEndpoint<T extends Trace<? extends ITraceValue>> extends Ab
 	 */
 	@Override
 	protected void connectImpl() throws EndpointConnectException {
-		try {
-			client= new StatsdClient(server, port);
-		} catch (Exception e) {
-			client=null;
-			throw new EndpointConnectException("The statsd client failed to connect to [" + server + ":" + port + "]", e);
-		}
+//		try {
+//			client= new StatsdClient(server, port);
+//		} catch (Exception e) {
+//			client=null;
+//			throw new EndpointConnectException("The statsd client failed to connect to [" + server + ":" + port + "]", e);
+//		}
 	}
 
 	/**
@@ -111,35 +108,35 @@ public class CollectdEndpoint<T extends Trace<? extends ITraceValue>> extends Ab
 	@Override
 	protected boolean processTracesImpl(TraceCollection<T> traceCollection) throws EndpointConnectException, EndpointTraceException {
 		if(traceCollection==null) return false;
-		if(client==null) return false;
-		Set<T> set = (Set<T>)traceCollection.getTraces();
-		if(set.isEmpty()) return false;
-		try {
-			for(T t: set) {
-				if(t.getMetricType().isInt()) {
-					boolean success = false;
-					if(t.isInterval()) {
-						success = client.count(t.getFQN().replace("/", ".").replace(" ", "_"), ((IntIntervalTraceValue)t.getTraceValue()).getAvg());
-					} else {
-						success = client.count(t.getFQN().replace("/", ".").replace(" ", "_"), ((IntTraceValue)t.getTraceValue()).getIntValue());
-					}	
-					log.info("Success:" + success);
-				} else if(t.getMetricType().isLong()) {
+//		if(client==null) return false;
+//		Set<T> set = (Set<T>)traceCollection.getTraces();
+//		if(set.isEmpty()) return false;
+//		try {
+//			for(T t: set) {
+//				if(t.getMetricType().isInt()) {
+//					boolean success = false;
 //					if(t.isInterval()) {
-//						long value = ((LongTraceValue)t.getTraceValue()).getLongValue();
-//						if(value<=Integer.MAX_VALUE) {
-//						
-//					}
-//					long value = ((LongTraceValue)t.getTraceValue()).getLongValue();
-//					if(value<=Integer.MAX_VALUE) {
-//						client.count(t.getFQN().replace("/", "."), (int)value);
-//					}
-				}
-			}
-			log.info("Forwarded [" + set.size() + "] Traces");
-		} catch (Exception e) {
-			throw new EndpointTraceException("Failed to send exchange", e);
-		}		
+//						success = client.count(t.getFQN().replace("/", ".").replace(" ", "_"), ((IntIntervalTraceValue)t.getTraceValue()).getAvg());
+//					} else {
+//						success = client.count(t.getFQN().replace("/", ".").replace(" ", "_"), ((IntTraceValue)t.getTraceValue()).getIntValue());
+//					}	
+//					log.info("Success:" + success);
+//				} else if(t.getMetricType().isLong()) {
+////					if(t.isInterval()) {
+////						long value = ((LongTraceValue)t.getTraceValue()).getLongValue();
+////						if(value<=Integer.MAX_VALUE) {
+////						
+////					}
+////					long value = ((LongTraceValue)t.getTraceValue()).getLongValue();
+////					if(value<=Integer.MAX_VALUE) {
+////						client.count(t.getFQN().replace("/", "."), (int)value);
+////					}
+//				}
+//			}
+//			log.info("Forwarded [" + set.size() + "] Traces");
+//		} catch (Exception e) {
+//			throw new EndpointTraceException("Failed to send exchange", e);
+//		}		
 		return true;
 	}
 
@@ -149,14 +146,14 @@ public class CollectdEndpoint<T extends Trace<? extends ITraceValue>> extends Ab
 	 */
 	@Override
 	protected void disconnectImpl() {
-		try { 
-			if(client!=null) {
-				client.shutdown();
-			}
-		} catch (Exception e) {			
-		} finally {
-			client=null;
-		}
+//		try { 
+//			if(client!=null) {
+//				client.shutdown();
+//			}
+//		} catch (Exception e) {			
+//		} finally {
+//			client=null;
+//		}
 	}
 	
 	/**
