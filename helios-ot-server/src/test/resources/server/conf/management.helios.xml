@@ -67,9 +67,10 @@
 				AppCtx.getBeanDefinitionNames().each() { beanName ->
 				    if(!AppCtx.isPrototype(beanName)) {
 				        bean = AppCtx.getBean(beanName);				        
-				        gbindings.put(beanName, bean);
+				        gbindings.put(beanName.replaceAll("\\.", "_"), bean);
 				    }
 				}				
+				//TracerManager3.getInstance().getTracer().traceSticky(AppCtx.getBeanDefinitionNames().length, "Bean Count", "Helios", "Spring Container");
 			]]></value>
 		</property>
 	</bean>	

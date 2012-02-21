@@ -140,7 +140,8 @@ public class AgentJVMMonitor {
 	public static final String[] NIO_BUFFER_ATTRS = new String[]{"Count", "MemoryUsed", "TotalCapacity", "Name"};	
 	/** The NIO namespace */
 	public static final String NIO_ROOT = ROOT + Trace.DELIM + "NIO" + Trace.DELIM + "BufferPools";
-	
+	/** The system property name that defines if the agent jvm monitor should be disabled */
+	public static final String DISABLE_AGENT_JVM_MONITOR = "AgentJVMMonitor.disable";
 	
 	/**
 	 * Acquires the AgentJVMMonitor singleton instance
@@ -205,8 +206,11 @@ public class AgentJVMMonitor {
 			bufferPoolObjectNames = Collections.emptySet();
 		}
 		long flushPeriod = ConfigurationHelper.getLongSystemThenEnvProperty(IntervalAccumulator.FLUSH_PERIOD_PROP, IntervalAccumulator.DEFAULT_FLUSH_PERIOD);
-		timer.schedule(timerTask, flushPeriod, flushPeriod);
-		log.info("Started AgentJVMMonitor");
+		boolean disabled = ConfigurationHelper.getBooleanSystemThenEnvProperty(DISABLE_AGENT_JVM_MONITOR, false);
+		if(!disabled) {
+			timer.schedule(timerTask, flushPeriod, flushPeriod);
+			log.info("Started AgentJVMMonitor");
+		}
 	}
 	
 	

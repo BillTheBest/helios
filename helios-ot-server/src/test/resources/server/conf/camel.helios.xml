@@ -74,7 +74,7 @@
    		<!-- <bean id="CollectdEndpoint" class="org.helios.server.ot.endpoint.local.CollectdEndpoint"/> -->
    	</util:list>
    	
-   	<bean id="TracerManager3" class="org.helios.ot.tracer.TracerManager3" factory-method="getInstance">
+   	<bean id="TracerManager3" class="org.helios.ot.tracer.TracerManager3" factory-method="getInstance" lazy-init="false" >
    		<constructor-arg>
    			<bean id="TracerManager3.Configuration" class="org.helios.ot.tracer.TracerManager3.Configuration" factory-method="getDefaultConfiguration">
    				<property name="endPoints" ref="TMEndpoints" />
