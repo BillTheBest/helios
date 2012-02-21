@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
@@ -588,6 +589,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 //		templateFactory.refresh();
 //		templateFactory.registerShutdownHook();
 		RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+		long startupTime = TimeUnit.SECONDS.convert((System.currentTimeMillis()- runtimeMXBean.getStartTime()), TimeUnit.MILLISECONDS);
 		String[] beanDefNames = JMXHelper.getRuntimeHeliosMBeanServer().getAttribute(JMXHelper.objectName("org.helios.spring:service=HeliosApplicationContext") , "BeanDefinitionNames", String[].class);		
 		LOG.info(Banner.banner("*", 3, 10, new String[]{
 				"Helios Spring Container Boot Complete",
@@ -595,7 +597,8 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 				"Spring Version:" + ApplicationContext.class.getPackage().getImplementationVersion(),
 				"Deployed Bean Count:" + beanDefNames.length,
 				"JVM:" + runtimeMXBean.getVmVendor() + " " + runtimeMXBean.getVmName() + " " + runtimeMXBean.getVmVersion(),
-				"Process ID:" + runtimeMXBean.getName().split("@")[0]
+				"Process ID:" + runtimeMXBean.getName().split("@")[0],
+				"Startup Time:" + startupTime + " s."
 		}));
 		
 		return applicationContext;
