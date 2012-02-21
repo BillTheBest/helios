@@ -160,7 +160,7 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 			// ==================================
 			bindings.put("AppCtx", applicationContext);
 			bindings.put("jmxHelper", JMXHelper.class);
-			bindings.put("mserver", JMXHelper.getHeliosMBeanServer());
+			bindings.put("mserver", JMXHelper.getHeliosMBeanServer());			
 			bindings.put("gbindings", bindings);
 			bindings.put("log", LOG);
 			LOG.info("\n\t==============================\n\tStarted GroovyService\n\t==============================\n");
