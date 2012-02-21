@@ -24,10 +24,26 @@
  */
 package org.helios.collectors.jdbc;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.log4j.Logger;
 import org.helios.collectors.AbstractCollector;
 import org.helios.collectors.CollectionResult;
+import org.helios.collectors.exceptions.CollectorInitException;
 import org.helios.collectors.exceptions.CollectorStartException;
 import org.helios.collectors.jdbc.connection.IJDBCConnectionFactory;
+import org.helios.jmx.dynamic.annotations.JMXManagedObject;
+import org.helios.ot.tracer.ITracer;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 /**
  * <p>Title: JDBCCollector</p>
@@ -38,16 +54,55 @@ import org.helios.collectors.jdbc.connection.IJDBCConnectionFactory;
  * $HeadURL$
  * $Id$
  */
-public class JDBCCollector extends AbstractCollector {
+@JMXManagedObject(annotated=true, declared=false)
+public class JDBCCollector extends AbstractCollector implements ApplicationContextAware {
+	/**  */
+	private static final long serialVersionUID = -2720226379379045990L;
 	protected IJDBCConnectionFactory connectionFactory = null;
 	protected long connectionTimeout = 5000;
 	protected long operationTimeout = 5000;
+	protected Map<String, SQLMapping> sqlMaps = new ConcurrentHashMap<String, SQLMapping>();
+	protected ApplicationContext appContext = null;
+	
 	
 	/**
 	 * 
 	 */
 	public JDBCCollector() {
 	}
+	
+	/**
+	 * Starts the collector and initializes all the sql mappings.
+	 * @throws CollectorStartException
+	 * @see org.helios.collectors.AbstractCollector#startCollector()
+	 */
+	public void startCollector() throws CollectorStartException {
+		log = Logger.getLogger(getClass().getName() + "." + this.beanName);
+	}
+	
+	/**
+	 * @throws CollectorInitException
+	 * @see org.helios.collectors.AbstractCollector#initCollector()
+	 */
+	public void initCollector() throws CollectorInitException {
+		for(Iterator<SQLMapping> iter = sqlMaps.values().iterator(); iter.hasNext();) {
+			SQLMapping mapping = iter.next();
+			try {
+				mapping.init(tracingNameSpace, tracer, collectorCache, server);
+			} catch (Exception e) {
+				if(this.logErrors) {
+					log.error("Failed to initialize SQLMapping [" + mapping.getName() + "]. Removing from map.", e);
+				}
+				iter.remove();
+			}
+			if(log.isDebugEnabled()) log.debug("Initialized SQLMapping [" + mapping.getName() + "]");
+		}
+		log.info("Initialized [" + sqlMaps.size() + " SQLMappings for [" + this.beanName + "]");
+		if(sqlMaps.size()<1) {
+			throw new CollectorInitException("No SQLMappings were active after in [" + this.beanName + "] initialization");
+		}		
+	}
+	
 
 	/**
 	 * @return
@@ -55,7 +110,51 @@ public class JDBCCollector extends AbstractCollector {
 	 */
 	@Override
 	public CollectionResult collectCallback() {
-		return null;
+		Connection conn = null;
+		CollectionResult result = new CollectionResult();		
+		try {
+			if(log.isDebugEnabled()) log.debug("Connecting");
+			long start = System.currentTimeMillis();
+//			tracer.startThreadInfoCapture();
+			conn = connectionFactory.getJDBCConnection(connectionTimeout);
+//			tracer.endThreadInfoCapture("Local Postgres", "Connect");
+			long elapsed = System.currentTimeMillis()-start;			
+			if(log.isDebugEnabled()) log.debug("Connected in [" + elapsed + "] ms.");
+			Map<String, Object> connMetaData = getConnMetaData(conn);
+			for(SQLMapping sqlMap: sqlMaps.values()) {
+				if(!sqlMap.isPre()) {
+					sqlMap.setConnMetaData(connMetaData);
+					sqlMap.execute(conn);
+				}
+			}
+			result.setResultForLastCollection(CollectionResult.Result.SUCCESSFUL);
+		} catch (Exception e) {			
+			result.setResultForLastCollection(CollectionResult.Result.FAILURE);
+			if(logErrors) {
+				log.error("Failed to acquire connection", e);
+			}
+		} finally {
+			try { conn.close(); } catch (Exception e) {}
+		}
+		return result;
+	}
+
+	/**
+	 * Extracts key values from the DB Connection meta data to pass to mappers.
+	 * @param conn The connection to get the meta-data from.
+	 * @return A map of meta-data key-value pairs.
+	 * @throws SQLException 
+	 */
+	protected  Map<String, Object> getConnMetaData(Connection conn) throws SQLException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		DatabaseMetaData dmd = conn.getMetaData();
+		map.put("db-product-name", dmd.getDatabaseProductName());
+		map.put("db-product-version", dmd.getDatabaseProductVersion());
+		map.put("db-url", dmd.getURL());
+		map.put("db-user", dmd.getUserName());
+		map.put("db-catalog", conn.getCatalog());
+		map.put("db-catalog", conn.getCatalog());
+		return map;
 	}
 
 	/**
@@ -67,20 +166,70 @@ public class JDBCCollector extends AbstractCollector {
 		return null;
 	}
 
-	/**
-	 * @throws CollectorStartException
-	 * @see org.helios.collectors.AbstractCollector#startCollector()
-	 */
-	@Override
-	public void startCollector() throws CollectorStartException {
-
-	}
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 
+	}
+
+	/**
+	 * @return the connectionTimeout
+	 */
+	public long getConnectionTimeout() {
+		return connectionTimeout;
+	}
+
+	/**
+	 * @param connectionTimeout the connectionTimeout to set
+	 */
+	public void setConnectionTimeout(long connectionTimeout) {
+		this.connectionTimeout = connectionTimeout;
+	}
+
+	/**
+	 * @return the operationTimeout
+	 */
+	public long getOperationTimeout() {
+		return operationTimeout;
+	}
+
+	/**
+	 * @param operationTimeout the operationTimeout to set
+	 */
+	public void setOperationTimeout(long operationTimeout) {
+		this.operationTimeout = operationTimeout;
+	}
+
+	/**
+	 * @param connectionFactory the connectionFactory to set
+	 */
+	public void setConnectionFactory(IJDBCConnectionFactory connectionFactory) {
+		this.connectionFactory = connectionFactory;
+	}
+
+	/**
+	 * Adds a sqlMap to be executed.
+	 * @param sqlMaps the sqlMaps to add
+	 */
+	public void setSqlMaps(Set<SQLMapping> sqlMaps) {
+		if(sqlMaps!=null) {
+			for(SQLMapping map: sqlMaps) {
+				this.sqlMaps.put(map.getName(), map);
+			}
+		}
+	}
+
+	/**
+	 * @param appContext
+	 * @throws BeansException
+	 * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
+	 */
+	public void setApplicationContext(ApplicationContext appContext)
+			throws BeansException {
+		this.appContext = appContext;
+		
 	}
 
 }

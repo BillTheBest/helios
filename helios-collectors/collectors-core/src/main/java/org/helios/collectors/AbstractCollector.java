@@ -43,8 +43,14 @@ import javax.management.MBeanServer;
 import javax.management.Notification;
 import javax.management.ObjectName;
 
+import net.sf.ehcache.CacheException;
+import net.sf.ehcache.Ehcache;
+import net.sf.ehcache.Element;
+import net.sf.ehcache.event.CacheEventListener;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.helios.collectors.cache.CollectorCacheService;
 import org.helios.collectors.exceptions.CollectorException;
 import org.helios.collectors.exceptions.CollectorInitException;
 import org.helios.collectors.exceptions.CollectorStartException;
@@ -87,7 +93,7 @@ import org.springframework.beans.factory.BeanNameAware;
                 @JMXNotificationType(type="org.helios.collectors.AbstractCollector.CollectorState")
         })       
 })
-public abstract class AbstractCollector extends ManagedObjectDynamicMBean implements Callable<CollectionResult>, ICollector, NamedTask, BeanNameAware {
+public abstract class AbstractCollector extends ManagedObjectDynamicMBean implements Callable<CollectionResult>, ICollector, NamedTask, BeanNameAware, CacheEventListener {
 	
 	private static final long serialVersionUID = 8420908979451738697L;
 
@@ -170,6 +176,9 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	/**
 	 * An instance of a Helios OpenTrace Factory to get a handle of TracerImpl instance */
 	protected TracerManager3 tracerFactory;
+	
+	/** This collector's collector cache */
+	protected Ehcache collectorCache = null;
 	
 	/**
 	 * An instance of a Helios OpenTrace TracerImpl to be used for tracing in the 
@@ -432,14 +441,10 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	 */
 	public final void init() throws CollectorInitException {
 		setState(CollectorState.INITIALIZING);
+		collectorCache = CollectorCacheService.getInstance().getCacheForCollector(this);
 		try{
-			if(tracer==null){
-				if(tracerFactory!=null){
-						tracer = tracerFactory.getTracer();
-				}else{
-					log.error("Tracer Factory not initialized properly for collector bean: "+this.getBeanName());				
-				}
-			}
+			tracerFactory = TracerManager3.getInstance();
+			tracer = tracerFactory.getTracer();
 			preInit();
 			initCollector();
 			postInit();
@@ -919,6 +924,15 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	@JMXAttribute (name="InternalLog", description="Displays messages from internal log.", mutability=AttributeMutabilityOption.READ_ONLY)
 	public Logger getInternalLog() {
 		return internalLog;
+	}
+	
+	/**
+	 * Returns the number of entries in the collector cache.
+	 * @return the number of entries in the collector cache.
+	 */
+	@JMXAttribute (name="CacheEntryCount", description="The number of entries in the collector cache.", mutability=AttributeMutabilityOption.READ_ONLY)
+	public int getCacheEntryCount() {
+		return collectorCache==null ? -1 : collectorCache.getSize();
 	}
 
 	/**
@@ -1733,5 +1747,77 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	public void setBlackoutEnd(String blackoutEnd) {
 		this.blackoutEnd = blackoutEnd;
 	}    
+	
+	/**
+	 * {@inheritDoc}
+	 * @see net.sf.ehcache.event.CacheEventListener#notifyElementRemoved(net.sf.ehcache.Ehcache, net.sf.ehcache.Element)
+	 */
+	@Override
+	public void notifyElementRemoved(Ehcache cache, Element element) throws CacheException {
+		
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see net.sf.ehcache.event.CacheEventListener#notifyElementPut(net.sf.ehcache.Ehcache, net.sf.ehcache.Element)
+	 */
+	@Override
+	public void notifyElementPut(Ehcache cache, Element element) throws CacheException {
+		
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see net.sf.ehcache.event.CacheEventListener#notifyElementUpdated(net.sf.ehcache.Ehcache, net.sf.ehcache.Element)
+	 */
+	@Override
+	public void notifyElementUpdated(Ehcache cache, Element element) throws CacheException {
+		
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see net.sf.ehcache.event.CacheEventListener#notifyElementExpired(net.sf.ehcache.Ehcache, net.sf.ehcache.Element)
+	 */
+	@Override
+	public void notifyElementExpired(Ehcache cache, Element element) {
+		
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see net.sf.ehcache.event.CacheEventListener#notifyElementEvicted(net.sf.ehcache.Ehcache, net.sf.ehcache.Element)
+	 */
+	@Override
+	public void notifyElementEvicted(Ehcache cache, Element element) {
+		
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see net.sf.ehcache.event.CacheEventListener#notifyRemoveAll(net.sf.ehcache.Ehcache)
+	 */
+	@Override
+	public void notifyRemoveAll(Ehcache cache) {
+		
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see net.sf.ehcache.event.CacheEventListener#dispose()
+	 */
+	@Override
+	public void dispose() {
+		
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see java.lang.Object#clone()
+	 */
+	public Object clone() {
+		return null;
+	}
+	
     
 }

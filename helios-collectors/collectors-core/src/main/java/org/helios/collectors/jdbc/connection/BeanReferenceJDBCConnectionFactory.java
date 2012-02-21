@@ -25,13 +25,12 @@
 package org.helios.collectors.jdbc.connection;
 
 import java.sql.Connection;
-import java.util.Map;
+import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import org.helios.collectors.jdbc.SQLMapping;
+import org.helios.collectors.timeout.ThreadWatcher;
 
 /**
  * <p>Title: BeanReferenceJDBCConnectionFactory</p>
@@ -67,37 +66,10 @@ public class BeanReferenceJDBCConnectionFactory implements IJDBCConnectionFactor
 	 * @see org.helios.collectors.jdbc.connection.IJDBCConnectionFactory#getJDBCConnection()
 	 */
 	public Connection getJDBCConnection() throws JDBCConnectionFactoryException {
-		if(dataSource==null) throw new JDBCConnectionFactoryException("Injected DataSource Was Null");
-		try {
-			return dataSource.getConnection();
-		} catch (Exception e) {
-			throw new JDBCConnectionFactoryException("Failed to get connection from datasource", e);
-		}
-	}
-	
-	/**
-	 * Acquires and returns a JDBC Connection, requiring credentials.
-	 * @param userName The username to associate with the connection.
-	 * @param password The password to associate with the connection.
-	 * @return A JDBC Connection.
-	 * @throws JDBCConnectionFactoryException
-	 */
-	public Connection getJDBCConnection(String userName, String password) throws JDBCConnectionFactoryException {
-		if(dataSource==null) throw new JDBCConnectionFactoryException("Injected DataSource Was Null");
-		try {
-			return dataSource.getConnection(userName, password);
-		} catch (Exception e) {
-			throw new JDBCConnectionFactoryException("Failed to get connection from datasource", e);
-		}		
+		return getJDBCConnection(-1);
 	}
 	
 
-	/**
-	 * No Op for this class.
-	 * @param configuration
-	 * @see org.helios.collectors.jdbc.connection.IJDBCConnectionFactory#setConfiguration(java.util.Map)
-	 */
-	public void setConfiguration(Map<String, String> configuration) {}
 
 	/**
 	 * Sets the data source to be used by this factory.
@@ -105,6 +77,44 @@ public class BeanReferenceJDBCConnectionFactory implements IJDBCConnectionFactor
 	 */
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
+	}
+
+	/**
+	 * @param timeout
+	 * @return
+	 * @throws JDBCConnectionFactoryException
+	 * @see org.helios.collectors.jdbc.connection.IJDBCConnectionFactory#getJDBCConnection(long)
+	 */
+	public Connection getJDBCConnection(long timeout) throws JDBCConnectionFactoryException {
+		try {
+			if(timeout > 0) {
+				ThreadWatcher.getInstance().watch(timeout);
+			}
+			return dataSource.getConnection();
+		} catch (InterruptedException ie) {
+			throw new JDBCConnectionFactoryException("Connection Request Was Interrupted After Timeout of [" + timeout + "] ms.", ie);
+		} catch (SQLException se) {
+			throw new JDBCConnectionFactoryException("Failed to acquire connection", se);
+		} finally {
+			if(timeout > 0) {
+				ThreadWatcher.getInstance().stop();
+			}
+		}
+	}
+
+	/**
+	 * @param timeout
+	 * @param sqlmap
+	 * @return
+	 * @throws JDBCConnectionFactoryException
+	 * @see org.helios.collectors.jdbc.connection.IJDBCConnectionFactory#getJDBCConnection(long, org.helios.collectors.jdbc.SQLMapping)
+	 */
+	public Connection getJDBCConnection(long timeout, SQLMapping sqlmap) throws JDBCConnectionFactoryException {
+		Connection conn = getJDBCConnection(timeout);
+		if(sqlmap!=null) {
+			
+		}
+		return conn;
 	}
 
 }

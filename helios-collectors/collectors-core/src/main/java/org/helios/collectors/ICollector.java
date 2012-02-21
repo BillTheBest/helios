@@ -28,6 +28,8 @@ import org.helios.collectors.AbstractCollector.CollectorState;
 import org.helios.collectors.exceptions.CollectorException;
 import org.helios.collectors.exceptions.CollectorInitException;
 import org.helios.collectors.exceptions.CollectorStartException;
+import org.helios.jmx.dynamic.annotations.JMXAttribute;
+import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 
 /**
  * <p>Title: ICollector</p>
@@ -70,5 +72,12 @@ public interface ICollector {
 	public boolean isRunning();
 	public CollectorState getState();
 	public String displayInternalLog();
+	
+	/**
+	 * Returns the number of entries in the collector cache.
+	 * @return the number of entries in the collector cache.
+	 */
+	public int getCacheEntryCount();
+
 
 }

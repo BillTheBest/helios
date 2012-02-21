@@ -25,7 +25,10 @@
 package org.helios.collectors.jdbc.connection;
 
 import java.sql.Connection;
-import java.util.Map;
+
+import javax.sql.DataSource;
+
+import org.helios.collectors.jdbc.SQLMapping;
 
 /**
  * <p>Title: IJDBCConnectionFactory</p>
@@ -35,28 +38,38 @@ import java.util.Map;
  * @version $LastChangedRevision$
  * $HeadURL$
  * $Id$
+ * @TODO: Provide native underlying connection
+ * @TODO: Provide clean way of returning an underlying connection back to the pool.
  */
 public interface IJDBCConnectionFactory {
 	/**
 	 * Acquires and returns a JDBC Connection.
-	 * @return An JDBC Connection.
+	 * @return A JDBC Connection.
 	 * @throws JDBCConnectionFactoryException
 	 */
 	public Connection getJDBCConnection() throws JDBCConnectionFactoryException;
 	
 	/**
-	 * Acquires and returns a JDBC Connection, requiring credentials.
-	 * @param userName The username to associate with the connection.
-	 * @param password The password to associate with the connection.
+	 * Acquires and returns a JDBC Connection with a thread watch of the defined time.
+	 * @param timeout The timeout in ms.
 	 * @return A JDBC Connection.
 	 * @throws JDBCConnectionFactoryException
 	 */
-	public Connection getJDBCConnection(String userName, String password) throws JDBCConnectionFactoryException;
-	/**
-	 * Sets the configuration parameters for the connection factory.
-	 * @param configuration The configuration parameters in name value format.
-	 */
-	public void setConfiguration(Map<String, String> configuration);
+	public Connection getJDBCConnection(long timeout) throws JDBCConnectionFactoryException;
 	
+	/**
+	 * Acquires and returns a JDBC Connection with a thread watch of the defined time and a connection check.
+	 * @param timeout The timeout in ms.
+	 * @param sqlmap Executed once the connection is made as a connection availability test.
+	 * @return A JDBC Connection.
+	 * @throws JDBCConnectionFactoryException
+	 */
+	public Connection getJDBCConnection(long timeout, SQLMapping sqlmap) throws JDBCConnectionFactoryException;
+	
+	/**
+	 * Provides the underlying data source for this connection factory.
+	 * @param dataSource The data source this connection factory will use.
+	 */
+	public void setDataSource(DataSource dataSource);
 
 }

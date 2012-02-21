@@ -45,6 +45,12 @@
 			  <artifactId>commons-pool</artifactId>
 			  <scope>provided</scope>			  
 			</dependency>
+			
+			<dependency>
+			  <groupId>net.sf.ehcache</groupId>
+			  <artifactId>ehcache-core</artifactId>
+			</dependency>
+			
 
 			
 			<!-- helios compile dependencies -->
