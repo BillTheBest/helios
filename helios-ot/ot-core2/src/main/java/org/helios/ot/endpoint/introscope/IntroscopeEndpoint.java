@@ -337,14 +337,14 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 					if(metricId.getNamespace()!=null) {						
 						for(String s: metricId.getNamespace()) {
 							if(s!=null && s.length() > 0) {
-								buff.append(s).append("|");
+								buff.append(clean(s)).append("|");
 							}
 						}
 					}
 					if(buff.length() > 0) {
 						buff.deleteCharAt(buff.length()-1).append(":");
 					}
-					buff.append(metricId.getMetricName());
+					buff.append(clean(metricId.getMetricName()));
 					metricName = buff.toString();
 					metricCache.put(metricId.getFQN(), metricName);
 				}
@@ -352,6 +352,19 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 		}
 		return metricName;
 	}	
+	
+	/** Introscope Pipe ('|') pattern  */
+	public static final Pattern ISCOPE_PIPE = Pattern.compile("\\|");
+	/** Introscope Colon (':') pattern  */
+	public static final Pattern ISCOPE_COLON = Pattern.compile(":");
+	
+	
+	public static String clean(CharSequence m) {
+		if(m==null) return null;
+		String s = ISCOPE_PIPE.matcher(m.toString()).replaceAll("(:)");
+		s = ISCOPE_COLON.matcher(s).replaceAll(";");
+		return s;
+	}
 	
 	/**
 	 * Determines if the passed metricId has the same host/agent name as the activated Introscope agent.
@@ -426,9 +439,9 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 						agent.recordDataPoint(iMetricName, Double.valueOf(value).longValue());
 					else if( typeCode == MetricType.TYPE_STICKY_INT_AVG)
 						agent.recordCurrentValue(iMetricName, Double.valueOf(value).intValue());
-					else if( typeCode == MetricType.TYPE_STICKY_LONG_AVG)
+					else if( typeCode == MetricType.TYPE_STICKY_LONG_AVG )
 						agent.recordCurrentValue(iMetricName, Double.valueOf(value).longValue());
-					else if( typeCode == MetricType.TYPE_DELTA_INT_AVG)
+					else if( typeCode == MetricType.TYPE_DELTA_INT_AVG )
 						agent.recordDataPoint(iMetricName, Double.valueOf(value).intValue());
 					else if( typeCode == MetricType.TYPE_DELTA_LONG_AVG)
 						agent.recordDataPoint(iMetricName, Double.valueOf(value).longValue());

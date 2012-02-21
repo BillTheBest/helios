@@ -151,8 +151,8 @@ public enum MetricType {
 	public static final int TYPE_STICKY_LONG_AVG = STICKY_LONG_AVG.ordinal();
 	public static final int TYPE_DELTA_INT_AVG = DELTA_INT_AVG.ordinal();
 	public static final int TYPE_DELTA_LONG_AVG = DELTA_LONG_AVG.ordinal();
-	public static final int TYPE_STICKY_DELTA_INT_AVG = DELTA_INT_AVG.ordinal();
-	public static final int TYPE_STICKY_DELTA_LONG_AVG = DELTA_LONG_AVG.ordinal();
+	public static final int TYPE_STICKY_DELTA_INT_AVG = STICKY_DELTA_INT_AVG.ordinal();
+	public static final int TYPE_STICKY_DELTA_LONG_AVG = STICKY_DELTA_LONG_AVG.ordinal();
 	public static final int TYPE_INTERVAL_INCIDENT = INTERVAL_INCIDENT.ordinal();
 	public static final int TYPE_TIMESTAMP = TIMESTAMP.ordinal();
 	public static final int TYPE_STRING = STRING.ordinal();

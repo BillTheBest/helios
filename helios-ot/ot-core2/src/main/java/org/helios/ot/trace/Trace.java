@@ -746,8 +746,15 @@ public class Trace<T extends ITraceValue> implements Externalizable, Serializabl
 			for(String s: nameSpace) {
 				b.append(s).append(DELIM);
 			}
-			b.append(point);
+			b.append(clean(point));
 			return b.toString().intern();
+		}
+		
+		public static final Pattern DELIM_PATTERN = Pattern.compile(DELIM);
+		
+		public static final String clean(String s) {
+			if(s==null) return null;
+			return DELIM_PATTERN.matcher(s).replaceAll("\\\\");
 		}
 		
 		/**
