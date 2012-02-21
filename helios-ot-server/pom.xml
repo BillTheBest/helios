@@ -96,10 +96,6 @@
 	</dependency>
 	
 	
-	    <dependency>
-		    <groupId>org.ubercraft.statsd</groupId>
-		    <artifactId>statsd-over-slf4j</artifactId>
-	    </dependency>
 	
 	
 	<!-- Groovy -->
