@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/helios/!svn/ver/1545/helios-collectors/trunk/src/org/helios/collectors/jdbc/connection
+END
+JDBCConnectionFactoryException.java
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/helios/!svn/ver/1545/helios-collectors/trunk/src/org/helios/collectors/jdbc/connection/JDBCConnectionFactoryException.java
+END
+IJDBCConnectionFactory.java
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/helios/!svn/ver/1545/helios-collectors/trunk/src/org/helios/collectors/jdbc/connection/IJDBCConnectionFactory.java
+END
+BeanReferenceJDBCConnectionFactory.java
+K 25
+svn:wc:ra_dav:version-url
+V 131
+/svn/helios/!svn/ver/1545/helios-collectors/trunk/src/org/helios/collectors/jdbc/connection/BeanReferenceJDBCConnectionFactory.java
+END

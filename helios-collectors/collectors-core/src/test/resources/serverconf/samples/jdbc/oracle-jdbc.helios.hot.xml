@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+     xmlns:aop="http://www.springframework.org/schema/aop"
+
+     xmlns:p="http://www.springframework.org/schema/p"
+
+     xmlns:context="http://www.springframework.org/schema/context"   
+
+     xmlns:tx="http://www.springframework.org/schema/tx"
+
+     xsi:schemaLocation="
+
+     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+
+     http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+
+     http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+
+     http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+
+ 
+
+ 
+
+                <bean id="PropertyEditors" class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+
+                  <property name="customEditors">
+
+                    <map>
+
+                      <entry key="org.w3c.dom.Node" value="org.helios.editors.XMLNodeEditor"/>
+
+                    </map>
+
+                  </property>
+
+                </bean>
+
+ 
+
+   
+
+                <bean id="OracleDataSource"
+
+                                class="org.apache.commons.dbcp.BasicDataSource"
+
+                                destroy-method="close"
+
+                                p:url="jdbc:oracle:thin:@localhost:1521:ORCL"
+
+                                p:driverClassName="oracle.jdbc.OracleDriver"
+
+                                p:username="ecsus"
+
+                                p:password="ecs"
+
+                                p:initial-size="2"
+
+                                p:max-active="6"
+
+                                p:pool-prepared-statements="true"
+
+                                p:maxOpenPreparedStatements="200"                               
+
+                                p:validation-query="SELECT SYSDATE FROM DUAL"
+
+                                p:test-on-borrow="false"
+
+                                p:test-while-idle="false"/>
+
+                               
+
+    <bean id="OracleConnectionFactory" class="org.helios.collectors.jdbc.connection.BeanReferenceJDBCConnectionFactory">
+
+                <property name="dataSource" ref="OracleDataSource" />
+
+    </bean>
+
+   
+
+    <bean id="CollectorCacheService" class="org.helios.collectors.cache.CollectorCacheService" factory-method="getInstance" >
+
+                                <property name="cacheManager" ref="ehcache" />
+
+    </bean>
+
+                               
+
+                               
+
+   <bean id="LocalOracleCollector" class="org.helios.collectors.jdbc.JDBCCollector" init-method="start" >
+
+                                <property name="connectionFactory" ref="OracleConnectionFactory"/>
+
+                                <property name="connectionTimeout" value="3000"/>
+
+                                <property name="frequency" value="15000" />
+
+                                <property name="logErrors" value="true" />
+
+                                <property name="tracingNameSpace" value="Database"/>
+
+                                <property name="objectName" value="org.helios.collectors:type=JDBCCollector,name=LocalOracle"/>
+
+                                <property name="logCollectionResult" value="true"/>
+
+                                <property name="sqlMaps">
+
+                                                <set>
+
+                                                                <ref bean="OracleSessions"/>
+
+                                                                <ref bean="OracleSessionsByStatus"/>
+
+                                                </set>
+
+                                </property>
+
+    </bean>
+
+                               
+
+                                 
+
+                <bean id="OracleSessions" class="org.helios.collectors.jdbc.SQLMapping">
+
+                                <property name="sql">
+
+                                                <value>
+
+                                                                SELECT COUNT(*) ECSSESSIONS FROM V$SESSION WHERE PROGRAM = 'ecs'                        
+
+                                                </value>
+
+                                </property>
+
+                                <property name="metricMapsNode">
+
+                                                <value><![CDATA[
+
+                                                                <MetricMaps>
+
+                                                                                <MetricMap value="{v:ECSSESSIONS}" name="Connections" segment="ECS|Oracle|Sessions" type="STICKY_LONG_AVG" scope="0" />
+
+                                                                </MetricMaps>
+
+                                                ]]></value>                       
+
+                                </property>
+
+                </bean>
+
+                               
+
+                <bean id="OracleSessionsByStatus" class="org.helios.collectors.jdbc.SQLMapping">
+
+                                <property name="sql">
+
+                                                <value>
+
+                                                                SELECT COUNT(*) ECSSESSIONS, STATUS FROM V$SESSION WHERE PROGRAM = 'ecs' GROUP BY STATUS
+
+                                                </value>
+
+                                </property>
+
+                                <property name="metricMapsNode">
+
+                                                <value><![CDATA[
+
+                                                                <MetricMaps>
+
+                                                                                <MetricMap value="{v:ECSSESSIONS}" name="{v:STATUS}" segment="ECS|Oracle|Sessions" type="STICKY_LONG_AVG" scope="0" />
+
+                                                                </MetricMaps>
+
+                                                ]]></value>                       
+
+                                </property>
+
+                </bean>
+
+                               
+
+  
+
+</beans>
