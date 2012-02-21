@@ -95,7 +95,7 @@ public class MetaCacheProcessor implements Processor, InitializingBean  {
 		if(elem==null) {
 			//putHierarchy(trace);
 			elem = new Element(trace.getFQN(), trace.getMetricId());
-			log.info("Processing New Element:[" + trace.getFQN() + "]");
+			if(log.isDebugEnabled()) log.debug("Processing New Element:[" + trace.getFQN() + "]");
 			metricNameCache.put(elem);
 			MetricTreeEntry currentEntry = rootEntry;
 			String[] segments = trace.getFQN().split("/");

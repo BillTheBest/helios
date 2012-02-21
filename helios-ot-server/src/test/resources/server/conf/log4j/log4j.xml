@@ -27,12 +27,12 @@
 -->
 
    <category name="org.helios" additivity="false">
-      <priority value="DEBUG"/>
+      <priority value="INFO"/>
       <appender-ref ref="CONSOLE"  />
    </category>
    
    <category name="org.helios.ot.endpoint" additivity="false">
-      <priority value="TRACE"/>
+      <priority value="INFO"/>
       <appender-ref ref="CONSOLE"  />
    </category>
       

@@ -221,7 +221,7 @@ public class CacheEventManager extends ManagedObjectDynamicMBean implements Cach
 			fireNotification(EVENT_CACHE_ENTRY_EVICTED + "." + cache.getName(), msg, cache.getName(), element.getKey());
 		}
 		
-		log.info(msg);
+		if(log.isDebugEnabled()) log.debug(msg);
 	}
 
 
@@ -251,8 +251,8 @@ public class CacheEventManager extends ManagedObjectDynamicMBean implements Cach
 		if(!supressedCacheNames.contains(cache.getName())) {
 			fireNotification(EVENT_CACHE_ENTRY_PUT + "." + cache.getName(), msg, cache.getName(), element.getKey());
 		}
-		//if(log.isDebugEnabled()) log.debug(msg);
-		log.info(msg);
+		if(log.isDebugEnabled()) log.debug(msg);
+		
 	}
 
 
@@ -348,8 +348,8 @@ public class CacheEventManager extends ManagedObjectDynamicMBean implements Cach
 		String msg = "Cache removed [" + cacheName + "]";
 		if(!supressedCacheNames.contains(cacheName)) {
 			fireNotification(EVENT_CACHE_REMOVED + "." + cacheName, msg, cacheName);
-		}
-		log.info(msg);								
+		}				
+		if(log.isDebugEnabled()) log.debug(msg);
 	}
 
 
