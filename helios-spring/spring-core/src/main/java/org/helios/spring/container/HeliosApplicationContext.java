@@ -30,14 +30,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.FatalBeanException;
-import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -45,7 +44,7 @@ import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 
@@ -58,13 +57,13 @@ import org.springframework.core.io.UrlResource;
  * $HeadURL$
  * $Id$
  */
-public class HeliosApplicationContext extends GenericApplicationContext implements ApplicationListener {
+public class HeliosApplicationContext extends GenericXmlApplicationContext implements ApplicationListener {
 	/** the main Spring app context */
 	protected Map<String, ApplicationContext> childContexts = new ConcurrentHashMap<String, ApplicationContext>();
 	/** a map of all beans by name */
 	protected final Map<String, Object> allBeans = new ConcurrentHashMap<String, Object>();
-	/** An XML Bean Definition Reader */
-	protected final XmlBeanDefinitionReader beanDefReader = new XmlBeanDefinitionReader(this);
+//	/** An XML Bean Definition Reader */
+//	protected final XmlBeanDefinitionReader beanDefReader = new XmlBeanDefinitionReader(this);
 	/** All registered configuration files */
 	protected final Set<String> configurations = new HashSet<String>();
 	/** Indicated if configurations have been loaded */
@@ -107,7 +106,8 @@ public class HeliosApplicationContext extends GenericApplicationContext implemen
 	 * @throws MalformedURLException 
 	 */
 	public HeliosApplicationContext(String[] configLocations, ApplicationContext parent) throws BeansException, MalformedURLException {
-		super(parent);
+		super();
+		setParent(parent);
 		Collections.addAll(configurations, configLocations);
 		initBeans();
 	}
@@ -170,8 +170,19 @@ public class HeliosApplicationContext extends GenericApplicationContext implemen
 		} catch (MalformedURLException mue) {
 			throw new FatalBeanException("Failed to load bean definitions", mue);
 		}			
-		
-		
+	}
+	
+	/**
+	 * Adds the passed configuration locations to the pre-refresh configs.
+	 * @param configLocations An array of config locations.
+	 */
+	public void addConfigurations(String...configLocations) {
+		Collections.addAll(configurations, configLocations);
+	}
+	
+	public void load(String...configFiles) {
+		super.load(configFiles);
+		beanDefsLoaded = getBeanDefinitionCount();
 	}
 
 	/**
@@ -181,10 +192,13 @@ public class HeliosApplicationContext extends GenericApplicationContext implemen
 	 */
 	protected int initBeans() throws MalformedURLException {
 		int beansFound = 0;
+		List<Resource> resources = new ArrayList<Resource>();
 		for(String config: configurations) {			
 			Resource rez = new UrlResource(config);
-			beansFound += beanDefReader.loadBeanDefinitions(rez);
+			//beansFound += beanDefReader.loadBeanDefinitions(rez);
 		}
+		load(resources.toArray(new Resource[resources.size()]));
+		beansFound = getBeanDefinitionCount();
 		configurationLoaded = true;
 		return beansFound;
 	}
@@ -341,7 +355,8 @@ public class HeliosApplicationContext extends GenericApplicationContext implemen
 	 * @param parent
 	 */
 	public HeliosApplicationContext(ApplicationContext parent) {
-		super(parent);
+		super();
+		setParent(parent);
 		addApplicationListener(this);
 	}
 
