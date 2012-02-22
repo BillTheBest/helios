@@ -15,7 +15,7 @@
 	<context:component-scan base-package="org.helios.ot.trace"/>
 	
 	<bean name="SubscriberSessionHttpSessionListener" class="org.helios.server.ot.session.http.SubscriberSessionHttpSessionListener" scope="prototype" lazy-init="true" >
-		<constructor-arg type="java.lang.String" value="" />
+		<constructor-arg><null/></constructor-arg>
 		<property name="initialSessionIdleTimeout" value="270" />
 	</bean>
 	

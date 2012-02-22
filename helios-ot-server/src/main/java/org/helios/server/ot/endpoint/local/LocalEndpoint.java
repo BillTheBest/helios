@@ -31,12 +31,12 @@ import org.apache.camel.CamelContextAware;
 import org.apache.camel.Endpoint;
 import org.apache.camel.ExchangePattern;
 import org.apache.camel.ProducerTemplate;
+import org.apache.camel.StartupListener;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.ot.endpoint.AbstractEndpoint;
 import org.helios.ot.endpoint.EndpointConnectException;
 import org.helios.ot.endpoint.EndpointTraceException;
-import org.helios.ot.trace.ClosedTrace;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.tracer.disruptor.TraceCollection;
@@ -50,7 +50,7 @@ import org.helios.ot.tracer.disruptor.TraceCollection;
  * <p><code>org.helios.server.ot.endpoint.local.LocalEndpoint</code></p>
  */
 
-public class LocalEndpoint<T extends Trace<? extends ITraceValue>> extends AbstractEndpoint<T> implements CamelContextAware {
+public class LocalEndpoint<T extends Trace<? extends ITraceValue>> extends AbstractEndpoint<T> implements CamelContextAware, StartupListener {
 	/** The sender template */
 	protected ProducerTemplate producerTemplate;
 	/** The OT Input Camel URI */
@@ -59,6 +59,10 @@ public class LocalEndpoint<T extends Trace<? extends ITraceValue>> extends Abstr
 	protected Endpoint endpoint = null;
 	/** The Camel context */
 	protected CamelContext camelContext = null;
+	/** Indicates if this endpoint is ready to accept traces */
+	protected boolean ready = false;
+	/** The number of times processTraces has been called when the endpoint is not ready */
+	protected long notReadyRejections = 0;
 	
 
 	/**
@@ -69,15 +73,6 @@ public class LocalEndpoint<T extends Trace<? extends ITraceValue>> extends Abstr
 		this.uri = uri;
 	}
 	
-	/**
-	 * Configures the OT endpoint's Camel endpoint
-	 * @throws Exception on any setup error
-	 */
-	public void start() throws Exception {
-		producerTemplate = camelContext.createProducerTemplate();
-		endpoint = camelContext.getEndpoint(uri);
-		log.info("OT LocalEndpoint Configured with endpoint [" + endpoint.getEndpointKey() + "/" + endpoint.getEndpointUri() + "]");
-	}
 	
 	/**
 	 * {@inheritDoc}
@@ -111,6 +106,12 @@ public class LocalEndpoint<T extends Trace<? extends ITraceValue>> extends Abstr
 	 */
 	@Override
 	protected boolean processTracesImpl(TraceCollection<T> traceCollection) throws EndpointConnectException, EndpointTraceException {
+		if(!ready) {
+			notReadyRejections++;
+			if(notReadyRejections%10==0) {
+				try { onCamelContextStarted(camelContext, true); } catch (Exception e) {}
+			}
+		}
 		if(traceCollection==null) return false;
 		
 		Set<T> set = (Set<T>)traceCollection.getTraces();
@@ -123,6 +124,25 @@ public class LocalEndpoint<T extends Trace<? extends ITraceValue>> extends Abstr
 		}		
 		return true;
 	}
+	
+	/**
+	 * Returns the number of unready process trace calls
+	 * @return the number of unready process trace calls
+	 */
+	@JMXAttribute(name="UnreadyCalls", description="The number of unready process trace calls", mutability=AttributeMutabilityOption.READ_ONLY)
+	public long getUnreadyCalls() {
+		return notReadyRejections;
+	}
+	
+	/**
+	 * Indicates if the endpoint is ready
+	 * @return true if the endpoint is ready
+	 */
+	@JMXAttribute(name="Ready", description="Indicates if the endpoint is ready", mutability=AttributeMutabilityOption.READ_ONLY)
+	public boolean getReady() {
+		return ready;
+	}
+	
 
 	/**
 	 * Returns the configured Camel Endpoint URI
@@ -149,6 +169,24 @@ public class LocalEndpoint<T extends Trace<? extends ITraceValue>> extends Abstr
 	 */
 	public void setCamelContext(CamelContext camelContext) {
 		this.camelContext = camelContext;
+		try {
+			this.camelContext.addStartupListener(this);
+		} catch (Exception e) {
+			log.error("Failed to add startup listener to Camel Context.", e);
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.apache.camel.StartupListener#onCamelContextStarted(org.apache.camel.CamelContext, boolean)
+	 */
+	@Override
+	public void onCamelContextStarted(CamelContext context, boolean alreadyStarted) throws Exception {
+		producerTemplate = camelContext.createProducerTemplate();
+		endpoint = camelContext.getEndpoint(uri);
+		ready = true;
+		log.info("OT LocalEndpoint Configured with endpoint [" + endpoint.getEndpointKey() + "/" + endpoint.getEndpointUri() + "]");
+		
 	}
 
 

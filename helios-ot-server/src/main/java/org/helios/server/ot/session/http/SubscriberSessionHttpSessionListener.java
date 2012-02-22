@@ -64,7 +64,9 @@ public class SubscriberSessionHttpSessionListener implements HttpSessionBindingL
 	 */
 	public SubscriberSessionHttpSessionListener(SubscriberSession subscriberSession) {
 		this.subscriberSession = subscriberSession;
-		this.subscriberSession.reflectObject(this);
+		if(subscriberSession!=null) {
+			this.subscriberSession.reflectObject(this);
+		}
 	}
 
 	/**

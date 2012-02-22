@@ -52,7 +52,7 @@
    		<constructor-arg value="activemq:topic" />
    	</bean>
    	
-   	<bean id="OTLocalEndpoint" class="org.helios.server.ot.endpoint.local.LocalEndpoint" init-method="start">   		
+   	<bean id="OTLocalEndpoint" class="org.helios.server.ot.endpoint.local.LocalEndpoint">   		
    		<constructor-arg value="seda:otlocal" />
    	</bean>
    	
