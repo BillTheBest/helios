@@ -66,7 +66,7 @@ public class DeltaManager {
 	/** The default load factor of the delta container */
 	protected static final float DELTA_LOAD_FACTOR_DEFAULT = 0.5F;
 	/** The default delta type of the delta container */
-	protected static final DeltaType DEFAULT_DELTA_TYPE = DeltaType.REBASE;
+	public static final DeltaType DEFAULT_DELTA_TYPE = DeltaType.REBASE;
 
 	
 	/**

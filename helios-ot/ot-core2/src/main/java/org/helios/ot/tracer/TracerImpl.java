@@ -734,7 +734,10 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 				Trace.buildFromObject(value, MetricType.valueOf(type), metricName).segment(nameSpace).format(this).build()
 		);		
 	}
-	
+
+	// =================================================================
+	// PULL ALL DELTAS FROM SURFACE API
+	// ================================================================= 
 	
 	/**
 	 * Returns a granularly typed value for the passed value in accordance with the passed MetricType.

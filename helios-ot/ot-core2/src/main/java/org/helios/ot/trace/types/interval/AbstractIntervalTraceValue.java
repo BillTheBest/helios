@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import org.helios.ot.trace.types.INumericTraceValue;
 import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.trace.types.TraceValueType;
 import org.helios.ot.type.MetricType;
@@ -59,6 +60,16 @@ public abstract class AbstractIntervalTraceValue<T extends ITraceValue> implemen
 	public TraceValueType getTraceValueType() {
 		return traceValueType;
 	}
+	
+	/**
+	 * Applies a delta to this value using the passed metric name as the key
+	 * @param fqn The fully qualified metric name
+	 * @return The resulting numeric trace value
+	 */
+	public ITraceValue applyDelta(CharSequence fqn) {
+		return this;
+	}
+	
 	
 	
 	/**

@@ -24,6 +24,8 @@
  */
 package org.helios.ot.trace.types;
 
+import org.helios.ot.type.MetricType;
+
 /**
  * <p>Title: ITraceValue</p>
  * <p>Description: An abstraction of the value of an individual trace.</p> 
@@ -44,6 +46,7 @@ public interface ITraceValue {
 	 */
 	public boolean isInterval();
 	
+	
 	/**
 	 * Returns the primary value of this trace value
 	 * @return the primary value of this trace value
@@ -55,4 +58,12 @@ public interface ITraceValue {
 	 * @return the traceValueType
 	 */
 	public TraceValueType getTraceValueType();	
+	
+	/**
+	 * Applies a delta to this value using the passed metric name as the key
+	 * @param fqn The fully qualified metric name
+	 * @return The resulting numeric trace value
+	 */
+	public ITraceValue applyDelta(CharSequence fqn);
+	
 }

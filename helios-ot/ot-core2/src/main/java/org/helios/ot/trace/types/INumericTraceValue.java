@@ -41,5 +41,6 @@ public interface INumericTraceValue extends ITraceValue {
 //	public double getDValue();
 	
 	public double getNativeValue();
+	
 
 }

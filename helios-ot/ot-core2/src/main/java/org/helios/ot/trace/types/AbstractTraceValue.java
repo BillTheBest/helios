@@ -62,6 +62,16 @@ public abstract class AbstractTraceValue implements ITraceValue, Externalizable 
 		return interval;
 	}
 	
+	/**
+	 * Applies a delta to this value using the passed metric name as the key
+	 * @param fqn The fully qualified metric name
+	 * @return The resulting numeric trace value
+	 */
+	public ITraceValue applyDelta(CharSequence fqn) {
+		return this;
+	}
+	
+	
 	
 	/**
 	 * Creates a new AbstractTraceValue

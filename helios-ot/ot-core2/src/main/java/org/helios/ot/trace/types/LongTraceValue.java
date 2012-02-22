@@ -28,6 +28,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import org.helios.ot.deltas.DeltaManager;
+import org.helios.ot.type.MetricType;
+
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
@@ -58,6 +61,22 @@ public class LongTraceValue extends AbstractNumericTraceValue  {
 	public LongTraceValue(TraceValueType type) {
 		super(type);
 	}
+	
+	/**
+	 * Applies a delta to this value using the passed metric name as the key
+	 * @param fqn The fully qualified metric name
+	 * @return The resulting numeric trace value
+	 */
+	public INumericTraceValue applyDelta(CharSequence fqn) {
+		if(fqn==null) throw new IllegalArgumentException("The passed fqn was null", new Throwable());
+		Number n = DeltaManager.getInstance().delta(fqn.toString(), value, MetricType.DELTA_LONG_AVG, DeltaManager.DEFAULT_DELTA_TYPE);
+		if(n==null) return null;
+		else {
+			value = n.longValue();
+			return this;
+		}
+	}
+	
 	
 	
 	/**

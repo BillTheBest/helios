@@ -771,7 +771,8 @@ public class Trace<T extends ITraceValue> implements Externalizable, Serializabl
 //				}
 //			}
 			t = new Trace();
-			t.metricId = MetricId.getInstance(metricType, buildMetricName());
+			final String metricName = buildMetricName();
+			t.metricId = MetricId.getInstance(metricType, metricName);
 			if(accumulatorBitMask!=-1) {
 				t.metricId.setTracerMask(accumulatorBitMask);
 			}
@@ -782,7 +783,13 @@ public class Trace<T extends ITraceValue> implements Externalizable, Serializabl
 			if(anyPhaseTriggers) {
 				t.phaseTriggers.putAll(phaseTriggers);
 				t.anyPhaseTriggers = true;
-			}			
+			}		
+			if(metricType.isDelta()) {
+				if(value.applyDelta(metricName)==null) {
+					return null;
+				}
+			}
+
 			return t;
 		}
 		
