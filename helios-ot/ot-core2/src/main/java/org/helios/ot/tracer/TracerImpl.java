@@ -33,8 +33,8 @@ import java.lang.management.ThreadMXBean;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -107,8 +107,6 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	protected String tracerName = null;
 	/** Instance reset barrier lock */
 	protected Object resetLock = new Object();
-	/** The delta processor */
-	protected DeltaManager deltaManager = DeltaManager.getInstance();
 	/** A reference to the parent tracerManager */
 	protected final ITracerManager tracerManager;
 	/** The tracer send counter */
@@ -497,7 +495,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	@JMXOperation (name="getCurrentDeltaInt", description="Returns the current int in delta state for the passed namespace.")
 	public int getCurrentDeltaInt(
 			@JMXParameter(name="namespace", description="The fully qualified metric namespace.") String namespace) {
-		Number n = deltaManager.getState(namespace);
+		Number n = DeltaManager.getInstance().getState(namespace);
 		if(n==null) return -0;
 		else return n.intValue();
 	}
@@ -510,7 +508,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	@JMXOperation (name="getCurrentDeltaLong", description="Returns the current long in delta state for the passed namespace.")
 	public long getCurrentDeltaLong(
 			@JMXParameter(name="namespace", description="The fully qualified metric namespace.") String namespace) {
-		Number n = deltaManager.getState(namespace);
+		Number n = DeltaManager.getInstance().getState(namespace);
 		if(n==null) return -0;
 		else return n.longValue();
 		
@@ -522,7 +520,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 */
 	@JMXOperation (name="dumpDeltas", description="Returns a string report of the contents of the delta states.")
 	public String dumpDeltas() {
-		return deltaManager.dumpState();
+		return DeltaManager.getInstance().dumpState();
 	}
 	
 	
@@ -537,7 +535,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	public synchronized Integer deltaInt(
 			@JMXParameter(name="namespace", description="The fully qualified metric namespace.") String namespace, 
 			@JMXParameter(name="value", description="The new int value") int value) { 		
-		Number n = deltaManager.delta(namespace, value, MetricType.DELTA_INT_AVG);
+		Number n = DeltaManager.getInstance().delta(namespace, value, MetricType.DELTA_INT_AVG);
 		if(n==null) return null;
 		else return n.intValue();
 	}
@@ -553,7 +551,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	public synchronized Long deltaLong(
 			@JMXParameter(name="namespace", description="The fully qualified metric namespace.") String namespace, 
 			@JMXParameter(name="value", description="The new long value") long value) { 		
-		Number n = deltaManager.delta(namespace, value, MetricType.DELTA_LONG_AVG);
+		Number n = DeltaManager.getInstance().delta(namespace, value, MetricType.DELTA_LONG_AVG);
 		if(n==null) return null;
 		else return n.longValue();
 	}
@@ -564,7 +562,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 */
 	@JMXAttribute (name="DeltaSize", description="The number of entries in the integer delta buffer.", mutability=AttributeMutabilityOption.READ_ONLY)
 	public int getDeltaSize() {
-		return deltaManager.getStateSize();
+		return DeltaManager.getInstance().getStateSize();
 	}
 	
 	
@@ -1006,11 +1004,8 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 * @return The generated Trace or null if returnTraces is false or if the delta was suppressed.
 	 */
 	public Trace traceDelta(int value, String metricName, String... nameSpace) {
-		Number deltaValue = DeltaManager.getInstance().delta(buildMetricName(metricName, nameSpace), value, MetricType.DELTA_INT_AVG);
-		if(deltaValue!=null) {
-			Builder builder = Trace.build(deltaValue.intValue(), MetricType.DELTA_INT_AVG, metricName).segment(nameSpace).format(this);
-			if(builder!=null) return builder.build();
-		}
+		Builder builder = Trace.build(value, MetricType.DELTA_INT_AVG, metricName).segment(nameSpace).format(this);
+		if(builder!=null) return builder.build();
 		return null;
 	}
 	
@@ -1023,11 +1018,8 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 * @return The generated Trace or null if returnTraces is false or if the delta was suppressed.
 	 */
 	public Trace traceDelta(long value, String metricName, String... nameSpace) {
-		Number deltaValue = DeltaManager.getInstance().delta(buildMetricName(metricName, nameSpace), value, MetricType.DELTA_LONG_AVG);
-		if(deltaValue!=null) {
-			Builder builder = Trace.build(deltaValue.longValue(), MetricType.DELTA_LONG_AVG, metricName).segment(nameSpace).format(this);
-			if(builder!=null) return builder.build();
-		}
+		Builder builder = Trace.build(value, MetricType.DELTA_LONG_AVG, metricName).segment(nameSpace).format(this);
+		if(builder!=null) return builder.build();
 		return null;
 	}
 	
@@ -1109,14 +1101,10 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 * @return The generated Trace  or null if returnTraces is false or if the delta was suppressed.
 	 */
 	public Trace traceStickyDelta(long value, String metricName, String... nameSpace) {
-		Number deltaValue = DeltaManager.getInstance().delta(buildMetricName(metricName, nameSpace), value, MetricType.DELTA_LONG_AVG);
-		if(deltaValue!=null) {
-			Builder builder = Trace.build(deltaValue.longValue(), MetricType.DELTA_LONG_AVG, metricName).segment(nameSpace).format(this);
-			if(builder!=null) {
-				return traceTrace(builder.build());
-			}
-		}
-		return null;
+		return traceTrace(
+				Trace.build(value, MetricType.STICKY_DELTA_LONG_AVG, metricName).segment(nameSpace).format(this).build()				
+		);
+		
 	}
 
 	
@@ -1325,12 +1313,9 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 * @return The generated Trace or null if returnTraces is false.
 	 */	
 	public Trace traceStickyDelta(long value, String metricName, String[] prefix, String... nameSpace) {
-		Number deltaValue = DeltaManager.getInstance().delta(buildMetricName(metricName, nameSpace), value, MetricType.DELTA_LONG_AVG);
-		if(deltaValue!=null) {
-			Builder builder = Trace.build(deltaValue.longValue(), MetricType.STICKY_DELTA_LONG_AVG, metricName).segment(nameSpace).prefix(prefix).format(this);
-			if(builder!=null) {
-				return traceTrace(builder.build());
-			}
+		Builder builder = Trace.build(value, MetricType.STICKY_DELTA_LONG_AVG, metricName).segment(nameSpace).prefix(prefix).format(this);
+		if(builder!=null) {
+			return traceTrace(builder.build());
 		}
 		return null;
 	}
