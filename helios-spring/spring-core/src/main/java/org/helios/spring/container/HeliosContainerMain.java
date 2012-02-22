@@ -533,8 +533,8 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 			File f = new File(s);
 		}
 		
-		applicationContext = new HeliosApplicationContext(configFiles, false);
 		setProfiles(profiles, applicationContext);
+		applicationContext = new HeliosApplicationContext(configFiles, false);		
 		ApplicationContextService acs = new ApplicationContextService(applicationContext);
 		try {
 			JMXHelperExtended.getHeliosMBeanServer().registerMBean(acs, ApplicationContextService.OBJECT_NAME);
