@@ -194,7 +194,8 @@ public class AgentJVMMonitor {
 		};
 		for(GarbageCollectorMXBean gcBean: gcMXBeans) {
 			try {
-				mbeanServer.getAttribute(gcBean.getObjectName(), "LastGcInfo");
+				ObjectName on = JMXHelper.objectName(new StringBuilder(ManagementFactory.GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE).append(",name=").append(gcBean.getName()));
+				mbeanServer.getAttribute(on, "LastGcInfo");
 				gcLastGCAvailable.put(gcBean.getName(), true);
 			} catch(Exception e) {
 				gcLastGCAvailable.put(gcBean.getName(), false);
@@ -368,9 +369,10 @@ public class AgentJVMMonitor {
 			itracer.traceDelta(gcCount, "GC Count", GC_ROOT, name);
 			if(gcLastGCAvailable.get(name)) {
 				try {
+					ObjectName on = JMXHelper.objectName(new StringBuilder(ManagementFactory.GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE).append(",name=").append(gcBean.getName()));
 					Long lastId = gcLastGCId.get(name);
 					Long thisId = null;
-					CompositeData gcInfo = (CompositeData)mbeanServer.getAttribute(gcBean.getObjectName(), "LastGcInfo");
+					CompositeData gcInfo = (CompositeData)mbeanServer.getAttribute(on, "LastGcInfo");
 					if(gcInfo!=null) {
 						thisId = (Long)gcInfo.get("id");
 						if(thisId.equals(lastId)) continue;
@@ -429,6 +431,8 @@ public class AgentJVMMonitor {
 		}
 	}
 	
+	/** The OS MXBean ObjectName */
+	public static final ObjectName OS_MXBEAN_ON = JMXHelper.objectName(ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME);
 	
 	/**
 	 * Collects OS process stats
@@ -436,7 +440,7 @@ public class AgentJVMMonitor {
 	protected void collectOS() {
 		AttributeList attrs = null;
 		try {
-			attrs = mbeanServer.getAttributes(osMXBean.getObjectName(), windows ? WIN_OS_STATS : UNIX_OS_STATS);
+			attrs = mbeanServer.getAttributes(OS_MXBEAN_ON, windows ? WIN_OS_STATS : UNIX_OS_STATS);
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 			return;
