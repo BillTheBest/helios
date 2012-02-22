@@ -655,6 +655,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 	 * @param gac The application context
 	 */
 	protected void setProfiles(Set<String> profiles, GenericApplicationContext gac) {
+		Set<String> activeProfiles = new HashSet<String>();
 		if(gac==null) throw new IllegalArgumentException("The passed application context was null", new Throwable());
 		String os = System.getProperty("os.name", "Unknown").toLowerCase();
 		String osProfile = null;
@@ -667,7 +668,8 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 		} else {
 			osProfile = "os";
 		}
-		gac.getEnvironment().setActiveProfiles(osProfile);   
+		activeProfiles.add(osProfile);
+		   
 		if(profiles!=null && !profiles.isEmpty()) {
 			for(String profile: profiles) {
 				profile = profile.trim();
@@ -679,11 +681,11 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 							profile = propVal;
 						}
 					}
-					gac.getEnvironment().setActiveProfiles(profile);
+					activeProfiles.add(profile);
 				}
 			}
 		}
-		
+		gac.getEnvironment().setActiveProfiles(activeProfiles.toArray(new String[activeProfiles.size()]));
 	}
 	
 	/**
