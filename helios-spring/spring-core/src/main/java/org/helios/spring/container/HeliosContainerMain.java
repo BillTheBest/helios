@@ -31,6 +31,7 @@ import java.lang.management.RuntimeMXBean;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +52,7 @@ import org.helios.editors.Log4JLevelEditor;
 import org.helios.editors.URLPropertyEditor;
 import org.helios.editors.XMLNodeEditor;
 import org.helios.helpers.Banner;
+import org.helios.helpers.ConfigurationHelper;
 import org.helios.helpers.JMXHelper;
 import org.helios.helpers.JMXHelperExtended;
 import org.helios.io.file.RecursiveDirectorySearch;
@@ -132,6 +134,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 	/** A set of discovered wars to deploy */
 	protected static final WarDeployer warDeployer = new WarDeployer();
 	
+	public static final String PROFILE_ARG = "-profiles";
 	public static final String CONF_ARG = "-conf";
 	public static final String LIB_ARG = "-lib";
 	public static final String SCP_ARG = "-cpd";
@@ -208,13 +211,15 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 	}
 	
 	/**
+	 * Processes the command line arguments
 	 * @param args
 	 * @param confDirs
 	 * @param libDirs
 	 * @param cpDirs
 	 * @param eclipseDirs
+	 * @param profiles
 	 */
-	protected static void processCommandLineArgs(String[] args, Set<String> confDirs, Set<String> libDirs, Set<String> cpDirs, Set<URL> eclipseDirs) {
+	protected static void processCommandLineArgs(final String[] args, final Set<String> confDirs, final Set<String> libDirs, final Set<String> cpDirs, final Set<URL> eclipseDirs, final Set<String> profiles) {
 		for(int i = 0; i < args.length; i++) {
 			if(CONF_ARG.equalsIgnoreCase(args[i]) && args.length >= (i+2)) {
 				confDirs.add(args[i+1]);
@@ -233,7 +238,15 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 				i++;
 				EclipseLauncher el = new EclipseLauncher(new File(args[i]));
 				eclipseDirs.addAll(el.getClasspathEntries());
-			} 
+			} else if(PROFILE_ARG.equalsIgnoreCase(args[i])) {
+				i++;
+				String[] profs = args[i].trim().split(",");
+				for(String s: profs) {
+					if(s!=null && !s.trim().isEmpty()) {
+						profiles.add(s.trim());
+					}
+				}
+			}
 		}		
 	}
 	
@@ -361,15 +374,15 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 			}
 		}
 		
-		
-		Set<String> confDirs = new HashSet<String>();
-		Set<String> libDirs = new HashSet<String>();
-		Set<String> cpDirs = new HashSet<String>();
-		Set<URL> eclipseDirs = new HashSet<URL>();
+		final Set<String> profiles = new HashSet<String>();
+		final Set<String> confDirs = new HashSet<String>();
+		final Set<String> libDirs = new HashSet<String>();
+		final Set<String> cpDirs = new HashSet<String>();
+		final Set<URL> eclipseDirs = new HashSet<URL>();
 		if(!supressDefaults) {
 			defaultConfigs(confDirs, libDirs, cpDirs);
 		}
-		processCommandLineArgs(args, confDirs, libDirs, cpDirs, eclipseDirs);
+		processCommandLineArgs(args, confDirs, libDirs, cpDirs, eclipseDirs, profiles);
 		Map<Integer, URL> addToClassPath = processClassPathEntries(libDirs, cpDirs, eclipseDirs);
 		ClassLoader defaultClassLoader = Thread.currentThread().getContextClassLoader();
 		URLClassLoader containerClassLoader = null;
@@ -402,7 +415,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 			}
 			String[] bootStrapArgs = confDirs.toArray(new String[confDirs.size()]);
 			HeliosContainerMain hsc = new HeliosContainerMain();
-			hsc.bootStrap(bootStrapArgs);
+			hsc.bootStrap(profiles, bootStrapArgs);
 			// Set<URLWebArchiveLink> wars
 		} finally {
 			if(isolated) {
@@ -426,6 +439,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 		b.append("\n\t-conf and -lib can be repeated more than once.");
 		b.append("\n\t-lib will recursively search the passed directory and add any located jar files to the container's classpath.");
 		b.append("\n\t-cpd will add the passed directory to the container's classpath.");
+		b.append("\n\t-profiles will activate the passed comma separated spring profiles in the container.");
 		b.append("\n\t-isolate configures the container classpath in a seperate class loader. By default, -cpd and -lib will append to the classpath.");
 		b.append("\n\t-daemon keeps the container JVM alive even in the absence of any non-daemon threads. ");
 		b.append("\n\t" + ECLIPSE_LAUNCHER + " extracts classpath entries from an Eclipse Run Configuration File");
@@ -463,7 +477,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 	 * Boostraps this container.
 	 * @param configDirectories names of directories that will be recursively searched for XML files to load into Spring.
 	 */
-	public HeliosApplicationContext bootStrap(String...configDirectories) {
+	public HeliosApplicationContext bootStrap(Set<String> profiles, String...configDirectories) {
 		LOG.info("Conf Dirs:" + configDirectories.length);
 		for(String s: configDirectories) {
 			LOG.info("Conf Dirs:" + s);
@@ -520,6 +534,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 		}
 		
 		applicationContext = new HeliosApplicationContext(configFiles, false);
+		setProfiles(profiles, applicationContext);
 		ApplicationContextService acs = new ApplicationContextService(applicationContext);
 		try {
 			JMXHelperExtended.getHeliosMBeanServer().registerMBean(acs, ApplicationContextService.OBJECT_NAME);
@@ -554,15 +569,15 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 		String[] beans = applicationContext.getQualifiedBeanDefinitionNames();
 		for(String s: beans) {
 			b.append("\n\t").append(s);
-			try {
-				ObjectName on = null; //inspectForJMXRegister(s);
-				if(on!=null) {
-					b.append("\t[JMX:").append(on.toString() + "]");
-				}
-			} catch (BeanIsAbstractException bia) {
-			} catch (Exception e) {
-				LOG.warn("Failed to register MODB [" + s + "] with Agent", e);
-			}
+//			try {
+//				ObjectName on = null; //inspectForJMXRegister(s);
+//				if(on!=null) {
+//					b.append("\t[JMX:").append(on.toString() + "]");
+//				}
+//			} catch (BeanIsAbstractException bia) {
+//			} catch (Exception e) {
+//				LOG.warn("Failed to register MODB [" + s + "] with Agent", e);
+//			}
 		}
 		b.append("\n============================\n");
 		b.append(applicationContext.toString()).append("\n");
@@ -632,6 +647,43 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 		} else {
 			return null;
 		}
+	}
+	
+	/**
+	 * Activates the container profiles
+	 * @param profiles A set fo command lines supplied profiles
+	 * @param gac The application context
+	 */
+	protected void setProfiles(Set<String> profiles, GenericApplicationContext gac) {
+		if(gac==null) throw new IllegalArgumentException("The passed application context was null", new Throwable());
+		String os = System.getProperty("os.name", "Unknown").toLowerCase();
+		String osProfile = null;
+		if(os.contains("windows")) {
+			osProfile = "windows";
+		} else if(os.contains("linux")) {
+			osProfile = "linux";
+		} else if(os.contains("solaris")) {
+			osProfile = "solaris";
+		} else {
+			osProfile = "os";
+		}
+		gac.getEnvironment().setActiveProfiles(osProfile);   
+		if(profiles!=null && !profiles.isEmpty()) {
+			for(String profile: profiles) {
+				profile = profile.trim();
+				if(!profile.isEmpty()) {
+					if(profile.startsWith("${") && profile.endsWith("}")) {
+						String propName = new StringBuilder(profile).deleteCharAt(profile.length()-1).delete(0, 2).toString();
+						String propVal = ConfigurationHelper.getSystemThenEnvProperty(propName, null);
+						if(propVal!=null) {
+							profile = propVal;
+						}
+					}
+					gac.getEnvironment().setActiveProfiles(profile);
+				}
+			}
+		}
+		
 	}
 	
 	/**
