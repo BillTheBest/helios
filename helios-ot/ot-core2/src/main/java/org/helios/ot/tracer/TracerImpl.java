@@ -1005,7 +1005,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 */
 	public Trace traceDelta(int value, String metricName, String... nameSpace) {
 		Builder builder = Trace.build(value, MetricType.DELTA_INT_AVG, metricName).segment(nameSpace).format(this);
-		if(builder!=null) return builder.build();
+		if(builder!=null) return traceTrace(builder.build());
 		return null;
 	}
 	
@@ -1019,7 +1019,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 */
 	public Trace traceDelta(long value, String metricName, String... nameSpace) {
 		Builder builder = Trace.build(value, MetricType.DELTA_LONG_AVG, metricName).segment(nameSpace).format(this);
-		if(builder!=null) return builder.build();
+		if(builder!=null) return traceTrace(builder.build());
 		return null;
 	}
 	
@@ -1218,7 +1218,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 */	
 	public Trace traceDelta(int value, String metricName, String[] prefix, String... nameSpace) {
 		Builder builder = Trace.build(value, MetricType.DELTA_INT_AVG, metricName).segment(nameSpace).prefix(prefix).format(this);
-		return builder!=null ? builder.build() : null;
+		return traceTrace(builder!=null ? builder.build() : null);
 	}
 
 
@@ -1232,7 +1232,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 */	
 	public Trace traceDelta(long value, String metricName, String[] prefix, String... nameSpace) {
 		Builder builder = Trace.build(value, MetricType.DELTA_LONG_AVG, metricName).segment(nameSpace).prefix(prefix).format(this);
-		return builder!=null ? builder.build() : null;
+		return traceTrace(builder!=null ? builder.build() : null);
 	}
 
 	/**
