@@ -1366,7 +1366,8 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 		llAppender = new LinkedListAppender();
 		internalLog = Logger.getLogger("internal.logger");
 		internalLog.setLevel(Level.DEBUG); 
-		internalLog.setAdditivity(false);  
+		internalLog.setAdditivity(false);
+		internalLog.removeAllAppenders();
 		internalLog.addAppender(llAppender);  
 	}
 	
