@@ -91,11 +91,6 @@
 			</dependency>
 
 			<dependency>
-			  	<groupId>org.helios.helios-ot</groupId>
-				<artifactId>helios-ot-core</artifactId>
-				<version>${helios.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>org.helios</groupId>
 				<artifactId>helios-scripting</artifactId>
 				<version>${helios.version}</version>

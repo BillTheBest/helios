@@ -29,7 +29,7 @@
 	<!-- helios compile dependencies -->
                 <dependency>
                         <groupId>org.helios.helios-ot</groupId>
-                        <artifactId>helios-ot-core</artifactId>
+                        <artifactId>helios-ot-core2</artifactId>
                         <version>${helios.version}</version>
                 </dependency>
 

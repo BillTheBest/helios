@@ -20,7 +20,7 @@
     <module>helios-esper</module>
     <module>helios-installer</module>
     <module>helios-esper-cl</module>
-    <module>helios-persistence</module>
+    <!-- <module>helios-persistence</module> -->
     <module>helios-webapp</module>
     <module>helios-ot-server</module>
     <module>helios-native</module>
@@ -751,7 +751,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.helios-ot</groupId>
-			<artifactId>helios-ot-core</artifactId>
+			<artifactId>helios-ot-core2</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
 		<dependency>

@@ -14,11 +14,11 @@
   <url>http://www.heliosdev.org/projects/opentrace</url>
   <modules>
     <module>ot-core2</module>
-    <module>ot-amqp</module>
+    <!-- <module>ot-amqp</module> -->
     <module>ot-google</module>
-    <module>ot-esper</module>
+    <!-- <module>ot-esper</module> -->
     <module>ot-relay</module>
-    <module>ot-helios</module>
+    <!-- <module>ot-helios</module> -->
   </modules>
   
 	<build>
