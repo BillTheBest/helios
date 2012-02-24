@@ -58,6 +58,12 @@
 				<groupId>org.helios.helios-spring</groupId>
 				<artifactId>helios-spring-core</artifactId>
 			</dependency>
+
+			<dependency>
+			  <groupId>org.springframework</groupId>
+			  <artifactId>spring-jdbc</artifactId>
+			</dependency>
+			
 			<dependency>
 				<groupId>org.helios</groupId>
 				<artifactId>helios-jmx</artifactId>
