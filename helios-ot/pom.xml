@@ -13,9 +13,9 @@
   <name>opentrace</name>
   <url>http://www.heliosdev.org/projects/opentrace</url>
   <modules>
-    <module>ot-core</module>
     <module>ot-core2</module>
     <module>ot-amqp</module>
+    <module>ot-google</module>
     <module>ot-esper</module>
     <module>ot-relay</module>
     <module>ot-helios</module>
