@@ -38,12 +38,13 @@ import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
-import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.context.event.ContextClosedEvent;
-import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.support.GenericXmlApplicationContext;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 
@@ -57,9 +58,7 @@ import org.springframework.core.io.UrlResource;
  * $Id$
  */
 @JMXManagedObject(annotated=true, declared=true)
-public class HeliosApplicationSubContext extends GenericApplicationContext implements ApplicationListener {
-	/** An XML Bean Definition Reader */
-	protected final XmlBeanDefinitionReader beanDefReader = new XmlBeanDefinitionReader(this);
+public class HeliosApplicationSubContext extends GenericXmlApplicationContext implements ApplicationListener {
 	/** instance logger */
 	protected final Logger log;
 	/** The subcontext's JMX ObjectName */
@@ -73,7 +72,8 @@ public class HeliosApplicationSubContext extends GenericApplicationContext imple
 	
 	
 	public HeliosApplicationSubContext(String name, String id, ApplicationContext parent) {
-		super(parent);
+		super();
+		this.setParent(parent);
 		this.setDisplayName(name);
 		this.setId(id);
 		objectName = JMXHelper.objectName(SUBCONTEXT_DOMAIN + ":name=" + name + ",id=" + id);
@@ -139,7 +139,8 @@ public class HeliosApplicationSubContext extends GenericApplicationContext imple
 		this(name, id, parent);
 		this.configurationUrl = configurationUrl;
 		Resource rez = new UrlResource(configurationUrl);
-		int beansFound = beanDefReader.loadBeanDefinitions(rez);
+		this.load(rez);
+		int beansFound = this.getBeanDefinitionNames().length;
 		StringBuilder b = new StringBuilder("\nCreated Subcontext [");
 		b.append(objectName).append("] with [").append(beansFound).append("]");
 		for(String beanName: this.getBeanDefinitionNames()) {
@@ -168,7 +169,14 @@ public class HeliosApplicationSubContext extends GenericApplicationContext imple
 	 */
 	public void onApplicationEvent(ApplicationEvent event) {
 		Object source = event.getSource();
-		if(event instanceof ContextClosedEvent && source.equals(this)) {
+		if(!source.equals(this)) return;
+		if(event instanceof ContextClosedEvent) {
+			for(Map.Entry<String, SmartLifecycle> entry: ((ContextClosedEvent) event).getApplicationContext().getBeansOfType(SmartLifecycle.class).entrySet()) {
+				SmartLifecycle bean = entry.getValue();
+				if(bean.isRunning()) {
+					bean.stop();
+				}
+			}			
 			try {
 				if(JMXHelperExtended.getHeliosMBeanServer().isRegistered(objectName)) {
 					JMXHelperExtended.getHeliosMBeanServer().unregisterMBean(objectName);
@@ -177,7 +185,14 @@ public class HeliosApplicationSubContext extends GenericApplicationContext imple
 			} catch (Exception e) {
 				log.warn("Failed to unregister subcontext [" + objectName + "]");
 			}
-		}
+		} else if(event instanceof ContextRefreshedEvent) {
+			for(Map.Entry<String, SmartLifecycle> entry: ((ContextRefreshedEvent) event).getApplicationContext().getBeansOfType(SmartLifecycle.class).entrySet()) {
+				SmartLifecycle bean = entry.getValue();
+				if(bean.isAutoStartup() && !bean.isRunning()) {
+					bean.start();
+				}
+			}
+		} 
 
 	}
 	
