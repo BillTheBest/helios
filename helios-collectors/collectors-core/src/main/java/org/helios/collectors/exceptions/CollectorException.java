@@ -24,7 +24,7 @@
  */
 package org.helios.collectors.exceptions;
 
-public class CollectorException extends Exception {
+public class CollectorException extends RuntimeException {
 
 	public CollectorException() {
 		super();

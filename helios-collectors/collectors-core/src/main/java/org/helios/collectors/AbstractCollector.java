@@ -76,6 +76,7 @@ import org.helios.ot.tracer.TracerManager3;
 import org.helios.scripting.ScriptBeanException;
 import org.helios.scripting.ScriptBeanWrapper;
 import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.context.SmartLifecycle;
 
 
 /**
@@ -93,7 +94,7 @@ import org.springframework.beans.factory.BeanNameAware;
                 @JMXNotificationType(type="org.helios.collectors.AbstractCollector.CollectorState")
         })       
 })
-public abstract class AbstractCollector extends ManagedObjectDynamicMBean implements Callable<CollectionResult>, ICollector, NamedTask, BeanNameAware, CacheEventListener {
+public abstract class AbstractCollector extends ManagedObjectDynamicMBean implements Callable<CollectionResult>, ICollector, NamedTask, BeanNameAware, CacheEventListener, SmartLifecycle {
 	
 	private static final long serialVersionUID = 8420908979451738697L;
 
@@ -210,18 +211,33 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	 * should automatically set this state in each case.
 	 */
 	protected enum CollectorState {
-		NULL, 
-		CONSTRUCTED, 
-		INITIALIZING, 
-		INITIALIZED,
-		INIT_FAILED,
-		STARTING, 
-		STARTED, 
-		START_FAILED, 
-		STOPPING, 
-		STOPPED, 
-		COLLECTING,
-		RESETTING
+		NULL(false), 
+		CONSTRUCTED(false), 
+		INITIALIZING(true), 
+		INITIALIZED(true),
+		INIT_FAILED(false),
+		STARTING(true), 
+		STARTED(true), 
+		START_FAILED(false), 
+		STOPPING(false), 
+		STOPPED(false), 
+		COLLECTING(true),
+		RESETTING(true);
+		
+		private CollectorState(boolean running) {
+			this.running = running;
+		}
+		
+		private final boolean running;
+
+		/**
+		 * Indicates if this state is considered running
+		 * @return true if this state is considered running, false otherwise
+		 */
+		public boolean isRunning() {
+			return running;
+		}
+		
 	}
 	
 	/** Indicates the current state of the collector. */
@@ -300,6 +316,12 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	/** TODO Spring Bean Factory Reference
 	protected BeanFactory beanFactory;	
 	*/	
+	
+	/** Indicates if this instance should auto-start  */
+	protected boolean autoStart = true;
+	/** The configured startup phase */
+	protected int phase = Integer.MAX_VALUE;
+	
 	
 	/** Reference to the primary task scheduling service for Helios */
 	protected HeliosScheduler hScheduler = null;
@@ -391,6 +413,59 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	}
 	
 	/**
+	 * {@inheritDoc}
+	 * <p>Indicates if this instance should auto-start 
+	 * @see org.springframework.context.SmartLifecycle#isAutoStartup()
+	 */
+	@Override
+	@JMXAttribute(name="AutoStartup", description="Indicates if this instance should auto-start", mutability=AttributeMutabilityOption.READ_ONLY)
+	public boolean isAutoStartup() {
+		return autoStart;
+	}
+	
+	/**
+	 * Sets the auto start flag.
+	 * @param autoStart true to auto start, false otherwise
+	 */
+	public void setAutoStartup(boolean autoStart) {
+		this.autoStart = autoStart;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>Callback from the Spring container to stop the collector.
+	 * @see org.springframework.context.SmartLifecycle#stop(java.lang.Runnable)
+	 */
+	@Override
+	public void stop(Runnable callback) {
+		try {
+			stop();
+		} finally {
+			callback.run();
+		}
+		
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>The configured startup phase
+	 * @see org.springframework.context.Phased#getPhase()
+	 */
+	@Override
+	@JMXAttribute(name="Phase", description="The configured startup phase", mutability=AttributeMutabilityOption.READ_WRITE)
+	public int getPhase() {
+		return phase;
+	}
+
+	/**
+	 * Sets the phase
+	 * @param phase The smart lifecycle phase
+	 */
+	public void setPhase(int phase) {
+		this.phase = phase;
+	}
+	
+	/**
 	 * Returns version of Helios Core Collector
 	 * 
 	 * @return version of AbstractCollector
@@ -415,7 +490,7 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	 */
 	protected void registerInMBeanServer(AbstractCollector collector){
 		defaultDomain = SystemEnvironmentHelper.getSystemPropertyThenEnv(JMX_DOMAIN_PROPERTY, JMX_DOMAIN_DEFAULT);
-		server = JMXHelper.getLocalMBeanServer(defaultDomain);
+		server = JMXHelper.getHeliosMBeanServer();
 		try{
 			server.registerMBean(collector, objectName);
 		}catch (InstanceAlreadyExistsException iaex) {
@@ -424,6 +499,18 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 		} catch (Exception ex) {
 			if(logErrors)
 				log.error("An unexpected error occured while registering MBean with objectName: [" +objectName+ "].", ex);			
+		}
+	}
+	
+	/**
+	 * Unregisters a collector MBean
+	 */
+	protected void unregisterFromMBeanServer() {
+		try { 
+			JMXHelper.getHeliosMBeanServer().unregisterMBean(objectName);
+		} catch (Exception e) {
+			if(logErrors)
+				log.error("Failed to unregister MBean with objectName: [" +objectName+ "]", e);						
 		}
 	}
 		
@@ -502,7 +589,7 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	 * @throws CollectorStartException
 	 */
 	@JMXOperation (name="start", description="Start this collector")
-	public final void start() throws CollectorStartException{
+	public final void start() {
 		try {
 			init();
 			if(getState() != CollectorState.INITIALIZED){
@@ -757,12 +844,13 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	 * overridden by concrete collector classes
 	 */
 	@JMXOperation (name="stop", description="Stop this collector")
-	public final void stop() throws CollectorException{
+	public final void stop() {
 		if(getState()==CollectorState.STOPPED || getState()==CollectorState.STOPPING)
 			return;
 		setState(CollectorState.STOPPING);
 		try {
 			preStop();
+			unregisterFromMBeanServer();
 			unScheduleCollect();
 			unScheduleReset();			
 			stopCollector();
@@ -1291,16 +1379,13 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
         else return "Unknown";
 	}	
 	
+	/**
+	 * {@inheritDoc}
+	 * <p>Indicates if the collector is running
+	 * @see org.helios.collectors.ICollector#isRunning()
+	 */
 	public boolean isRunning() {
-		boolean isRunning=true;
-		if( 	getState() == CollectorState.STOPPED ||
-				getState() == CollectorState.INIT_FAILED ||
-				getState() == CollectorState.START_FAILED || 
-				getState() == CollectorState.STOPPING ||
-				getState() == CollectorState.NULL ){  
-			isRunning=false;
-		}
-		return isRunning;
+		return getState().isRunning();
 	}
 	
 	/**
@@ -1367,7 +1452,7 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 		internalLog = Logger.getLogger("internal.logger");
 		internalLog.setLevel(Level.DEBUG); 
 		internalLog.setAdditivity(false);
-		internalLog.removeAllAppenders();
+		//internalLog.removeAllAppenders();
 		internalLog.addAppender(llAppender);  
 	}
 	
