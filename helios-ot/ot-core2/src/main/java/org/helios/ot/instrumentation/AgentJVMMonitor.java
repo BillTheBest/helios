@@ -266,12 +266,12 @@ public class AgentJVMMonitor {
 		int monitorDeadlockedThreads = deadLocked==null ? 0 : deadLocked.length;
 		int peakThreadCount = threadMXBean.getPeakThreadCount();
 		threadMXBean.resetPeakThreadCount();
-		itracer.trace(threadCount, "Thread Count", THREAD_ROOT);
-		itracer.trace(daemonThreadCount, "Daemon Thread Count", THREAD_ROOT);
-		itracer.trace(nonDaemonThreadCount, "NonDaemon Thread Count", THREAD_ROOT);
-		itracer.trace(peakThreadCount, "Peak Thread Count", THREAD_ROOT);
-		itracer.trace(deadlockedThreads, "Deadlocked Thread Count", THREAD_ROOT);
-		itracer.trace(monitorDeadlockedThreads, "Monitor Deadlocked Thread Count", THREAD_ROOT);
+		itracer.traceSticky(threadCount, "Thread Count", THREAD_ROOT);
+		itracer.traceSticky(daemonThreadCount, "Daemon Thread Count", THREAD_ROOT);
+		itracer.traceSticky(nonDaemonThreadCount, "NonDaemon Thread Count", THREAD_ROOT);
+		itracer.traceSticky(peakThreadCount, "Peak Thread Count", THREAD_ROOT);
+		itracer.traceSticky(deadlockedThreads, "Deadlocked Thread Count", THREAD_ROOT);
+		itracer.traceSticky(monitorDeadlockedThreads, "Monitor Deadlocked Thread Count", THREAD_ROOT);
 	}
 	
 	/**

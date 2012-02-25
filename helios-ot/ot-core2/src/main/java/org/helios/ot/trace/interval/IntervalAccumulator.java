@@ -681,6 +681,7 @@ public class IntervalAccumulator extends ManagedObjectDynamicMBean implements In
 	 */
 	@JMXOperation(name="submit", description="Submits a trace to be accumulated")
 	public void submit(@JMXParameter(name="trace", description="The trace to submit") Trace trace) {
+		if(trace==null) return;
 		if(log.isTraceEnabled()) log.trace("Submitting Trace [" + trace.getFQN() + "][" + trace.getMod() + "]");
 		if(submissionQueues[trace.getMod()].offer(trace)) {
 			if(trace.hasAnyPhaseTriggers() && trace.hasTriggersFor(Phase.SUBQ)) {

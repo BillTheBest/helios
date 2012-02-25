@@ -421,6 +421,7 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 	}
 		
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
 	protected boolean processTracesImpl(TraceCollection traceCollection)
 			throws EndpointConnectException, EndpointTraceException {
@@ -428,7 +429,7 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 		if(agent==null) return false;
 		Set<Trace<? extends ITraceValue>> traces = traceCollection.getTraces();
 		if(traces!=null && !traces.isEmpty()) {		
-			for(Trace trace: traces) {
+			for(Trace<?> trace: traces) {
 				String iMetricName = getIntroscopeMetric(trace.getMetricId());
 				MetricType type = trace.getMetricType();
 				int typeCode = type.getCode();
