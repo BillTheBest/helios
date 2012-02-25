@@ -56,32 +56,6 @@
    		<constructor-arg value="seda:otlocal" />
    	</bean>
    	
-   	
-   	
-   	
-   	
-   	<util:list id="TMEndpoints" >
-   		<ref bean="OTLocalEndpoint" />
-   		<ref bean="IntroscopeEndpoint" />		
-   		<!-- <bean id="CollectdEndpoint" class="org.helios.server.ot.endpoint.local.CollectdEndpoint"/> -->
-   	</util:list>
-   	
-   	<bean id="TracerManager3" class="org.helios.ot.tracer.TracerManager3" factory-method="getInstance" lazy-init="false" >
-   		<constructor-arg>
-   			<bean id="TracerManager3.Configuration" class="org.helios.ot.tracer.TracerManager3.Configuration" factory-method="getDefaultConfiguration">
-   				<property name="endPoints" ref="TMEndpoints" />
-   			</bean>
-   		</constructor-arg>
-   	</bean>
-   	
-   	<!-- 
-   	<bean id="Monitor" class="org.helios.server.ot.endpoint.local.TestLocalOT" init-method="start" destroy-method="stop">
-   		<constructor-arg ref="OTLocalEndpoint" />
-   	</bean>
-   	-->
-   	
-   	
-   	
    	<bean id="senderTemplate" class="org.apache.camel.impl.DefaultProducerTemplate" init-method="start" destroy-method="stop" >
    		<constructor-arg ref="HeliosContext"/>
    		<constructor-arg ref="MetricInputStreamThreadPool"/>
@@ -188,31 +162,6 @@
   		<property name="completionTimeout" value="3000" />	
 	</bean>	    
 
-
-   	<bean id="IntroscopeEndpoint" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint" >
-   		<constructor-arg ref="IntroscopeBuilder" />
-   	</bean>   	   	  
-
-    
-   	<beans profile="windows">
-	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
-	   		 <property name="agentName" value="OTServer" />
-	   		 <property name="emHost" value="localhost" />
-	   		 <property name="emPort" value="5001" />
-	   		 <property name="processName" value="Helios" />   		 
-	   		 <property name="agentJar" value="c:\\Introscope\\Introscope8.2.0.0\\agents\\jboss\\Agent.jar" />
-	   	</bean>
-   	</beans>
-   	
-   	<beans profile="linux">  
-	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
-	   		 <property name="agentName" value="OTServer" />
-	   		 <property name="emHost" value="hserval" />
-	   		 <property name="emPort" value="5001" />
-	   		 <property name="processName" value="Helios" />   		 
-	   		 <property name="agentJar" value="/home/nwhitehead/introscope/9.0/agent/wily/Agent.jar" />
-	   	</bean>
-   	</beans>
 
 </beans>
 
