@@ -41,6 +41,7 @@ import org.helios.collectors.jdbc.binding.provider.BindVariableProviderFactory;
 import org.helios.collectors.jdbc.binding.provider.IBindVariableProvider;
 import org.helios.collectors.jdbc.extract.IReadOnlyProcessedResultSet;
 import org.helios.helpers.XMLHelper;
+import org.helios.ot.deltas.DeltaManager;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.Trace.Builder;
 import org.helios.ot.tracer.ITracer;
@@ -198,9 +199,25 @@ public class MetricMap {
 		if(metricType.isDelta()) {
 			if(metricType.isLong()) {
 				if(metricType.isSticky()) {
-					trace = tracer.traceStickyDelta(Long.parseLong(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+					
+					trace = tracer.traceStickyDelta(
+							new Double(
+									valueFormatter.getValue(prs, connMetaData)
+							).longValue(), 
+							nameFormatter.getValue(prs, connMetaData), 
+							prefix, 
+							segmentFormatter.getValues(prs, connMetaData)
+					);
+					//log.info("DB Trace:\n\tRaw Value:[" + valueFormatter.getValue(prs, connMetaData) + "]\n\tTrace:" + trace);
 				} else {
-					trace = tracer.traceDelta(Long.parseLong(valueFormatter.getValue(prs, connMetaData)), nameFormatter.getValue(prs, connMetaData), prefix, segmentFormatter.getValues(prs, connMetaData));
+					trace = tracer.traceDelta(
+							Long.parseLong(
+									valueFormatter.getValue(prs, connMetaData)
+							), 
+							nameFormatter.getValue(prs, connMetaData), 
+							prefix, 
+							segmentFormatter.getValues(prs, connMetaData)
+					);
 				}
 			} else if(metricType.isInt()) {
 				if(metricType.isSticky()) {
@@ -259,7 +276,7 @@ public class MetricMap {
 	public void traceScopeFailures() {
 		if(!tracerEnabled) return;
 		Set<String> removes = new HashSet<String>();
-		for(Map.Entry<String, ScopeState> scopes: scopeMap.entrySet()) {
+		for(Map.Entry<String, ScopeState> scopes: scopeMap.entrySet()) {    
 			ScopeState state = scopes.getValue(); 
 			if(!state.isAccounted()) {				
 				Builder builder = tracer.trace(
@@ -268,9 +285,14 @@ public class MetricMap {
 						state.getType())
 				.segment(prefix)
 				.segment(state.getSegment())
-				.temporal(temporal);
-				builder.trace();				
+				.temporal(temporal)
+				.deltaReset();
+				Trace trace = tracer.traceTrace(builder.trace());
+				if(trace!=null && state.getType().isDelta()) {
+					DeltaManager.getInstance().reset(trace.getFQN());
+				}
 				removes.add(scopes.getKey());
+				
 			}
 		}
 		for(String name: removes) {

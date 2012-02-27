@@ -172,10 +172,10 @@ public class SQLMapping implements ApplicationContextAware, BeanNameAware {
 			}
 			ProcessedResultSet prs  = new ProcessedResultSet(rset);
 			prs.setQueryName(mappingName);
-			if(LOG.isDebugEnabled()) LOG.debug("Retrieved [" + prs.getRowCount() + "] rows.");
+			//if(LOG.isDebugEnabled()) LOG.debug("Retrieved [" + prs.getRowCount() + "] rows.");
 			try { rset.close(); } catch (Exception e) {}
 			elapsed = System.currentTimeMillis()-start;
-			LOG.info("Elapsed Time to PRS:" + elapsed + " ms.");
+			//LOG.info("Elapsed Time to PRS:" + elapsed + " ms.");
 			if(!pre) {
 				if(LOG.isDebugEnabled()) LOG.debug("Resetting Scope on Metric Maps");
 				for(MetricMap mm: metricMaps) {

@@ -804,15 +804,15 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	 * 
 	 */
 	private void logCollectionResultDetails() {
-		internalLog.info("Last Collection Result: " + collectionResult.getResultForLastCollection());
-		internalLog.info("Last Collection Started at: " + returnDate(lastTimeCollectionStarted));
-		internalLog.info("Last Collection Succeeded at: " + returnDate(lastTimeCollectionSucceeded));
-		internalLog.info("Last Collection Completed at: " + returnDate(lastTimeCollectionCompleted));
-		internalLog.info("Last Collection Failed at: " + returnDate(lastTimeCollectionFailed));
-		internalLog.info("Total number of collections so far: "+totalCollectionCount);
-		internalLog.info("Successful collections: "+totalSuccessCount);
-		internalLog.info("Failed collections: "+totalFailureCount);
-		internalLog.info("Consecutive failed collections: "+consecutiveFailureCount);
+//		internalLog.info("Last Collection Result: " + collectionResult.getResultForLastCollection());
+//		internalLog.info("Last Collection Started at: " + returnDate(lastTimeCollectionStarted));
+//		internalLog.info("Last Collection Succeeded at: " + returnDate(lastTimeCollectionSucceeded));
+//		internalLog.info("Last Collection Completed at: " + returnDate(lastTimeCollectionCompleted));
+//		internalLog.info("Last Collection Failed at: " + returnDate(lastTimeCollectionFailed));
+//		internalLog.info("Total number of collections so far: "+totalCollectionCount);
+//		internalLog.info("Successful collections: "+totalSuccessCount);
+//		internalLog.info("Failed collections: "+totalFailureCount);
+//		internalLog.info("Consecutive failed collections: "+consecutiveFailureCount);
 	}
 	
 	private String returnDate(long millis){
