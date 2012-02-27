@@ -1006,12 +1006,9 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 * @return The generated Trace or null if returnTraces is false or if the delta was suppressed.
 	 */
 	public Trace traceDelta(int value, String metricName, String... nameSpace) {
-		Number deltaValue = DeltaManager.getInstance().delta(buildMetricName(metricName, nameSpace), value, MetricType.DELTA_INT_AVG);
-		if(deltaValue!=null) {
-			Builder builder = Trace.build(deltaValue.intValue(), MetricType.DELTA_INT_AVG, metricName).segment(nameSpace).format(this);
-			if(builder!=null) return builder.build();
-		}
-		return null;
+		return traceTrace(
+				Trace.build(value, MetricType.DELTA_INT_AVG, metricName).segment(nameSpace).format(this).build()				
+		);
 	}
 	
 	
@@ -1023,12 +1020,9 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 * @return The generated Trace or null if returnTraces is false or if the delta was suppressed.
 	 */
 	public Trace traceDelta(long value, String metricName, String... nameSpace) {
-		Number deltaValue = DeltaManager.getInstance().delta(buildMetricName(metricName, nameSpace), value, MetricType.DELTA_LONG_AVG);
-		if(deltaValue!=null) {
-			Builder builder = Trace.build(deltaValue.longValue(), MetricType.DELTA_LONG_AVG, metricName).segment(nameSpace).format(this);
-			if(builder!=null) return builder.build();
-		}
-		return null;
+		return traceTrace(
+				Trace.build(value, MetricType.DELTA_LONG_AVG, metricName).segment(nameSpace).format(this).build()				
+		);
 	}
 	
 	/**
@@ -1109,14 +1103,9 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 * @return The generated Trace  or null if returnTraces is false or if the delta was suppressed.
 	 */
 	public Trace traceStickyDelta(long value, String metricName, String... nameSpace) {
-		Number deltaValue = DeltaManager.getInstance().delta(buildMetricName(metricName, nameSpace), value, MetricType.DELTA_LONG_AVG);
-		if(deltaValue!=null) {
-			Builder builder = Trace.build(deltaValue.longValue(), MetricType.DELTA_LONG_AVG, metricName).segment(nameSpace).format(this);
-			if(builder!=null) {
-				return traceTrace(builder.build());
-			}
-		}
-		return null;
+		return traceTrace(
+				Trace.build(value, MetricType.STICKY_DELTA_LONG_AVG, metricName).segment(nameSpace).format(this).build()				
+		);
 	}
 
 	
@@ -1315,7 +1304,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 				Trace.build(value, MetricType.STICKY_DELTA_INT_AVG, metricName).segment(nameSpace).prefix(prefix).format(this).build()				
 		);						
 	}
-
+	
 	/**
 	 * Traces a sticky delta long. 
 	 * @param value The trace value.
@@ -1325,15 +1314,12 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 * @return The generated Trace or null if returnTraces is false.
 	 */	
 	public Trace traceStickyDelta(long value, String metricName, String[] prefix, String... nameSpace) {
-		Number deltaValue = DeltaManager.getInstance().delta(buildMetricName(metricName, nameSpace), value, MetricType.DELTA_LONG_AVG);
-		if(deltaValue!=null) {
-			Builder builder = Trace.build(deltaValue.longValue(), MetricType.STICKY_DELTA_LONG_AVG, metricName).segment(nameSpace).prefix(prefix).format(this);
-			if(builder!=null) {
-				return traceTrace(builder.build());
-			}
-		}
-		return null;
+		return traceTrace(
+				Trace.build(value, MetricType.STICKY_DELTA_LONG_AVG, metricName).segment(nameSpace).prefix(prefix).format(this).build()				
+		);						
 	}
+	
+
 
 	/**
 	 * Traces a timestamp. 

@@ -487,6 +487,10 @@ public class Trace<T extends ITraceValue> implements Externalizable, Serializabl
 		private String agent = null;
 		private String host = null;
 		
+		// Indicates a delta reset
+		private boolean deltaReset = false;
+		
+
 		// Phase triggers
 		/** Phase trigger map */
 		protected final Map<Phase, Set<IPhaseTrigger>> phaseTriggers = new EnumMap<Phase, Set<IPhaseTrigger>>(Phase.class);
@@ -733,6 +737,25 @@ public class Trace<T extends ITraceValue> implements Externalizable, Serializabl
 		}
 		
 		/**
+		 * Indicates if this builder is building a delta reset trace
+		 * @return true if this builder is building a delta reset trace, false otherwise
+		 */
+		public boolean isDeltaReset() {
+			return deltaReset;
+		}
+
+
+		/**
+		 * Designates this builder to build a deltra trace meaning that the value provided is absolute and will not be delta'ed
+		 * @return this builder
+		 */
+		public Builder deltaReset() {
+			deltaReset = true;
+			return this;
+		}
+		
+		
+		/**
 		 * Builds the metric name from the Builder collected fragments
 		 * @return The fully qualified metric name
 		 */
@@ -761,6 +784,7 @@ public class Trace<T extends ITraceValue> implements Externalizable, Serializabl
 		 * Builds a new trace from the builder.
 		 * @return A new trace or null if the itracer vetoed the metric.
 		 */
+		@SuppressWarnings({ "rawtypes", "unchecked" })
 		public Trace build() {			
 			if(t!=null) {
 				return t;
@@ -784,12 +808,11 @@ public class Trace<T extends ITraceValue> implements Externalizable, Serializabl
 				t.phaseTriggers.putAll(phaseTriggers);
 				t.anyPhaseTriggers = true;
 			}		
-			if(metricType.isDelta()) {
+			if(metricType.isDelta() && !deltaReset) {
 				if(value.applyDelta(metricName)==null) {
 					return null;
 				}
 			}
-
 			return t;
 		}
 		

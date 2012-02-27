@@ -46,7 +46,10 @@ public class DeltaManager {
 	/** The delta manager singleton */
 	protected volatile static DeltaManager deltaManager = null;
 	/** The container for tracking deltas */
-	protected TObjectLongHashMap<java.lang.String> longDeltas = null;
+	protected final TObjectLongHashMap<java.lang.String> longDeltas;
+	/** The container for tracking the last served delta */
+	protected final TObjectLongHashMap<java.lang.String> lastServedDeltas;
+	
 	/** The configured default delta type for this JVM instance */
 	static DeltaType deltaType = null;
 	/** The class logger */
@@ -78,7 +81,8 @@ public class DeltaManager {
 		try { initialDeltaCapacity = Integer.parseInt(SystemEnvironmentHelper.getEnvThenSystemProperty(DELTA_CAPACITY)); } catch (Exception e) {}
 		try { initialDeltaLoadFactor = Float.parseFloat(SystemEnvironmentHelper.getEnvThenSystemProperty(DELTA_LOAD_FACTOR)); } catch (Exception e) {}
 		try { deltaType = DeltaType.valueOf(SystemEnvironmentHelper.getEnvThenSystemProperty(DELTA_TYPE, DEFAULT_DELTA_TYPE.name())); } catch (Exception e) {}
-		longDeltas = new TObjectLongHashMap<java.lang.String>(initialDeltaCapacity, initialDeltaLoadFactor);		
+		longDeltas = new TObjectLongHashMap<java.lang.String>(initialDeltaCapacity, initialDeltaLoadFactor);
+		lastServedDeltas = new TObjectLongHashMap<java.lang.String>(initialDeltaCapacity, initialDeltaLoadFactor);
 	}
 	
 	/**
@@ -122,7 +126,7 @@ public class DeltaManager {
 			long state = longDeltas.get(name);
 			longDeltas.put(name, inValue);
 			if(inValue < state) {
-				number = processBrokenMonotonic(name, inValue, state, dt);
+				number = processBrokenMonotonic(name, inValue, state, dt, type);
 			} else {
 				number = inValue - state;				
 			}
@@ -130,9 +134,10 @@ public class DeltaManager {
 			longDeltas.put(name, inValue);
 		}
 		if(number==null) return null;
-		if(type.isInt()) {
+		lastServedDeltas.put(name, number.longValue());
+		if(type.isInt()) {			
 			return number.intValue();
-		} else {
+		} else {			
 			return number.longValue();
 		}
 	}
@@ -175,11 +180,15 @@ public class DeltaManager {
 	 * @param name
 	 * @param newValue
 	 * @param state
+	 * @param type
 	 * @return
 	 */
-	protected Long processBrokenMonotonic(String name, long newValue, long state, DeltaType dt) {
+	protected Long processBrokenMonotonic(String name, long newValue, long state, DeltaType dt, MetricType type) {
 		longDeltas.put(name, newValue);
-		if(dt.equals(DeltaType.REBASE)) {			
+		if(dt.equals(DeltaType.REBASE)) {
+			if(lastServedDeltas.containsKey(name)) {
+				return lastServedDeltas.get(name);				
+			}
 			return null;
 		} 
 		long d = newValue - state;
@@ -195,5 +204,15 @@ public class DeltaManager {
 	 */
 	public synchronized void reset() {
 		longDeltas.clear();
+	}
+	
+	/**
+	 * Clears the named delta scope
+	 * @param name The name of the metric delta to reset
+	 */
+	public synchronized void reset(String name) {
+		if(name==null) throw new IllegalArgumentException("The passed name was null", new Throwable());
+		lastServedDeltas.remove(name);
+		longDeltas.remove(name);
 	}
 }
