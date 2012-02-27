@@ -189,6 +189,7 @@ public class DynamicConfiguration implements ApplicationListener, Comparable<Obj
 		}
 		myAppContext = new HeliosApplicationSubContext(configurationFile.toURI().toURL(), configurationFile.getName(), "DynamicConf#" + serial.incrementAndGet() + ",version=" + versionSerial.incrementAndGet(), parentAppContext);
 		this.myAppContext.addApplicationListener(this);
+		this.myAppContext.addApplicationListener(this.myAppContext);
 		this.myAppContext.refresh();
 		propagateToParent();
 		updateTimestamp();

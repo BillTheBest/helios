@@ -172,7 +172,17 @@ public class DynamicDeploymentManager implements Runnable, ThreadFactory, Uncaug
 						dc = managedFiles.get(fName);
 						if(dc.hasChanged()) {
 							try { 
-								dc.refresh();
+								//dc.refresh();
+								if(dc.isStarted()) {
+									dc.stop();
+								}
+								managedFiles.remove(fName);								
+								dc = new DynamicConfiguration(configFile, parentAppContext);
+								managedFiles.put(fName, dc);							
+								//dc.start();
+								newConfigurations.add(dc);
+								
+								
 							} catch (Exception e) {
 								LOG.error("Failed to refresh updated configuration:[" + dc.getDisplayName() + "/" + dc.getId() + "]\n\tWill retry when file is changed.", e);
 								errorFiles.put(fName, configFile.lastModified());

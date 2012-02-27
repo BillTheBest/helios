@@ -389,8 +389,8 @@ public class HeliosApplicationContext extends GenericXmlApplicationContext imple
 	
 
 	/**
-	 * Listens on application events and registers any comtext refreshed events from child app contexts.
-	 * @param event
+	 * Listens on application events and registers any context refreshed events from child app contexts.
+	 * @param event The Spring application event
 	 * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
 	 */
 	public void onApplicationEvent(ApplicationEvent event) {	
@@ -431,7 +431,7 @@ public class HeliosApplicationContext extends GenericXmlApplicationContext imple
 					}
 				}
 			}
-		} else if(event instanceof ContextClosedEvent) {
+		} else if(event instanceof ContextClosedEvent) {			
 			if(source instanceof AbstractApplicationContext) {
 				AbstractApplicationContext appContext = (AbstractApplicationContext)source;
 				childContexts.remove(appContext.getDisplayName());
