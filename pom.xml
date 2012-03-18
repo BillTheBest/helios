@@ -24,6 +24,7 @@
     <module>helios-webapp</module>
     <module>helios-ot-server</module>
     <module>helios-native</module>
+    <module>generic-ot</module>
   </modules>
 
   <repositories>
@@ -48,7 +49,6 @@
     <name>Spring Maven MILESTONE Repository</name>
     <url>http://maven.springframework.org/milestone</url>
   </repository>
-
   </repositories>
 
 
