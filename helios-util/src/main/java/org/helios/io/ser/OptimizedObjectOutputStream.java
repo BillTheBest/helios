@@ -66,6 +66,11 @@ public class OptimizedObjectOutputStream extends ObjectOutputStream {
 		}
 	}
 	
+	/**
+	 * Indicates if the passed class is recognized as optimized by this JVM
+	 * @param clazz The class to test
+	 * @return true if the class is optimized
+	 */
 	public static boolean isClassOptimized(Class<?> clazz) {
 		if(clazz==null) throw new IllegalArgumentException("Passed class was null", new Throwable());
 		int hashCode = clazz.getName().hashCode();
