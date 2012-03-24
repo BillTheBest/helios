@@ -105,6 +105,7 @@
 		<disruptor.version>2.7.1</disruptor.version>
 		<icu4j.version>4.8.1.1</icu4j.version>
 		<google-data.version>1.41.5</google-data.version>
+		<morphia.version>0.99</morphia.version>
 
 	</properties>
 
@@ -366,6 +367,13 @@
 			<groupId>com.espertech</groupId>
 			<artifactId>esperio-springjms</artifactId>
 			<version>${esper.version}</version>
+		</dependency>
+
+		<!-- Morphia -->
+		<dependency>
+			<groupId>com.google.code.morphia</groupId>
+			<artifactId>morphia</artifactId>
+			<version>${morphia.version}</version>
 		</dependency>
 
 

@@ -36,6 +36,7 @@ import com.espertech.esper.client.EventType;
 import com.espertech.esper.client.SafeIterator;
 import com.espertech.esper.client.StatementAwareUpdateListener;
 import com.espertech.esper.client.UpdateListener;
+import com.espertech.esper.client.context.ContextPartitionSelector;
 
 /**
  * <p>Title: HeliosEPStatement</p>
@@ -276,6 +277,24 @@ public class HeliosEPStatement implements EPStatement {
 	@Override
 	public String getServiceIsolated() {
 		return innerStatement.getServiceIsolated();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see com.espertech.esper.client.EPStatement#iterator(com.espertech.esper.client.context.ContextPartitionSelector)
+	 */
+	@Override
+	public Iterator<EventBean> iterator(ContextPartitionSelector selector) {
+		return innerStatement.iterator(selector);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * @see com.espertech.esper.client.EPStatement#safeIterator(com.espertech.esper.client.context.ContextPartitionSelector)
+	 */
+	@Override
+	public SafeIterator<EventBean> safeIterator(ContextPartitionSelector selector) {
+		return innerStatement.safeIterator(selector); 
 	}
 
 }

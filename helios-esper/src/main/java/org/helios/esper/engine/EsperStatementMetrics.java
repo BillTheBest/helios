@@ -30,16 +30,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
+import org.helios.jmx.dynamic.annotations.JMXOperation;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 
 import com.espertech.esper.client.EPServiceProvider;
 import com.espertech.esper.client.EPStatement;
 import com.espertech.esper.client.EPStatementState;
+import com.espertech.esper.client.EPStatementStateListener;
 import com.espertech.esper.client.EventBean;
+import com.espertech.esper.client.EventPropertyDescriptor;
 import com.espertech.esper.client.EventType;
 import com.espertech.esper.client.StatementAwareUpdateListener;
 import com.espertech.esper.client.metric.StatementMetric;
-import com.espertech.esper.core.EPStatementImpl;
+import com.espertech.esper.core.service.EPStatementImpl;
 
 /**
  * <p>Title: EsperStatementMetrics</p>
@@ -49,7 +52,7 @@ import com.espertech.esper.core.EPStatementImpl;
  * @version $LastChangedRevision$
  */
 @JMXManagedObject(annotated=true, declared=true)
-public class EsperStatementMetrics extends ManagedObjectDynamicMBean implements StatementAwareUpdateListener {
+public class EsperStatementMetrics extends ManagedObjectDynamicMBean implements StatementAwareUpdateListener, EPStatementStateListener {
 	/**  */
 	private static final long serialVersionUID = 225348129161683823L;
 	protected EPStatement statement = null;
@@ -58,6 +61,8 @@ public class EsperStatementMetrics extends ManagedObjectDynamicMBean implements 
 	protected String statementName = null;
 	protected EPServiceProvider provider = null;
 	protected AtomicReference<StatementMetric> metric = new AtomicReference<StatementMetric>();
+	protected EventType eventType = null;
+	protected EventPropertyDescriptor[] eventPropertyDescriptors = null;
 
 	
 	
@@ -72,6 +77,9 @@ public class EsperStatementMetrics extends ManagedObjectDynamicMBean implements 
 		statementName = statement.getName();
 		subStatement = provider.getEPAdministrator().createEPL("select * from com.espertech.esper.client.metric.StatementMetric.win:time(5 sec) where statementName = '" + statementName + "'", "Monitor-" + statementName);
 		subStatement.addListener(this);
+		eventType = this.statement.getEventType();
+		if(eventType!=null) eventPropertyDescriptors = eventType.getPropertyDescriptors();
+		provider.addStatementStateListener(this);
 	}
 	
 
@@ -132,8 +140,26 @@ public class EsperStatementMetrics extends ManagedObjectDynamicMBean implements 
 	
 	@JMXAttribute(description="The statement property names", name="PropertyNames", mutability=AttributeMutabilityOption.READ_ONLY)
 	public String[] getPropertyNames() {
-		return statement.getEventType().getPropertyNames();
+		String[] names = new String[eventPropertyDescriptors.length];
+		int cnt = 0;
+		for(EventPropertyDescriptor pd: eventPropertyDescriptors) {
+			names[cnt] = pd.getPropertyName();
+			cnt++;
+		}
+		return names;
 	}
+	
+	@JMXAttribute(description="The statement type names", name="TypeNames", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String[] getTypeNames() {
+		String[] names = new String[eventPropertyDescriptors.length];
+		int cnt = 0;
+		for(EventPropertyDescriptor pd: eventPropertyDescriptors) {
+			names[cnt] = pd.getPropertyType().getName();
+			cnt++;
+		}
+		return names;
+	}
+	
 	
 	@JMXAttribute(description="The timestamp of the last statement change", name="LastTimeChange", mutability=AttributeMutabilityOption.READ_ONLY)	
 	public long getLastTimeChange() {
@@ -263,6 +289,69 @@ public class EsperStatementMetrics extends ManagedObjectDynamicMBean implements 
 	public String getStatementType() {
 		return ((EPStatementImpl)statement).getStatementMetadata().getStatementType().toString();
 	}
+	
+	/**
+	 * Indicates if a subscriber is attached to this statement
+	 * @return true if a subscriber is attached to this statement, false otherwise
+	 */
+	@JMXAttribute(description="Indicates if a subscriber is registered", name="HasSubscriber", mutability=AttributeMutabilityOption.READ_ONLY)
+	public boolean getHasSubscriber() {
+		return statement.getSubscriber()!=null;
+	}
+	
+	/**
+	 * Stops the statement if it is started
+	 */
+	@JMXOperation(name="stop", description="Stops the statement if it is started")
+	public void stop() {
+		if(statement.isStarted()) statement.stop();
+	}
+	
+	/**
+	 * Starts the statement if it is stopped
+	 */
+	@JMXOperation(name="start", description="Starts the statement if it is stopped")
+	public void start() {
+		if(statement.isStopped()) statement.start();
+	}
+	
+	/**
+	 * Destroys the statement
+	 */
+	@JMXOperation(name="destroy", description="Destroys the statement")
+	public void destroy() {
+		provider.removeStatementStateListener(this);
+		statement.destroy();
+	}
+
+
+	/**
+	 * {@inheritDoc}
+	 * @see com.espertech.esper.client.EPStatementStateListener#onStatementCreate(com.espertech.esper.client.EPServiceProvider, com.espertech.esper.client.EPStatement)
+	 */
+	@Override
+	public void onStatementCreate(EPServiceProvider provider, EPStatement statement) {
+		
+	}
+
+
+	/**
+	 * {@inheritDoc}
+	 * @see com.espertech.esper.client.EPStatementStateListener#onStatementStateChange(com.espertech.esper.client.EPServiceProvider, com.espertech.esper.client.EPStatement)
+	 */
+	@Override
+	public void onStatementStateChange(EPServiceProvider provider, EPStatement statement) {
+		if(this.statement==statement) {
+			eventType = this.statement.getEventType();
+			if(eventType!=null) eventPropertyDescriptors = eventType.getPropertyDescriptors();	
+			if(statement.isDestroyed()) {
+				
+			}
+		}
+		
+	}
+	
+	
 
 
 	

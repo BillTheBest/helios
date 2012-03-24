@@ -30,8 +30,16 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Pattern;
+
+import org.bson.types.ObjectId;
+
+import com.google.code.morphia.annotations.Entity;
+import com.google.code.morphia.annotations.Id;
+import com.google.code.morphia.annotations.Transient;
 
 /**
  * <p>Title: GenericMetricDef</p>
@@ -40,6 +48,7 @@ import java.util.regex.Pattern;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.ot.generic.GenericMetricDef</code></p>
  */
+@Entity(value="metricdef", noClassnameStored=true)
 public class GenericMetricDef implements Externalizable {
 	/** The APM Domain */
 	private String domain;
@@ -60,8 +69,14 @@ public class GenericMetricDef implements Externalizable {
 	/** The metric type code */
 	private int typeCode = -1;	
 	/** The full name hash code */
+	@Id
 	private int fullNameHash = -1;
+	/** The data store ID */
 	
+	private ObjectId id;
+	/** Indicates if this metric def's hash code is a recognized subst token */
+	@Transient
+	private boolean recognized = false;	
 	/** Regex to split resource */
 	public static final Pattern resourcePattern = Pattern.compile("\\|");
 	/** Regex to split resource and metric */
@@ -73,7 +88,8 @@ public class GenericMetricDef implements Externalizable {
 	
 	/** The flyweight cache */
 	private static final Map<Integer, GenericMetricDef> GDEFS = new ConcurrentHashMap<Integer, GenericMetricDef>();
-
+	/** A cache of metric def hash codes that are confirmed by a remote as being recognized and mapable back to a metric def */
+	private static final Set<Integer> substTokens = new CopyOnWriteArraySet<Integer>();
 	
 	
 	/**
@@ -99,7 +115,21 @@ public class GenericMetricDef implements Externalizable {
 		return metricDef;
 	}
 	
+	/**
+	 * Retrieves a metric def from the reference cache
+	 * @param hashCode The hash code of the metric def
+	 * @return a metric def
+	 */
+	public static GenericMetricDef getInstance(int hashCode) {
+		GenericMetricDef md = GDEFS.get(hashCode);
+		if(md==null) {
+			throw new RuntimeException("No cached GenericMetricDef for token [" + hashCode + "]", new Throwable());
+		}
+		return md;
+	}
+	
 	public GenericMetricDef() {}
+	
 	
 	/**
 	 * Creates a new GenericMetricDef
@@ -112,6 +142,38 @@ public class GenericMetricDef implements Externalizable {
 		this.typeCode = typeCode;
 		this.fullNameHash = hashCode;
 		init();
+	}
+	
+	
+	/**
+	 * Marks an array of subst tokens as recognized
+	 * @param tokens An array of subst tokens
+	 */
+	public static void recognizeSubstTokens(int...tokens) {
+		if(tokens==null || tokens.length<1) return;
+		for(int token: tokens) {
+			if(token==0 || substTokens.contains(token)) continue;
+			GenericMetricDef metricDef = GDEFS.get(token);
+			if(metricDef==null) {
+				// Corrupt ?
+				System.err.println("GenericMetricDef Corrupted SubstToken Table. Token [" + token + "] was marked as recognized but had no metric def");
+				continue;
+			}
+			metricDef.setRecognized();
+		}
+	}
+	
+	/**
+	 * Marks an array of subst tokens as recognized
+	 * @param tokens An array of subst tokens
+	 */
+	public static void recognizeSubstTokens(Integer...tokens) {
+		if(tokens==null || tokens.length<1) return;
+		int[] itokens = new int[tokens.length];
+		for(int i = 0; i < tokens.length; i++) {
+			itokens[i] = tokens[i];
+		}
+		recognizeSubstTokens(itokens);
 	}
 	
 	/**
@@ -254,14 +316,38 @@ public class GenericMetricDef implements Externalizable {
 		return localName;
 	}	
 	
+	/**
+	 * Indicates if this metric def's hash code is a recognized subst token
+	 * @return true if recognized, false otherwise
+	 */
+	public boolean isRecognized() {
+		return recognized;
+	}
 
+	/**
+	 * Sets this metric def as recognized
+	 */
+	public void setRecognized() {
+		this.recognized = true;
+	}
+
+	
+	public static final byte[] NOT_RECOGNIZED = new byte[]{0};
+	public static final byte[] RECOGNIZED = new byte[]{1};
+	
 	/**
 	 * {@inheritDoc}
 	 * @see java.io.Externalizable#writeExternal(java.io.ObjectOutput)
 	 */
 	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeUTF(fullName);
-		out.writeInt(typeCode);
+		if(recognized) {
+			out.write(RECOGNIZED);
+			out.writeInt(fullNameHash);
+		} else {
+			out.write(NOT_RECOGNIZED);
+			out.writeUTF(fullName);
+			out.writeInt(typeCode);
+		}
 	}
 
 	/**
@@ -269,6 +355,12 @@ public class GenericMetricDef implements Externalizable {
 	 * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
 	 */
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		byte[] recognized = new byte[1];
+		in.read(recognized);
+		if(recognized[0]==1) {
+			int token = in.readInt();
+			
+		}
 		fullName = in.readUTF();
 		typeCode = in.readInt();
 		fullNameHash = fullName.hashCode();
@@ -319,18 +411,20 @@ public class GenericMetricDef implements Externalizable {
 	public String toString() {
 	    final String TAB = "\n\t";
 	    StringBuilder retValue = new StringBuilder("GenericMetricDef [")
-	    	.append(TAB).append("fullName = ").append(this.fullName)
-	    	.append(TAB).append("localName = ").append(getLocalName())
-	        .append(TAB).append("domain = ").append(this.domain)
-	        .append(TAB).append("host = ").append(this.host)
-	        .append(TAB).append("process = ").append(this.process)
-	        .append(TAB).append("agent = ").append(this.agent)
-	        .append(TAB).append("resource = ").append(Arrays.toString(getResource()))
-	        .append(TAB).append("metricName = ").append(this.metricName)
-	        .append(TAB).append("typeCode = ").append(this.typeCode)
+	    	.append(TAB).append("fullName:").append(this.fullName)
+	    	.append(TAB).append("localName:").append(getLocalName())
+	        .append(TAB).append("domain:").append(this.domain)
+	        .append(TAB).append("host:").append(this.host)
+	        .append(TAB).append("process:").append(this.process)
+	        .append(TAB).append("agent:").append(this.agent)
+	        .append(TAB).append("resource:").append(Arrays.toString(getResource()))
+	        .append(TAB).append("metricName:").append(this.metricName)
+	        .append(TAB).append("typeCode:").append(this.typeCode)
+	        .append(TAB).append("recognized:").append(this.recognized)
 	        .append("\n]");    
 	    return retValue.toString();
 	}
+
 
 	
 

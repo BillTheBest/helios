@@ -65,9 +65,11 @@ public class CollectionResult {
 
 	/**
 	 * @param resultForLastCollection the resultForLastCollection to set
+	 * @return this CollectionResult
 	 */
-	public void setResultForLastCollection(Result resultForLastCollection) {
+	public CollectionResult setResultForLastCollection(Result resultForLastCollection) {
 		this.resultForLastCollection = resultForLastCollection;
+		return this;
 	}
 
 	/**

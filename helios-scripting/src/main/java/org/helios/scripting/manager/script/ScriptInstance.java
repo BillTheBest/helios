@@ -27,7 +27,8 @@ package org.helios.scripting.manager.script;
 import java.io.File;
 import java.io.Reader;
 import java.net.URL;
-import java.net.URLClassLoader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -92,6 +93,8 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 	protected final AtomicReference<ScriptEngine> scriptEngine = new AtomicReference<ScriptEngine>(null);
 	/** The configured minimum check time for source updates */
 	public final long minCheckTime;
+	/** The local bindings injected into each invocation */
+	protected final Map<String, Object> localBindings = new HashMap<String, Object>();
 	
 	/** The source code container */
 	protected final Source source;
@@ -192,13 +195,18 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 				if(compiled.get()==null) {
 					compiled.set(((Compilable)scriptEngine).compile(source.getSource()));
 				}
-				return compiled.get().eval();
+				return compiled.get().eval(getLBindings());
 			} else {
-				return scriptEngine.get().eval(source.getSource());
+				return scriptEngine.get().eval(source.getSource(), getLBindings());
 			}
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to execute script [" + source.getName() + "]", e);
 		}
+	}
+	
+	
+	protected Bindings getLBindings() {
+		return new SimpleBindings(localBindings);
 	}
 	
 	/**
@@ -499,6 +507,24 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 	public void setContext(ScriptContext context) {
 		scriptEngine.get().setContext(context);
 		
+	}
+
+	/**
+	 * Returns the local bindings
+	 * @return the localBindings
+	 */
+	public Map<String, Object> getLocalBindings() {
+		return localBindings;
+	}
+
+	/**
+	 * Sets the local bindings
+	 * @param localBindings the localBindings to set
+	 */
+	public void setLocalBindings(Map<String, Object> localBindings) {
+		if(localBindings != null) {
+			this.localBindings.putAll(localBindings);
+		}
 	}
 
 	

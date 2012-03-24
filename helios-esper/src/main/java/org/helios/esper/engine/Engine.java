@@ -67,8 +67,8 @@ import com.espertech.esper.client.EPStatement;
 import com.espertech.esper.client.EPStatementState;
 import com.espertech.esper.client.EPStatementStateListener;
 import com.espertech.esper.client.EventSender;
-import com.espertech.esper.core.EPRuntimeImpl;
-import com.espertech.esper.core.EPStatementImpl;
+import com.espertech.esper.core.service.EPRuntimeImpl;
+import com.espertech.esper.core.service.EPStatementImpl;
 
 /**
  * <p>Title: Engine</p>
@@ -157,6 +157,14 @@ public class Engine implements ApplicationContextAware, BeanNameAware, EPService
 			configuration.addEventType(clazz.getSimpleName(), clazz);
 		}
 		return esperRuntime.getEventSender(clazz.getName());					
+	}
+	
+	/**
+	 * Returns the configuration instance for this engine
+	 * @return the configuration instance for this engine
+	 */
+	public Configuration getConfiguration() {
+		return configuration;
 	}
 	
 	

@@ -61,7 +61,7 @@ import com.espertech.esper.client.EPStatementState;
 import com.espertech.esper.client.EPStatementStateListener;
 import com.espertech.esper.client.EventBean;
 import com.espertech.esper.client.StatementAwareUpdateListener;
-import com.espertech.esper.core.EPStatementImpl;
+import com.espertech.esper.core.service.EPStatementImpl;
 
 /**
  * <p>Title: RemoteStatementSession</p>

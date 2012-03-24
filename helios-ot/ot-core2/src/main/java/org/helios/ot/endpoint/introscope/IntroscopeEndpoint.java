@@ -26,6 +26,7 @@ package org.helios.ot.endpoint.introscope;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Array;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -59,6 +60,8 @@ import org.helios.ot.trace.MetricId;
 import org.helios.ot.type.MetricType;
 import org.helios.helpers.Banner;
 
+import test.org.helios.ot.trace.IScopeOneOffTracer;
+
 /**
  * <p>Title: IntroscopeEndpoint</p>
  * <p>Description: A concrete endpoint implementation for Introscope. </p> 
@@ -82,6 +85,8 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 	protected String agentJarLocation = null;
 	/** The introscope profile */
 	protected String profileName = null;
+	/** The one off tracer for odd issues with the adapter */
+	protected IScopeOneOffTracer iscope = null;
 	/** Introscope Enterprise Manager's IP address */
 	protected String emHost = null;
 	/** Introscope Enterprise Manager's port.  Default is 5001 */
@@ -296,6 +301,7 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 		ClassLoader currentCl = Thread.currentThread().getContextClassLoader();
 		Thread.currentThread().setContextClassLoader(agentLoader);
 		try {
+			iscope = IScopeOneOffTracer.getInstance();
 			adapter.set((IntroscopeAdapter)DynaClassFactory.generateClassInstance(
 					IntroscopeTracerAdapter.class.getPackage().getName() + ".TracerInstance", 
 					IntroscopeTracerAdapter.class, cls));
@@ -453,8 +459,20 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 					else if( typeCode == MetricType.TYPE_INTERVAL_INCIDENT)
 						agent.recordIntervalIncident(iMetricName, Double.valueOf(value).intValue());	
 					else if( typeCode == MetricType.TYPE_STRING)
-						agent.recordDataPoint(iMetricName, value);
-					else if( typeCode == MetricType.TYPE_TIMESTAMP)
+						//agent.recordDataPoint(iMetricName, value.getBytes().length);
+						IScopeOneOffTracer.getInstance().recordDataPoint(value, iMetricName);
+					else if( typeCode == MetricType.TYPE_STRINGS) {
+						if(value.getClass().isArray()) {
+							StringBuilder b = new StringBuilder();
+							for(int i = 0; i < Array.getLength(value); i++) {								
+								b.append(i==0 ? "" : ",").append(Array.get(value, i).toString());
+							}
+							agent.recordDataPoint(iMetricName, value.toString());
+						} else {
+							agent.recordDataPoint(iMetricName, value.toString());
+						}
+											
+					} else if( typeCode == MetricType.TYPE_TIMESTAMP)
 						agent.recordTimeStamp(iMetricName, Double.valueOf(value).longValue());
 					else
 						if(log.isTraceEnabled()) log.trace("Introscope Tracer Error: Metric Type Code [" + type + "] not recognized for metric:" + iMetricName);

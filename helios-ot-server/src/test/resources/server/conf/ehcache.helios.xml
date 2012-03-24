@@ -71,6 +71,13 @@
 		<constructor-arg value="consumerCache" />
 	</bean>
 	
+	<bean id="patternMatchCache" factory-bean="ehcache" factory-method="getCache" >
+		<constructor-arg value="patternMatchCache" />
+	</bean>
+	
+	
+	
+	
 	<bean id="ehcachejmx" class="net.sf.ehcache.management.ManagementService" init-method="init" >
 		<constructor-arg value="#{ ehcache }" />
 		<constructor-arg ref="MBeanServer" />

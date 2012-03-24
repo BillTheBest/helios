@@ -97,6 +97,15 @@
     	statistics="true"
     />    
         
+    <cache name="patternMatchCache"
+    	diskPersistent="false"
+    	eternal="false"    	    	    	
+    	overflowToDisk="false"
+    	timeToIdleSeconds="60"
+    	timeToLiveSeconds="120"
+    	statistics="true"
+       	diskExpiryThreadIntervalSeconds="120"
+       	memoryStoreEvictionPolicy="LRU"/>    	
     
        	
        	

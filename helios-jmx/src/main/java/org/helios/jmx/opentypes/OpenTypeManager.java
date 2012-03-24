@@ -154,6 +154,17 @@ public class OpenTypeManager {
 	}
 	
 	/**
+	 * Returns the named OpenType or null if it was not found.
+	 * @param name The name of the OpenType
+	 * @return an OpenType or null if it was not found.
+	 */
+	public OpenType<?> getOpenTypeOrNull(String name) {
+		return REGISTERED_OPEN_TYPES.get(ClassHelper.nvl(name, "Passed name was null"));
+	}
+		
+	
+	
+	/**
 	 * Returns the named OpenType
 	 * @param name The name of the OpenType
 	 * @return an OpenType

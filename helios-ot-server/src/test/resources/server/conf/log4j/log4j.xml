@@ -35,6 +35,12 @@
       <priority value="INFO"/>
       <appender-ref ref="CONSOLE"  />
    </category>
+   
+   <category name="com.espertech.esper.queryplan" additivity="false">
+      <priority value="INFO"/>
+      <appender-ref ref="CONSOLE"  />
+   </category>
+   
       
    <category name="org.helios.ot.tracer.disruptor" additivity="false">
       <priority value="INFO"/>

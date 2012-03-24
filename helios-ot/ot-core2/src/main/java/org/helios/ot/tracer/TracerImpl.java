@@ -975,7 +975,7 @@ public class TracerImpl extends ManagedObjectDynamicMBean implements ITracer {
 	 */
 	public Trace traceMessage(String value, String metricName, String...nameSpace) {
 		return traceTrace(
-				Trace.build(value, MetricType.STRINGS, metricName).segment(nameSpace).format(this).build()
+				Trace.build(value, MetricType.STRING, metricName).segment(nameSpace).format(this).build()
 		);		
 	}
 	

@@ -42,7 +42,12 @@
     	</amq:transportConnectors>
   	</amq:broker>
   	
-  	<amq:connectionFactory id="internalConnectionFactory" alwaysSyncSend="true" brokerURL="vm://helios?create=false" disableTimeStampsByDefault="true" statsEnabled="true"  />
+  	<amq:connectionFactory id="internalConnectionFactory" alwaysSyncSend="true"  brokerURL="vm://helios?create=false" disableTimeStampsByDefault="true" statsEnabled="true"  />
+  	
+  	<amq:topic id="METRICS_IN" name="METRICS_IN" physicalName="METRICS_IN">
+  	
+  	
+  	</amq:topic>
   	
 
 </beans>

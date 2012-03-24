@@ -34,6 +34,7 @@ import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -120,6 +121,9 @@ public class AgentJVMMonitor {
 	
 	/** The root name space */
 	public static final String ROOT = "JVM";
+	/** The constant metrics name space  */
+	public static final String CONSTANTS_ROOT = ROOT + Trace.DELIM + "Runtime";
+	
 	/** The threading metrics name space  */
 	public static final String THREAD_ROOT = ROOT + Trace.DELIM + "Threads";
 	/** The classloading metrics name space  */
@@ -188,8 +192,7 @@ public class AgentJVMMonitor {
 		itracer = TracerManager3.getInstance().getIntervalTracer();
 		timerTask =  new TimerTask(){
 			public void run() {
-				collect();	
-				collectClassLoading();
+				collect();					
 			}
 		};
 		for(GarbageCollectorMXBean gcBean: gcMXBeans) {
@@ -214,6 +217,7 @@ public class AgentJVMMonitor {
 		}
 	}
 	
+	protected boolean constantsTraced = false;
 	
 	/**
 	 * Executes the JVM metric collection and tracing. 
@@ -221,19 +225,24 @@ public class AgentJVMMonitor {
 	private void collect() {
 		SystemClock.startTimer();
 		try {
-			collectThreads();
-			collectClassLoading();
-			if(compileTimeSupported) collectCompilation();
-			collectMemory();
-			collectMemoryPools();
-			for(Runnable runnable: registeredCollectors) {
-				runnable.run();
-			}
-			collectGc();
-			collectOS();
-			if(java7) collectNio();
-			long elapsed = SystemClock.lapTimer().elapsedMs;
-			itracer.trace(elapsed, "JVM Metrics Collect Time", ROOT);
+			collectConstants();
+//			if(!constantsTraced) {
+//				collectConstants();
+//				constantsTraced = true;
+//			}
+//			collectThreads();
+//			collectClassLoading();
+//			if(compileTimeSupported) collectCompilation();
+//			collectMemory();
+//			collectMemoryPools();
+//			for(Runnable runnable: registeredCollectors) {
+//				runnable.run();
+//			}
+//			collectGc();
+//			collectOS();
+//			if(java7) collectNio();
+//			long elapsed = SystemClock.lapTimer().elapsedMs;
+//			itracer.trace(elapsed, "JVM Metrics Collect Time", ROOT);
 		} catch (Exception e) {
 			log.error("AgentJVMMonitor: Unexpected collection exception", e);
 		} finally {
@@ -251,6 +260,21 @@ public class AgentJVMMonitor {
 		registeredCollectors.add(runnable);
 	}
 	
+	
+	/**
+	 * Collects the JVM Runtime Constants 
+	 */
+	protected void collectConstants() {
+		tracer.traceMessage(rtMXBean.getManagementSpecVersion(), "Management Spec Version", CONSTANTS_ROOT);
+		tracer.traceMessage(rtMXBean.getName(), "Runtime Name", CONSTANTS_ROOT);
+		tracer.traceMessage(rtMXBean.getSpecName(), "Spec Name", CONSTANTS_ROOT);
+		tracer.traceMessage(rtMXBean.getSpecVendor(), "Spec Vendor", CONSTANTS_ROOT);
+		tracer.traceMessage(rtMXBean.getSpecVersion(), "Spec Version", CONSTANTS_ROOT);
+		tracer.traceMessage(rtMXBean.getVmName(), "VM Name", CONSTANTS_ROOT);
+		tracer.traceMessage(rtMXBean.getVmVendor(), "VM Vendor", CONSTANTS_ROOT);
+		tracer.traceMessage(rtMXBean.getVmVersion(), "VM Version", CONSTANTS_ROOT);
+		tracer.traceMessage(rtMXBean.getInputArguments().toString(), "Input Arguments", CONSTANTS_ROOT);
+	}
 	
 	/**
 	 * Collects thread stats
