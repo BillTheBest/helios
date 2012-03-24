@@ -33,16 +33,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
 
-import org.bson.types.ObjectId;
-
-import com.google.code.morphia.Datastore;
-import com.google.code.morphia.Key;
-import com.google.code.morphia.Morphia;
-import com.google.code.morphia.annotations.Entity;
-import com.google.code.morphia.annotations.Id;
-import com.google.code.morphia.annotations.Reference;
-import com.google.code.morphia.annotations.Transient;
-import com.mongodb.Mongo;
 
 /**
  * <p>Title: GenericMetric</p>
@@ -51,23 +41,17 @@ import com.mongodb.Mongo;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.ot.generic.GenericMetric</code></p>
  */
-@Entity(value="metric", noClassnameStored=true)
 public class GenericMetric implements IGenericMetric, Externalizable {
 
 	/** The metrid def */
-	@Reference("metricdef")
 	private GenericMetricDef metricDef = null;
-	@Id
-	private ObjectId id;
 	/** The interval start time */
 	private long intervalStart = -1;
 	/** The interval end time */
 	private long intervalEnd = -1;
 	/** The interval start date */
-	@Transient
 	private transient Date intervalStartDate = null;
 	/** The interval end date */
-	@Transient
 	private transient Date intervalEndDate = null;
 	/** Metric value average */
 	private long avg = -1;
@@ -79,82 +63,6 @@ public class GenericMetric implements IGenericMetric, Externalizable {
 	private long count = -1;
 
 	
-	public static void main(String[] args) {
-		log("GenericMetric Persistence Test");
-		Random random = new Random(System.nanoTime());
-		Mongo mongo = null;
-		try {
-			mongo = new Mongo("localhost");
-			Morphia morphia = new Morphia();
-			morphia.map(GenericMetric.class);
-			morphia.map(GenericMetricDef.class);
-			Datastore ds = new Morphia().createDatastore(mongo, "helios");			
-			log("Connected:" + ds.getDB().getName());
-			mongo.getDB("helios").getCollection("metrics").drop();
-			mongo.getDB("helios").getCollection("metricdef").drop();
-			log("Metric Def Count:" + ds.getCount(GenericMetricDef.class));
-			log("Generic Metric Count:" + ds.getCount(GenericMetric.class));			
-			if(1-1==0) return;
-			for(int x = 0; x < 50; x++) {
-				int metricCount = 1000;
-				GenericMetric[] metrics = new GenericMetric[metricCount];
-				GenericMetricDef[] metricDefs = new GenericMetricDef[metricCount];
-				String agent = ManagementFactory.getRuntimeMXBean().getName();
-				long now = System.currentTimeMillis();
-				for(int i = 0; i < metricCount; i++) {
-					long min = Math.abs(random.nextInt());
-					long max = min*4;
-					long avg = min*2;
-					
-					metrics[i] = new GenericMetric(now, now + 15000, avg, max, min, 3, GenericMetricDef.getInstance("herserval|" + agent + "|MongoTest|SimpleMetrics:Metric" + i, 1) );
-					metricDefs[i] = metrics[i].getMetricDef();
-				}
-				log("Saving Warmup...");
-				long start = System.currentTimeMillis();		
-				ds.save(metricDefs);
-				Iterable<Key<GenericMetric>> keys = ds.save(metrics);			
-				long elapsed = System.currentTimeMillis()-start;
-				log("Warmup Save Time:" + elapsed);
-				for(GenericMetric m: metrics) {
-					ds.delete(m);
-				}
-				metricCount = 1000;
-				metrics = new GenericMetric[metricCount];			
-				now = System.currentTimeMillis();
-				for(int i = 0; i < metricCount; i++) {
-					long min = Math.abs(random.nextInt());
-					long max = min*4;
-					long avg = min*2;
-					
-					metrics[i] = new GenericMetric(now, now + 15000, avg, max, min, 3, GenericMetricDef.getInstance("herserval|" + agent + "|MongoTest|SimpleMetrics:Metric" + i, 1) );
-					metricDefs[i] = metrics[i].getMetricDef();
-				}
-				log("Saving...");
-				start = System.currentTimeMillis();			
-				ds.save(metricDefs);
-				keys = ds.save(metrics);			
-				
-				elapsed = System.currentTimeMillis()-start;
-				log("Save Time:" + elapsed);
-//				log("Purging.....");
-//				for(GenericMetric key: ds.find(GenericMetric.class).fetch()) {
-//					ds.delete(key);
-//				}
-//				log("Purge Complete");
-				mongo.fsync(false);
-				for(GenericMetric m: metrics) {
-					ds.delete(m);
-				}
-				log("Metric Def Count:" + ds.getCount(GenericMetricDef.class));
-				log("Generic Metric Count:" + ds.getCount(GenericMetric.class));
-				
-			}
-		} catch (Exception e) {
-			e.printStackTrace(System.err);
-		} finally {
-			try { mongo.close(); } catch (Exception e) {}
-		}
-	}
 	
 	
 	public static void log(Object msg) {
@@ -469,3 +377,89 @@ public class GenericMetric implements IGenericMetric, Externalizable {
 
 
 }
+
+
+
+/*
+Quick Test Case For Saving Generic Metrics to MongoDB
+=====================================================
+	public static void main(String[] args) {
+		log("GenericMetric Persistence Test");
+		Random random = new Random(System.nanoTime());
+		Mongo mongo = null;
+		try {
+			mongo = new Mongo("localhost");
+			Morphia morphia = new Morphia();
+			morphia.map(GenericMetric.class);
+			morphia.map(GenericMetricDef.class);
+			Datastore ds = new Morphia().createDatastore(mongo, "helios");			
+			log("Connected:" + ds.getDB().getName());
+			mongo.getDB("helios").getCollection("metrics").drop();
+			mongo.getDB("helios").getCollection("metricdef").drop();
+			log("Metric Def Count:" + ds.getCount(GenericMetricDef.class));
+			log("Generic Metric Count:" + ds.getCount(GenericMetric.class));			
+			if(1-1==0) return;
+			for(int x = 0; x < 50; x++) {
+				int metricCount = 1000;
+				GenericMetric[] metrics = new GenericMetric[metricCount];
+				GenericMetricDef[] metricDefs = new GenericMetricDef[metricCount];
+				String agent = ManagementFactory.getRuntimeMXBean().getName();
+				long now = System.currentTimeMillis();
+				for(int i = 0; i < metricCount; i++) {
+					long min = Math.abs(random.nextInt());
+					long max = min*4;
+					long avg = min*2;
+					
+					metrics[i] = new GenericMetric(now, now + 15000, avg, max, min, 3, GenericMetricDef.getInstance("herserval|" + agent + "|MongoTest|SimpleMetrics:Metric" + i, 1) );
+					metricDefs[i] = metrics[i].getMetricDef();
+				}
+				log("Saving Warmup...");
+				long start = System.currentTimeMillis();		
+				ds.save(metricDefs);
+				Iterable<Key<GenericMetric>> keys = ds.save(metrics);			
+				long elapsed = System.currentTimeMillis()-start;
+				log("Warmup Save Time:" + elapsed);
+				for(GenericMetric m: metrics) {
+					ds.delete(m);
+				}
+				metricCount = 1000;
+				metrics = new GenericMetric[metricCount];			
+				now = System.currentTimeMillis();
+				for(int i = 0; i < metricCount; i++) {
+					long min = Math.abs(random.nextInt());
+					long max = min*4;
+					long avg = min*2;
+					
+					metrics[i] = new GenericMetric(now, now + 15000, avg, max, min, 3, GenericMetricDef.getInstance("herserval|" + agent + "|MongoTest|SimpleMetrics:Metric" + i, 1) );
+					metricDefs[i] = metrics[i].getMetricDef();
+				}
+				log("Saving...");
+				start = System.currentTimeMillis();			
+				ds.save(metricDefs);
+				keys = ds.save(metrics);			
+				
+				elapsed = System.currentTimeMillis()-start;
+				log("Save Time:" + elapsed);
+//				log("Purging.....");
+//				for(GenericMetric key: ds.find(GenericMetric.class).fetch()) {
+//					ds.delete(key);
+//				}
+//				log("Purge Complete");
+				mongo.fsync(false);
+				for(GenericMetric m: metrics) {
+					ds.delete(m);
+				}
+				log("Metric Def Count:" + ds.getCount(GenericMetricDef.class));
+				log("Generic Metric Count:" + ds.getCount(GenericMetric.class));
+				
+			}
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+		} finally {
+			try { mongo.close(); } catch (Exception e) {}
+		}
+	}
+
+
+
+*/

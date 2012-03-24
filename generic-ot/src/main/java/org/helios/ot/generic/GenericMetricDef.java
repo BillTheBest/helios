@@ -35,11 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.regex.Pattern;
 
-import org.bson.types.ObjectId;
-
-import com.google.code.morphia.annotations.Entity;
-import com.google.code.morphia.annotations.Id;
-import com.google.code.morphia.annotations.Transient;
 
 /**
  * <p>Title: GenericMetricDef</p>
@@ -48,7 +43,6 @@ import com.google.code.morphia.annotations.Transient;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.ot.generic.GenericMetricDef</code></p>
  */
-@Entity(value="metricdef", noClassnameStored=true)
 public class GenericMetricDef implements Externalizable {
 	/** The APM Domain */
 	private String domain;
@@ -69,13 +63,8 @@ public class GenericMetricDef implements Externalizable {
 	/** The metric type code */
 	private int typeCode = -1;	
 	/** The full name hash code */
-	@Id
 	private int fullNameHash = -1;
-	/** The data store ID */
-	
-	private ObjectId id;
 	/** Indicates if this metric def's hash code is a recognized subst token */
-	@Transient
 	private boolean recognized = false;	
 	/** Regex to split resource */
 	public static final Pattern resourcePattern = Pattern.compile("\\|");
