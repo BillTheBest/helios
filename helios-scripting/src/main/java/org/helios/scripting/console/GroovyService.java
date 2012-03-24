@@ -196,5 +196,52 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 			}
 		}
 	}
+
+	/**
+	 * Returns the app Context 
+	 * @return the applicationContext
+	 */
+	@JMXAttribute(name="ApplicationContext", description="The App Context this service is deployed in", mutability=AttributeMutabilityOption.READ_ONLY)
+	public ApplicationContext getApplicationContext() {
+		return applicationContext;
+	}
+	
+	/**
+	 * Returns the app Context Name 
+	 * @return the applicationContext Name
+	 */
+	@JMXAttribute(name="ApplicationContextName", description="The App Context Name this service is deployed in", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String getApplicationContextName() {
+		return applicationContext.getDisplayName();
+	}
+	
+
+	/**
+	 * Returns the name of the console class
+	 * @return the console Class name 
+	 */
+	@JMXAttribute(name="ConsoleClassName", description="The class name of the console", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String getConsoleClassName() {
+		return consoleClass==null ? "Null" : consoleClass.getName();
+	}
+
+	/**
+	 * Returns the Groovy Class Loader
+	 * @return the Groovy Class Loader
+	 */
+	@JMXAttribute(name="GroovyClassLoader", description="The groovy class loader", mutability=AttributeMutabilityOption.READ_ONLY)
+	public GroovyClassLoader getGroovyClassLoader() {
+		return gcl;
+	}
+	
+	/**
+	 * Returns the Groovy Class Loader String
+	 * @return the Groovy Class Loader String
+	 */
+	@JMXAttribute(name="GroovyClassLoaderString", description="The groovy class loader string", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String getGroovyClassLoaderString() {
+		return gcl==null ? "Null" : gcl.toString();
+	}
+	
 	
 }
