@@ -24,10 +24,14 @@
  */
 package org.helios.spring.web;
 
+import javax.management.ObjectName;
 import javax.servlet.ServletContext;
 
 import org.apache.log4j.Logger;
 import org.helios.helpers.JMXHelper;
+import org.helios.helpers.JMXHelperExtended;
+import org.helios.spring.container.HeliosApplicationContext;
+import org.helios.spring.container.jmx.ApplicationContextService;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.ContextLoader;
@@ -44,7 +48,9 @@ import org.springframework.web.context.ContextLoader;
 public class HeliosContextLoader extends ContextLoader {
 	/** Static class logger */
 	protected static final Logger LOG = Logger.getLogger(HeliosContextLoader.class);
-
+	/** Static synch lock for when the helios app context has not been created yet */
+	private static final Object lock = new Object();
+	
 	/**
 	 * Creates a new HeliosContextLoader
 	 */
@@ -61,7 +67,17 @@ public class HeliosContextLoader extends ContextLoader {
 	 * @see org.springframework.web.context.ContextLoader#loadParentContext(javax.servlet.ServletContext)
 	 */
 	protected ApplicationContext loadParentContext(ServletContext servletContext)   throws BeansException {
-		ApplicationContext parent = (ApplicationContext)JMXHelper.getAttribute(JMXHelper.objectName("org.helios.spring:service=HeliosApplicationContext"), JMXHelper.getHeliosMBeanServer(), "AppContext");
+		if(!JMXHelper.getHeliosMBeanServer().isRegistered(ApplicationContextService.OBJECT_NAME)) {
+			synchronized(lock) {
+				if(!JMXHelper.getHeliosMBeanServer().isRegistered(ApplicationContextService.OBJECT_NAME)) {
+					HeliosApplicationContext ctx = new HeliosApplicationContext(new String[]{"file:WEB-INF/applicationContext.xml"});
+					ApplicationContextService acs = new ApplicationContextService(ctx);
+					JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(acs, ApplicationContextService.OBJECT_NAME);
+					ctx.refresh();
+				}
+			}
+		}
+		ApplicationContext parent = (ApplicationContext)JMXHelper.getRuntimeHeliosMBeanServer().getAttribute(ApplicationContextService.OBJECT_NAME, "AppContext");		
 		LOG.info("Returning Helios App Context as parent of WebAppContext");
 		return parent;
 	}
