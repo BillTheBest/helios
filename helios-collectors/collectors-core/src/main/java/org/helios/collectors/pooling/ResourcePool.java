@@ -24,11 +24,16 @@
  */
 package org.helios.collectors.pooling;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 import org.helios.helpers.Banner;
@@ -52,16 +57,21 @@ public class ResourcePool<T> extends ManagedObjectDynamicMBean {
 	protected int startingResources = 1;
 	/** The default timeout in ms. when waiting for an available resource. Defaults to 500 ms. */
 	protected long timeout = 500L;
-	/** Acquisition permit */
-	protected Semaphore semaphore = null;
 	/** A map of pooled resources keyed by an identity serial number */
 	protected final Map<Integer, T> resourceMap = new ConcurrentHashMap<Integer, T>();
+	/** A map of pooled resource keys keyed by the system identity hash code of the resource */
+	protected final Map<Integer, Integer> resourceKeys = new ConcurrentHashMap<Integer, Integer>();
+	
 	/** A set of serial numbers available */
-	protected final Set<Integer> available = new CopyOnWriteArraySet<Integer>();
+	protected PriorityBlockingQueue<Integer> available;
 	/** A set of serial numbers in use */
 	protected final Set<Integer> inuse = new CopyOnWriteArraySet<Integer>();
 	/** The resource factory */
 	protected ResourceFactory<T> resourceFactory = null;
+	/** Flag indicating pool is running */
+	protected final AtomicBoolean running = new AtomicBoolean(false);
+	/** Set of threads waiting for resources */
+	protected final Set<Thread> waitingThreads = new CopyOnWriteArraySet<Thread>();
 	/** Instance logger */
 	protected final Logger log = Logger.getLogger(getClass());
 	
@@ -75,12 +85,20 @@ public class ResourcePool<T> extends ManagedObjectDynamicMBean {
 		this.objectName = resourceFactory.getObjectName();
 		Banner.banner("*", 2, 10, "Starting Resource pool [" + objectName + "]");
 		quickValidate();
-		semaphore = new Semaphore(maxResources, true);
+		available = new PriorityBlockingQueue<Integer>(maxResources, Collections.reverseOrder(new TreeSet<Integer>().comparator()));
+		resourceMap.clear();
+		resourceKeys.clear();
+		available.clear();
+		inuse.clear();		
+		for(int i = 0; i < maxResources; i++) {
+			getResource(i);
+		}
 		for(int i = 0; i < startingResources; i++) {
 			resourceMap.put(i, resourceFactory.newResource());
 		}		
 		this.reflectObject(this);
 		JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(this, objectName);
+		running.set(true);
 		Banner.banner("*", 2, 10, 
 				"Started Resource pool [" + objectName + "]",
 				"Max Pool Size:" + maxResources,
@@ -92,9 +110,20 @@ public class ResourcePool<T> extends ManagedObjectDynamicMBean {
 	/**
 	 * Stops the pool and deallocates the pooled resources
 	 */
-	public void destroy() {
+	public void destroy() {		
 		Banner.banner("*", 2, 10, "Stopping Resource pool [" + objectName + "]");
-		
+		running.set(false);
+		for(T t: resourceMap.values()) {
+			try { resourceFactory.close(t); } catch (Exception e) {}
+		}
+		resourceMap.clear();
+		resourceKeys.clear();
+		available.clear();
+		inuse.clear();
+		for(Thread t: waitingThreads) {
+			log.warn("Interrupting thread waiting on closed pool [" + t.toString() + "]");
+			t.interrupt();
+		}
 		Banner.banner("*", 2, 10, "Stopped Resource pool [" + objectName + "]");
 	}
 	
@@ -106,6 +135,113 @@ public class ResourcePool<T> extends ManagedObjectDynamicMBean {
 		if(startingResources<0) throw new RuntimeException("The starting resources cannot be less than 0", new Throwable());
 		if(timeout<1) throw new RuntimeException("The timeout cannot be less than 1", new Throwable());
 	}
+	
+	
+	/**
+	 * Acquires a resource from the pool
+	 * @param timeout The length of time to wait in ms.
+	 * @return A pooled resource instance
+	 */
+	public T getResource(long timeout) {
+		waitingThreads.add(Thread.currentThread());		
+		try {
+			T t = null;
+			Integer key = available.poll(timeout, TimeUnit.MILLISECONDS);
+			if(key==null) {
+				throw new RuntimeException("Thread timed out while waiting for a resource [" + timeout + "]", new Throwable());
+			}
+			inuse.add(key);
+			t = resourceMap.get(key);			
+			if(t==null) {
+				t = resourceFactory.newResource();
+				resourceMap.put(key, t);
+			}
+			return t;
+		} catch (InterruptedException ie) {
+			if(Thread.interrupted()) Thread.interrupted();
+			throw new RuntimeException("Thread was interrupted while waiting for a resource", ie);
+		} finally {
+			waitingThreads.remove(Thread.currentThread());
+		}
+	}
+	
+	/**
+	 * Acquires a resource from the pool waiting the defailt timeout period
+	 * @return A pooled resource instance
+	 */
+	public T getResource() {
+		return getResource(this.timeout);
+	}
+	
+	/**
+	 * Returns a resource to the pool
+	 * @param resource The resource to return
+	 */
+	public void returnResource(T resource) {
+		if(resource==null) throw new IllegalArgumentException("The passed resource was null", new Throwable());
+		int hash = System.identityHashCode(resource);
+		Integer serial = resourceKeys.get(hash);
+		if(serial==null) {
+			log.warn("Unrecognized resource returned to pool [" + resource + "]. Closing it.");
+			resourceFactory.close(resource);
+		} else {
+			if(!inuse.remove(serial)) {
+				if(available.contains(serial)) {
+					log.warn("Unreserved resource returned to pool [" + resource + "]. Ignoring it.");
+				} else {
+					log.warn("Untracked resource returned to pool [" + resource + "]. Closing it.");
+					resourceFactory.close(resource);
+				}				
+			} else {
+				if(!available.contains(serial)) {
+					available.add(serial);
+				} else {
+					log.warn("Tracked resource returned to pool but marked as available [" + resource + "]. Ignoring it.");
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Internal only.
+	 * @param serial The serial number of the resource to get
+	 * @return the indicated resource instance
+	 */
+	protected T getResource(int serial) {
+		T t = resourceMap.get(serial);
+		if(t==null) {
+			synchronized(resourceMap) {
+				t = resourceMap.get(serial);
+				if(t==null) {
+					t = resourceFactory.newResource();
+					resourceMap.put(serial, t);
+					resourceKeys.put(System.identityHashCode(t), serial);
+				}
+			}
+		}
+		try {
+			if(!resourceFactory.testResource(t)) {
+				throw new Exception();
+			}
+		} catch (Exception e) {
+			resourceMap.remove(serial);
+			resourceKeys.remove(System.identityHashCode(t));
+			try { resourceFactory.close(t); } catch (Exception ex) {}
+			t = resourceFactory.newResource();
+			try {
+				if(!resourceFactory.testResource(t)) {
+					throw new Exception("Failed to test resource [" + t + "]", new Throwable());
+				}
+				resourceMap.put(serial, t);
+				resourceKeys.put(System.identityHashCode(t), serial);				
+			} catch (Exception ex) {
+				throw new RuntimeException("Failed to validate newly created resource", ex);
+			}
+		}
+		return t;
+	}
+	
+	
 	
 	
 	
@@ -178,6 +314,13 @@ public class ResourcePool<T> extends ManagedObjectDynamicMBean {
 	 */
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
+	}
+
+	/**
+	 * @return the running
+	 */
+	public AtomicBoolean getRunning() {
+		return running;
 	}
 
 	
