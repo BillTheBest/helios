@@ -57,7 +57,7 @@ import org.helios.scripting.manager.ScriptThreading;
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * @version $LastChangedRevision$
- * <p><code>org.helios.scripting.manager.ScriptInstance</code></p>
+ * <p><code>org.helios.scripting.manager.script.ScriptInstance</code></p>
  * <p>Execution Models:<ul>
  * 	<li>Parameters:<ul>
  * 		<li>Simple Arguments (<code>args[]</code>)</li>
@@ -93,11 +93,11 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 	protected final AtomicReference<ScriptEngine> scriptEngine = new AtomicReference<ScriptEngine>(null);
 	/** The configured minimum check time for source updates */
 	public final long minCheckTime;
-	/** The local bindings injected into each invocation */
+	/** Locally scoped bindings */
 	protected final Map<String, Object> localBindings = new HashMap<String, Object>();
 	
 	/** The source code container */
-	protected final Source source;
+	protected Source source;
 	/** Instance logger */
 	protected final Logger log = Logger.getLogger(getClass());
 
@@ -105,7 +105,7 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 	/** The default minimum check time for source updates */
 	public static final long DEFAULT_MIN_CHECK_TIME = 15000;
 	/** The system prop name for overriding the min check time */
-	public static final String DEFAULT_MIN_CHECK_TIME_PROP = ScriptInstance.class.getPackage().getName() + ".minchecktime";
+	public static final String DEFAULT_MIN_CHECK_TIME_PROP = ScriptInstance.class.getPackage().getName() + ".minchecktime";  
 	
 	
 	
@@ -119,18 +119,20 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 	
 	/**
 	 * Creates a new ScriptInstance managing a script supplied by the passed source text
+	 * @param extension The notional extension to identify the correct script engine
 	 * @param source The source for the script
 	 */
-	public ScriptInstance(CharSequence source) {
-		try {
-			this.source = new Source(source);
+	public ScriptInstance(String extension, String source) {
+		try { 
+			this.source = new Source(extension, source);	
+			
 			minCheckTime = ConfigurationHelper.getLongSystemThenEnvProperty(DEFAULT_MIN_CHECK_TIME_PROP, DEFAULT_MIN_CHECK_TIME);
 			scriptEngine.set(new ScriptEngineManager().getEngineByExtension(this.source.getExtension()));
-			compilable = scriptEngine instanceof Compilable;
-			invocable = scriptEngine instanceof Invocable;
+			compilable = scriptEngine.get() instanceof Compilable;
+			invocable = scriptEngine.get() instanceof Invocable;
 			threading = ScriptThreading.value((String)scriptEngine.get().getFactory().getParameter("THREADING"));
 			if(compilable) {
-				compiled.set(((Compilable)scriptEngine).compile(this.source.getSource()));
+				compiled.set(((Compilable)scriptEngine.get()).compile(this.source.getSource()));
 			}
 		} catch (Exception e) {
 			log.error("Failed to create script instance for raw source", e);
@@ -150,6 +152,7 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 			
 			minCheckTime = ConfigurationHelper.getLongSystemThenEnvProperty(DEFAULT_MIN_CHECK_TIME_PROP, DEFAULT_MIN_CHECK_TIME);
 			source = new Source(minCheckTime, url);
+			source.addListener(this);			
 			scriptEngine.set(new ScriptEngineManager().getEngineByExtension(source.getExtension()));
 			compilable = scriptEngine instanceof Compilable;
 			invocable = scriptEngine instanceof Invocable;
@@ -182,7 +185,24 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 //		}
 //	}
 	
-
+	/**
+	 * Adds a map of bindings to the locally scoped script bindings
+	 * @param localBindings a map of local bindings
+	 */
+	public void setLocalBindings(Map<String,  Object> localBindings) {
+		if(localBindings!=null) {
+			this.localBindings.putAll(localBindings);
+		}
+	}
+	
+	/**
+	 * Adds a local binding
+	 * @param name
+	 * @param value
+	 */
+	public void addLocalBinding(String name, Object value) {
+		this.localBindings.put(name, value);
+	}
 	
 	/**
 	 * Executes the script with no parameters
@@ -195,18 +215,14 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 				if(compiled.get()==null) {
 					compiled.set(((Compilable)scriptEngine).compile(source.getSource()));
 				}
-				return compiled.get().eval(getLBindings());
+				return compiled.get().eval(new SimpleBindings(localBindings));
 			} else {
-				return scriptEngine.get().eval(source.getSource(), getLBindings());
+				return scriptEngine.get().eval(source.getSource(), new SimpleBindings(localBindings));
 			}
 		} catch (Exception e) {
+			e.printStackTrace(System.err);
 			throw new RuntimeException("Failed to execute script [" + source.getName() + "]", e);
 		}
-	}
-	
-	
-	protected Bindings getLBindings() {
-		return new SimpleBindings(localBindings);
 	}
 	
 	/**
@@ -214,7 +230,16 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 	 * @param source The Source object that changed
 	 */
 	public void onSourceChange(Source source) {
-		
+		log.info("Source Updated for [" + source.getName() + "]");
+		this.source = source;
+		scriptEngine.set(new ScriptEngineManager().getEngineByExtension(this.source.getExtension()));
+		if(compilable) {
+			try {
+				compiled.set(((Compilable)scriptEngine).compile(this.source.getSource()));
+			} catch (ScriptException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	/**
@@ -508,7 +533,7 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 		scriptEngine.get().setContext(context);
 		
 	}
-
+	
 	/**
 	 * Returns the local bindings
 	 * @return the localBindings
@@ -517,14 +542,14 @@ public class ScriptInstance implements SourceChangeListener, ScriptEngine, Invoc
 		return localBindings;
 	}
 
+
+	
+
 	/**
-	 * Sets the local bindings
-	 * @param localBindings the localBindings to set
+	 * @return the source
 	 */
-	public void setLocalBindings(Map<String, Object> localBindings) {
-		if(localBindings != null) {
-			this.localBindings.putAll(localBindings);
-		}
+	public Source getSource() {
+		return source;
 	}
 
 	

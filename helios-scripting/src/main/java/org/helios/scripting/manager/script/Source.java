@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import org.apache.log4j.Logger;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
@@ -110,21 +111,25 @@ public class Source {
 	
 	/**
 	 * Creates a new source instance from a passed string
+	 * @param extension The notional extension so the engine can be identified
 	 * @param source the source
 	 * @param listeners An optional array of source change listeners that will be notified when the source changes.
 	 */
-	public Source(CharSequence source, SourceChangeListener...listeners) {
+	public Source(String extension, CharSequence source, SourceChangeListener...listeners) {
 		if(source==null) throw new IllegalArgumentException("Passed source was null", new Throwable());
+		if(extension==null) throw new IllegalArgumentException("Passed extension was null", new Throwable());
+		this.source.set(source.toString());
 		this.minChangeCheckTime = 0;
+		this.extension = extension;
 		location = null;
 		lastChangeAware.set(false);
 		lastChange.set(System.currentTimeMillis());
-		contentSize.set(source.toString().getBytes().length);
-		ScriptEngine scriptEngine = ScriptHelper.sniffEngine(source);
-		if(scriptEngine==null) {
-			throw new RuntimeException("The source for the passed script could not be matched to a script engine", new Throwable());
-		}
-		this.extension = scriptEngine.getFactory().getExtensions().iterator().next();
+		contentSize.set(source.toString().getBytes().length);		
+		ScriptEngine scriptEngine = new ScriptEngineManager().getEngineByExtension(this.extension);
+//		if(scriptEngine==null) {
+//			throw new RuntimeException("The source for the passed script could not be matched to a script engine", new Throwable());
+//		}
+//		this.extension = scriptEngine.getFactory().getExtensions().iterator().next();
 		CharSequence scriptName = null;
 		try { scriptName = (CharSequence) ScriptHelper.getScriptVariable(source, StandardConstants.NAME.getVariable()); } catch (Exception e) {}
 		if(scriptName==null) {
