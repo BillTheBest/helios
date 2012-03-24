@@ -102,6 +102,19 @@ public class CollectorCacheService extends ManagedObjectDynamicMBean {
 	public Ehcache getCacheForCollector(ICollector collector) {
 		if(collector==null) throw new IllegalArgumentException("The passed collector was null", new Throwable());
 		String cacheName = collector.getClass().getSimpleName();
+		/*
+		 * This next paragraph should not be needed but there is a current dependency issue
+		 * where collectors come asking for their cache before the cache service has been initialized.
+		 * We need a way of implicitly making collectors depend on a set of core services like this one
+		 * before they start collecting.
+		 */
+		if(cacheManager==null) {
+			synchronized(this) {
+				if(cacheManager==null) {
+					cacheManager = CacheManager.getInstance();
+				}
+			}
+		}
 		Ehcache cache = cacheManager.addCacheIfAbsent(cacheName);
 		if(!collectorCaches.containsKey(cacheName)) {
 			collectorCaches.put(cacheName, cache);			
