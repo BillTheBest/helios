@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean id="Engine" class="org.helios.esper.engine.Engine"
+		init-method="start" destroy-method="stop">
+		<property name="objectName" value="org.helios.esper:service=Engine" />
+		<property name="configuration">
+			<bean id="EngineConfiguration" class="com.espertech.esper.client.Configuration" />
+		</property>
+		<property name="variables">
+			<map>
+				<entry key="Period" value="30" />
+			</map>
+		</property>
+		<property name="notificationThreadPool" ref="NotificationThreadPool" />
+		<property name="aliases">
+			<map>				
+				<entry key="Metric" value="org.helios.wily.IGenericMetric" />
+			</map>
+		</property>
+		<property name="statements">
+			<map>
+			<!-- 
+			<entry key="PopulateMetricCatalog"
+					value="insert into MetricCatalog select fullName from Metric.std:unique(fullName)" />
+			-->
+			<entry key="MetricCatalog"
+					value="create window MetricCatalog.std:unique(fullName) as select fullName from Metric" />
+			</map>
+		</property>
+		<property name="listeners">
+			<set>
+			</set>
+		</property>
+		<property name="metricsEnabled" value="true" />
+	</bean>
+	
+
+	<bean id="EngineLogging" class="com.espertech.esper.client.ConfigurationEngineDefaults.Logging"  >
+		<property name="enableQueryPlan" value="true" />	
+	</bean>
+	
+	
+	
+	<bean id="JMSGenericMetricProcessor" class="org.helios.esper.engine.jms.JMSGenericMetricProcessor" init-method="start" destroy-method="stop">
+		<property name="connectionFactory" ref="internalConnectionFactory" />
+		<property name="engine" ref="Engine" />
+		<property name="destination" ref="METRICS_IN" />
+	</bean>
+
+
+	<bean id="OnDemmandProcessor"
+		class="org.helios.esper.engine.service.interactive.OnDemmandProcessor"
+		init-method="init">
+		<constructor-arg ref="Engine" />
+	</bean>
+	
+     <bean id="NotificationThreadPool"
+                class="org.helios.jmx.threadservices.JMXManagedThreadPoolService" init-method="start" destroy-method="stop">
+                <property name="corePoolSize" value="2"/>
+                <property name="maxPoolSize" value="5"/>
+                <property name="discardOldest" value="true"/>
+                <property name="instrumentationEnabled" value="true"/>
+                <property name="daemonThreads" value="true" />
+                <property name="objectName" value="org.helios.esper:service=NotificationThreadPool" />
+                <property name="prestartThreads" value="1" />
+                <property name="queueCapacity" value="100" />
+                <property name="taskInstrumentationEnabled" value="true" />
+                <property name="threadGroupName" value="NotificationThreadGroup" />
+                <property name="threadNamePrefix" value="NotificationThread" />                
+     </bean>
+	
+
+
+
+</beans>
