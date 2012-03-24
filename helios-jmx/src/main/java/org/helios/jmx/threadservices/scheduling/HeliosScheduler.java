@@ -486,6 +486,13 @@ public class HeliosScheduler extends ManagedObjectDynamicMBean implements ISched
 				((FixedDelayTrigger)trigger).setOriginalScheduler(innerScheduler);
 			}
 			JobDetail jobDetail = new JobDetail(taskKey.toString(), threadPool.getThreadGroupName(), QuartzExecutionTask.class, false, false, false);
+			/*
+			 * Sometimes, there is still a task left with the same name.
+			 * This can happen when a collector hot deploy/undeploy acts funny.
+			 * To avoid issues, we will automatically remove the existing job, 
+			 * if one exists with the same name/gropup
+			 */
+			innerScheduler.deleteJob(taskKey.toString(), threadPool.getThreadGroupName());
 			JobDataMap dataMap = jobDetail.getJobDataMap();
 			dataMap.put(QuartzExecutionTask.TASK_TYPE, type);
 			dataMap.put(QuartzExecutionTask.TASK, task);
