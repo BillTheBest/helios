@@ -176,6 +176,9 @@ public class QuartzDeferredTaskResult<V> extends ManagedObjectDynamicMBean imple
 			this.reflectObject(this);
 			try {
 				objectName = JMXHelperExtended.objectName("org.helios.scheduling.tasks:name=" + taskId.replace(":", "@").replace("=", "-").replace(",", ".") + ",type=" + schedType.name());
+				if(mbeanServer.isRegistered(objectName)) {
+					mbeanServer.unregisterMBean(objectName);
+				}				
 				mbeanServer.registerMBean(this, objectName);
 			} catch (Exception e) {
 				log.warn("Task[" + triggerListenerName + "] Could not register management interface", e);
