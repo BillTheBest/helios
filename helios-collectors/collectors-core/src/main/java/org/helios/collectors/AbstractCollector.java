@@ -108,6 +108,10 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	/** The root tracing namespace where all collected metrics will be traced to */
 	protected String[] tracingNameSpace;
 	
+	/** Default collector cache items time to live in seconds. Defaults to 120 */
+	protected int cacheEntryTimeToLive = 120;
+	
+	
 	/** 
 	 * An instance level logger which is set to <flattened namespace>.<bean name> 
 	 * so that the collectors logging statements are distinguishable in a 
@@ -1904,6 +1908,24 @@ public abstract class AbstractCollector extends ManagedObjectDynamicMBean implem
 	public Object clone() {
 		return null;
 	}
+	
+	/**
+	 * Returns the default collector cache items time to live in seconds
+	 * @return the default collector cache items time to live in seconds
+	 */
+	@JMXAttribute(name="CacheEntryTimeToLive", description="The default collector cache items time to live in seconds", mutability=AttributeMutabilityOption.READ_WRITE)
+	public int getCacheEntryTimeToLive() {
+		return cacheEntryTimeToLive;
+	}
+
+	/**
+	 * Sets the default collector cache items time to live in seconds
+	 * @param cacheEntryTimeToLive the default collector cache items time to live in seconds
+	 */
+	public void setCacheEntryTimeToLive(int cacheEntryTimeToLive) {
+		this.cacheEntryTimeToLive = cacheEntryTimeToLive;
+	}
+	
 	
     
 }
