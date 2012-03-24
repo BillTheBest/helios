@@ -38,9 +38,9 @@ import javax.jms.Session;
 
 import org.apache.log4j.Logger;
 import org.helios.esper.engine.Engine;
+import org.helios.ot.generic.IGenericMetric;
 import org.helios.time.SystemClock;
 import org.helios.time.SystemClock.ElapsedTime;
-import org.helios.wily.IGenericMetric;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;

@@ -24,21 +24,17 @@
  */
 package org.helios.esper.engine.beans;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Date;
 
-import org.helios.wily.GenericMetricDef;
-import org.helios.wily.IGenericMetric;
-import org.helios.wily.IUpdateableGenericMetric;
-import org.helios.wily.WilyGenericMetricImpl;
+import org.helios.ot.generic.GenericMetricDef;
+import org.helios.ot.generic.IGenericMetric;
+import org.helios.ot.generic.updateable.IUpdateableGenericMetric;
+
 
 /**
  * <p>Title: EngineGenericMetric</p>
@@ -101,37 +97,6 @@ public class EngineGenericMetric implements IUpdateableGenericMetric, Externaliz
 	}
 	
 	
-	public static void main(String[] args) {
-		log("Metric Extern Test");
-		try {
-			EngineGenericMetric metric = new EngineGenericMetric();
-			String name = "SooperDomain|MyHost|SnazzyProcess|CoolAgent|A|B|C:foo";
-			GenericMetricDef mdef = new GenericMetricDef(name, 99, name.hashCode());
-			long now = System.currentTimeMillis();
-			metric.metricDef = mdef;
-		    metric.intervalStart = now;
-		    metric.intervalEnd = now + 1000;
-		    metric.avg = 5;
-		    metric.max = 10;
-		    metric.min = 1;
-		    metric.count = 4;
-		    WilyGenericMetricImpl wimpl = new WilyGenericMetricImpl(metric);
-		    log("Writing Metric....");
-		    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		    ObjectOutputStream oos = new ObjectOutputStream(baos);
-		    oos.writeObject(wimpl);
-		    oos.flush();
-		    baos.flush();
-		    log("Reading Metric....");		    
-		    ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-		    ObjectInputStream ois = new ObjectInputStream(bais);
-		    WilyGenericMetricImpl metric2 = (WilyGenericMetricImpl)ois.readObject();
-		    log(metric2);
-		    
-		} catch (Exception e) {
-			e.printStackTrace(System.err);
-		}
-	}
 	
 	public static void log(Object msg) {
 		System.out.println(msg);
