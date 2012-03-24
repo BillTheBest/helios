@@ -204,9 +204,8 @@ public class SQLMapping implements ApplicationContextAware, BeanNameAware {
 				}
 				if(LOG.isDebugEnabled()) LOG.debug("Fired Binds on Pre Metric Maps");				
 			}
-			
-			
-			
+			elapsed = System.currentTimeMillis()-start;
+			tracer.traceSticky(elapsed, "Collection Time (ms)", "Helios", "Collectors", "Database", mappingName);
 		} catch (Exception e) {
 			if(LOG.isEnabledFor(Level.ERROR)) LOG.error("SQLMap Execution Error:\n\tSQL:" + sql, e);
 		} finally {
