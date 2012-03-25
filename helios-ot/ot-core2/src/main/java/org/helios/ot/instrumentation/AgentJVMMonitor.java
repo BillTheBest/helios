@@ -225,24 +225,23 @@ public class AgentJVMMonitor {
 	private void collect() {
 		SystemClock.startTimer();
 		try {
-			collectConstants();
-//			if(!constantsTraced) {
-//				collectConstants();
-//				constantsTraced = true;
-//			}
-//			collectThreads();
-//			collectClassLoading();
-//			if(compileTimeSupported) collectCompilation();
-//			collectMemory();
-//			collectMemoryPools();
-//			for(Runnable runnable: registeredCollectors) {
-//				runnable.run();
-//			}
-//			collectGc();
-//			collectOS();
-//			if(java7) collectNio();
-//			long elapsed = SystemClock.lapTimer().elapsedMs;
-//			itracer.trace(elapsed, "JVM Metrics Collect Time", ROOT);
+			if(!constantsTraced) {
+				collectConstants();
+				constantsTraced = true;
+			}
+			collectThreads();
+			collectClassLoading();
+			if(compileTimeSupported) collectCompilation();
+			collectMemory();
+			collectMemoryPools();
+			for(Runnable runnable: registeredCollectors) {
+				runnable.run();
+			}
+			collectGc();
+			collectOS();
+			if(java7) collectNio();
+			long elapsed = SystemClock.lapTimer().elapsedMs;
+			itracer.trace(elapsed, "JVM Metrics Collect Time", ROOT);
 		} catch (Exception e) {
 			log.error("AgentJVMMonitor: Unexpected collection exception", e);
 		} finally {
