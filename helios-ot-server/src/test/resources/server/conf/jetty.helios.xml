@@ -53,13 +53,12 @@
         <property name="server" ref="HttpServer" />
       </bean>
 	
+<!-- 	  
 	  <bean id="CamelWar" class="org.eclipse.jetty.webapp.WebAppContext">
 	      <property name="contextPath" value="/camel"/>
 	      <property name="war" value="${m2Home}/org/apache/camel/camel-web/${console.version}/camel.war" />
 	      <property name="logUrlOnStart" value="true"/>  
-	  </bean>	
-                        
-<!-- 
+	  </bean>
 
 	  <bean id="ActiveMQWar" class="org.eclipse.jetty.webapp.WebAppContext">
 	      <property name="contextPath" value="/amq"/>
