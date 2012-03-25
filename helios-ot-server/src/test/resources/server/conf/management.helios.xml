@@ -44,7 +44,7 @@
 	<bean id="MBeanServerJMXUrl" class="javax.management.remote.JMXServiceURL"
 		lazy-init="false" depends-on="systemProperties" >
 		<constructor-arg type="java.lang.String"
-			value="service:jmx:rmi://${java.rmi.server.hostname}:8002/jndi/rmi://${java.rmi.server.hostname}:8003/jmxrmi" />
+			value="service:jmx:rmi://${java.rmi.server.hostname}:8002/jndi/rmi://${java.rmi.server.hostname}:8005/jmxrmi" />
 	</bean>
 	
 	<!-- 
@@ -58,7 +58,7 @@
 
 	<bean id="RMIRegistry" class="java.rmi.registry.LocateRegistry"
 		lazy-init="false" factory-method="createRegistry">
-		<constructor-arg value="8003" />
+		<constructor-arg value="8005" />
 	</bean>
 	
 	<bean name="GroovyService" class="org.helios.scripting.console.GroovyService" >

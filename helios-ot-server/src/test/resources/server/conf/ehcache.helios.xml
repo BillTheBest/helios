@@ -88,7 +88,10 @@
 		<constructor-arg value="true" />
 	</bean>
 		
-	<bean id="CollectorCacheService" class="org.helios.collectors.cache.CollectorCacheService" factory-method="getInstance"/>
+	<bean id="CollectorCacheService" class="org.helios.collectors.cache.CollectorCacheService" factory-method="getInstance">
+		<property name="cacheManager" ref="ehcache" />
+	</bean>
+	
 	
        
 </beans>       
