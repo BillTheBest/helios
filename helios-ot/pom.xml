@@ -17,7 +17,7 @@
     <!-- <module>ot-amqp</module> -->
     <!-- <module>ot-google</module> -->
     <!-- <module>ot-esper</module> -->
-    <module>ot-relay</module>
+    <!-- <module>ot-relay</module> -->
     <!-- <module>ot-helios</module> -->
   </modules>
   
