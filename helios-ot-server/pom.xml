@@ -444,7 +444,10 @@
 		    <version>${helios.version}</version>
 		    <scope>runtime</scope>
 		</dependency>
-		
+		<dependency>				
+			<groupId>org.helios</groupId>
+			<artifactId>helios-esper</artifactId>		
+		</dependency>		
 		
 		
 		
