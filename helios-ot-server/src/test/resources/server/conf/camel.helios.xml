@@ -145,8 +145,14 @@
 		<camel:process ref="subPatternListener" /> -->
 			  
 	  </route>
-	  
+
+    	<route autoStartup="true" id="NettyRoute" >
+           <from uri="netty:tcp://localhost:9428?decoders=#object-decoder&amp;sync=false"/>
+           <to uri="mock:multiple-codec"/>
+    	</route>
 	</camelContext>
+	
+	<bean id="object-decoder" class="org.jboss.netty.handler.codec.string.StringDecoder"/>
 	
   	<bean name="PollingHttpSubscriptionProcessor" class="org.helios.server.ot.session.camel.routing.http.PollingHttpSubscriptionProcessor" scope="prototype" lazy-init="true">
   		<constructor-arg type="java.lang.String" ><null/></constructor-arg>
