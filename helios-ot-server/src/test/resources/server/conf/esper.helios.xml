@@ -17,7 +17,7 @@
 		<property name="notificationThreadPool" ref="NotificationThreadPool" />
 		<property name="aliases">
 			<map>				
-				<entry key="Metric" value="org.helios.wily.IGenericMetric" />
+				<entry key="Metric" value="org.helios.ot.generic.IGenericMetric" />
 			</map>
 		</property>
 		<property name="statements">
