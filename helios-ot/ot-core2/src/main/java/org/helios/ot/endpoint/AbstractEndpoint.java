@@ -30,7 +30,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -41,6 +44,7 @@ import javax.management.ObjectName;
 
 import org.apache.log4j.Logger;
 import org.helios.helpers.ClassHelper;
+import org.helios.helpers.ConfigurationHelper;
 import org.helios.helpers.JMXHelper;
 import org.helios.helpers.SystemEnvironmentHelper;
 import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
@@ -51,8 +55,7 @@ import org.helios.jmx.dynamic.annotations.JMXNotificationType;
 import org.helios.jmx.dynamic.annotations.JMXNotifications;
 import org.helios.jmx.dynamic.annotations.JMXOperation;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
-import org.helios.jmx.threadservices.scheduling.HeliosScheduler;
-import org.helios.jmx.threadservices.scheduling.ScheduledTaskHandle;
+import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.tracer.disruptor.TraceCollection;
@@ -75,7 +78,7 @@ public abstract class AbstractEndpoint<T extends Trace<? extends ITraceValue>> e
 
 	private static final long serialVersionUID = -2805888058877530608L;
 	/** Whether this endpoint is active or not */
-	private boolean isConnected = false;
+	protected final AtomicBoolean isConnected = new AtomicBoolean(false);
 	/** Last timestamp (in millis) when connected was established to an endpoint */
 	protected long lastConnected = 0L;
 	/** Last timestamp (in millis) when we disconnected from this endpoint */
@@ -123,11 +126,20 @@ public abstract class AbstractEndpoint<T extends Trace<? extends ITraceValue>> e
 	/** The builder used to build this endpoint */
 	protected Builder builder = null;	
 
-	/** Reference to the primary task scheduling service for Helios */
-	private HeliosScheduler hScheduler = null;
+	/** Lightweight scheduler for scheduling [re-]connects */
+	private static final ScheduledExecutorService hScheduler = (ScheduledExecutorService)ExecutorBuilder.newBuilder()
+			.setCoreThreads(ConfigurationHelper.getIntSystemThenEnvProperty("org.helios.endpoint.reconnector.corethreads", 3))
+			.setDaemonThreads(true)
+			.setExecutorType(false)
+			.setJmxDomains(JMXHelper.getRuntimeHeliosMBeanServer().getDefaultDomain())
+			.setPoolObjectName("org.helios.endpoints:name=EndpointReconnector,service=ThreadPool")
+			.setThreadGroupName(AbstractEndpoint.class.getSimpleName() + "ThreadGroup")		
+			.setContinueDelayedTasks(false)
+			.setContinuePeriodicTasks(false)
+			.build();
 
 	/** Handle to a scheduled frequency task */
-	private ScheduledTaskHandle<Boolean> frequencyTaskHandle = null;
+	private ScheduledFuture<?> frequencyTaskHandle = null;
 	/** Maximum time taken so far to submit traces to the this endpoint */
 	private long maxTimeTakenToSubmitTraces = 0l;
 	/**  Minimum time taken so far to submit traces to the this endpoint */
@@ -204,7 +216,7 @@ public abstract class AbstractEndpoint<T extends Trace<? extends ITraceValue>> e
 	@JMXOperation (name="connect", description="Connect to this Endpoint")
 	public final boolean connect() {
 		log.trace("connect executed...");
-		if(isConnected){
+		if(isConnected.get()){
 			log.debug("Endpoint Connection is already active so ignore this call...");
 			return true;
 		}
@@ -217,16 +229,16 @@ public abstract class AbstractEndpoint<T extends Trace<? extends ITraceValue>> e
 			unScheduleEndpointConnectAttempt();
 			numberOfActiveEndpoints.incrementAndGet();
 			lastConnected = System.currentTimeMillis();
-			if(!isConnected)
+			if(!isConnected.get())
 				this.sendNotification(new Notification("org.helios.ot.endpoint.state",this,notificationSerialNumber.incrementAndGet(),System.currentTimeMillis(),"Connected to endpoint ["+this.getClass().getSimpleName()+"]"));
-			isConnected = true;
+			isConnected.set(true);
 			log.debug("Connect call for Endpoint ["+ this.getClass().getSimpleName() +"] completed in " + (System.currentTimeMillis() - start) + " ms.");
 		} catch (EndpointConnectException e) {
-			log.warn("An error occured while connecting to Endpoint: " + this.getClass().getSimpleName(), e);
+			log.warn("An error occured while connecting to Endpoint [ " + this.toString() + "]:" + e.getMessage());
 			cleanup();
 			scheduleConnectAttempt();
 		}
-		return true;
+		return isConnected.get();
 	}
 
 	private void registerEndpointMBean() {
@@ -278,9 +290,9 @@ public abstract class AbstractEndpoint<T extends Trace<? extends ITraceValue>> e
 		//unregisterEndpointMBean();
 		numberOfActiveEndpoints.decrementAndGet();
 		lastDisconnected = System.currentTimeMillis();
-		if(isConnected)
+		if(isConnected.get())
 			this.sendNotification(new Notification("org.helios.ot.endpoint.state",this,notificationSerialNumber.incrementAndGet(),System.currentTimeMillis(),"Disconnected from endpoint ["+this.getClass().getSimpleName()+"]"));
-		isConnected = false;
+		isConnected.set(false);
 	}
 
 	private void unregisterEndpointMBean() {
@@ -338,9 +350,9 @@ public abstract class AbstractEndpoint<T extends Trace<? extends ITraceValue>> e
 			totalFailedTraceSubmits++;
 			if(logErrors)
 				log.error("An error occured while connecting to Endpoint: " + this.getClass().getSimpleName(), eex);
-			if(isConnected)
+			if(isConnected.get())
 				this.sendNotification(new Notification("org.helios.ot.endpoint.state",this,notificationSerialNumber.incrementAndGet(),System.currentTimeMillis(),"Disconnected from endpoint ["+this.getClass().getSimpleName()+"]"));
-			isConnected = false;
+			isConnected .set(false);
 			scheduleConnectAttempt();
 		} catch (EndpointTraceException e) {
 			if(logErrors)
@@ -363,12 +375,14 @@ public abstract class AbstractEndpoint<T extends Trace<? extends ITraceValue>> e
 		log.trace("scheduleConnectAttempt executed...");
 		if(reconnectAttemptFrequency > 0L){
 			if(frequencyTaskHandle == null){
-				if(hScheduler==null)
-					hScheduler = HeliosScheduler.getInstance();
-
-				frequencyTaskHandle = hScheduler.scheduleAtFrequency(false, this, 5000L, reconnectAttemptFrequency, TimeUnit.MILLISECONDS);
+				final Callable<Boolean> finalCallable = this;
+				frequencyTaskHandle = hScheduler.scheduleWithFixedDelay(new Runnable(){public void run(){try {
+					finalCallable.call();
+				} catch (Exception e) {
+				}}}, 0, reconnectAttemptFrequency, TimeUnit.MILLISECONDS);
+				//frequencyTaskHandle = hScheduler.scheduleAtFrequency(false, this, 5000L, reconnectAttemptFrequency, TimeUnit.MILLISECONDS);
 			}else
-				log.trace("A reconnect frequency is already active for this endpoint: " + this.getClass().getSimpleName());
+				log.trace("A reconnect frequency is already active for endpoint [" + getObjectName() + "]");
 		}
 		else
 			log.trace("Skipping reconnect attempts as invalid frequency [" +reconnectAttemptFrequency+ "] provided for the endpoint" + this.getClass().getSimpleName());
@@ -380,13 +394,12 @@ public abstract class AbstractEndpoint<T extends Trace<? extends ITraceValue>> e
 		if(frequencyTaskHandle!=null){
 			frequencyTaskHandle.cancel(true);
 			frequencyTaskHandle = null;
-			hScheduler = null;
 		}
 	}
 
 	@JMXAttribute (name="Connected", description="Whether the connection to Endpoint is active currently", mutability=AttributeMutabilityOption.READ_ONLY)
 	public boolean isConnected() {
-		return isConnected;
+		return isConnected.get();
 	}
 
 	/**
