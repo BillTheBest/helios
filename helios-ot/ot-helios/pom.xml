@@ -17,21 +17,20 @@
 	    <dependency>
 	      <groupId>junit</groupId>
 	      <artifactId>junit</artifactId>	
-	      <version>4.1</version>
 	      <scope>test</scope>
 	    </dependency>
 	<!-- 3rd party compile dependencies -->
-		<dependency>
-		  <groupId>trove</groupId>
-		  <artifactId>trove</artifactId>
-		</dependency>
+	    <dependency>
+	      <groupId>org.jboss.netty</groupId>
+	      <artifactId>netty</artifactId>
+	    </dependency>
 
 	<!-- helios compile dependencies -->
-                <dependency>
-                        <groupId>org.helios.helios-ot</groupId>
-                        <artifactId>helios-ot-core2</artifactId>
-                        <version>${helios.version}</version>
-                </dependency>
+	    <dependency>
+		    <groupId>org.helios.helios-ot</groupId>
+		    <artifactId>helios-ot-core2</artifactId>
+		    <version>${helios.version}</version>
+	    </dependency>
 
   </dependencies>
 </project>

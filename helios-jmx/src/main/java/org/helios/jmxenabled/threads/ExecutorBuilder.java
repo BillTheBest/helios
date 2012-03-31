@@ -72,7 +72,7 @@ public class ExecutorBuilder {
 	/** The time limit in ms. for which threads may remain idle before being terminated. Defaults to 60000 ms. */
 	private long keepAliveTime = 60000L;
 	/** The priority of the threads that will be created for the pool. Defaults to Thread.NORM_PRIORITY */
-	private int threadPriority = Thread.NORM_PRIORITY;
+	private int threadPriority = Thread.NORM_PRIORITY;	
 	/** Indicates if the threads created for the thread pool should be daemon threads. Defaults to true */
 	private boolean daemonThreads = true;
 	/** Indicates if the thread pool will allow core threads to timeout. Defaults to false */
