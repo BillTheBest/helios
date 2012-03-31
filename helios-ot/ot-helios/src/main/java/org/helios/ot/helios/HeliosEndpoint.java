@@ -72,21 +72,8 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	protected int port;
 	/** The helios OT server comm protocol */
 	protected Protocol protocol;
-	/** The channel socket factory */
-	protected NioClientSocketChannelFactory socketChannelFactory;
-	/** The channel socket  */
-	protected SocketChannel socketChannel;
-	
-	/** The boss thread pool */
-	protected Executor bossExecutor;
-	/** The worker thread pool */
-	protected Executor workerExecutor;
-	/** The client bootstrap */
-	protected ClientBootstrap bootstrap; 
-	/** The pipeline factory */
-	protected ChannelPipelineFactory channelPipelineFactory;
-	/** The connection's channel future */
-	protected ChannelFuture channelFuture;
+	/** The helios OT connector of the configured protocol */
+	protected final AbstractEndpointConnector connector;
 	
 	/** The count of exceptions */
 	protected final AtomicLong exceptionCount = new AtomicLong(0);
@@ -107,100 +94,26 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		host = HeliosEndpointConstants.getHost();
 		port = HeliosEndpointConstants.getPort();
 		protocol = HeliosEndpointConstants.getProtocol();
-		// Initialize the boss worker pool
-		bossExecutor = ExecutorBuilder.newBuilder()
-				.setCoreThreads(1)
-				.setCoreThreadTimeout(false)
-				.setDaemonThreads(true)
-				.setExecutorType(true)
-				.setFairSubmissionQueue(false)
-				.setKeepAliveTime(15000)
-				.setMaxThreads(3)
-				.setJmxDomains(JMXHelper.getRuntimeHeliosMBeanServer().getDefaultDomain())
-				.setPoolObjectName(new StringBuilder("org.helios.endpoints:name=").append(getClass().getSimpleName()).append(",service=ThreadPool,type=Boss,protocol=").append(protocol.name()))
-				.setPrestartThreads(1)
-				.setTaskQueueSize(100)
-				.setTerminationTime(5000)
-				.setThreadGroupName(getClass().getSimpleName() + "BossThreadGroup")
-				.setUncaughtExceptionHandler(this)
-				.build();
-		// Initialize the worker worker pool
-		workerExecutor = ExecutorBuilder.newBuilder()
-				.setCoreThreads(5)
-				.setCoreThreadTimeout(false)
-				.setDaemonThreads(true)
-				.setExecutorType(true)
-				.setFairSubmissionQueue(false)
-				.setKeepAliveTime(15000)
-				.setMaxThreads(100)
-				.setJmxDomains(JMXHelper.getRuntimeHeliosMBeanServer().getDefaultDomain())
-				.setPoolObjectName(new StringBuilder("org.helios.endpoints:name=").append(getClass().getSimpleName()).append(",service=ThreadPool,type=Worker,protocol=").append(protocol.name()))
-				.setPrestartThreads(1)
-				.setTaskQueueSize(1000)
-				.setTerminationTime(5000)
-				.setThreadGroupName(getClass().getSimpleName() + "WorkerThreadGroup")
-				.setUncaughtExceptionHandler(this)
-				.build();
-	    // Configure the client.
-		socketChannelFactory = new NioClientSocketChannelFactory(bossExecutor, workerExecutor);
-		bootstrap = new ClientBootstrap(socketChannelFactory);
-		// Set up the pipeline factory.
-		channelPipelineFactory = new ChannelPipelineFactory() {
-	          public ChannelPipeline getPipeline() throws Exception {
-	              return Channels.pipeline(
-	                      new ObjectEncoder(),
-	                      new ObjectDecoder());
-	          }
-		};	                     
-		bootstrap.setPipelineFactory(channelPipelineFactory);
-		bootstrap.setOption("remoteAddress", new InetSocketAddress(host, port));
-		bootstrap.setOption("tcpNoDelay", true);
-		bootstrap.setOption("receiveBufferSize", 1048576);
-		bootstrap.setOption("sendBufferSize", 1048576);
-		bootstrap.setOption("keepAlive", true);
-		bootstrap.setOption("connectTimeoutMillis", 2000);
-
-
-		/*
-		 * OTHER OPTIONS
-		 * =============
-		"localAddress" ....
-		"keepAlive"	setKeepAlive(boolean)
-		"reuseAddress"	setReuseAddress(boolean)
-		"soLinger"	setSoLinger(int)
-		"tcpNoDelay"	setTcpNoDelay(boolean)
-		"receiveBufferSize"	setReceiveBufferSize(int)
-		"sendBufferSize"	setSendBufferSize(int)
-		"trafficClass"	setTrafficClass(int)
-		"bufferFactory"	setBufferFactory(ChannelBufferFactory)
-		"connectTimeoutMillis"	setConnectTimeoutMillis(int)
-		"pipelineFactory"	setPipelineFactory(ChannelPipelineFactory)
-		 */
+		connector = protocol.createConnector(this); 		
+	}
+	
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.ot.endpoint.AbstractEndpoint#connectImpl()
+	 */
+	@Override
+	protected void connectImpl() throws EndpointConnectException {
+		connector.connect();
 	}
 	
 	/**
-	 * Adds a channel listener
-	 * @param listener the listener
-	 * @see org.jboss.netty.channel.ChannelFuture#addListener(org.jboss.netty.channel.ChannelFutureListener)
+	 * {@inheritDoc}
+	 * @see org.helios.ot.endpoint.AbstractEndpoint#disconnectImpl()
 	 */
-	public void addChannelConnectedListener(ChannelFutureListener listener) {
-		if(listener!=null) {
-			connectListeners.add(listener);
-		}
-		//channelFuture.addListener(listener);
-	}
-	
-
-	/**
-	 * Removes a channel listener
-	 * @param listener the listener
-	 * @see org.jboss.netty.channel.ChannelFuture#removeListener(org.jboss.netty.channel.ChannelFutureListener)
-	 */
-	public void removeChannelConnectedListener(ChannelFutureListener listener) {
-		if(listener!=null) {
-			connectListeners.remove(listener);
-		}		
-		//channelFuture.removeListener(listener);
+	@Override
+	protected void disconnectImpl() {
+		connector.disconnect();
 	}
 	
 	
@@ -209,11 +122,12 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		Logger LOG = Logger.getLogger(HeliosEndpoint.class);
 		LOG.info("Test");
 		HeliosEndpoint he = new HeliosEndpoint();
+		he.reflectObject(he.connector.getInstrumentation());
 		boolean b = he.connect();
 		LOG.info("Connected:"+b);
 		for(int i = 0; i < 1000; i++) {
 			try {
-				he.socketChannel.write(new Date());
+				he.connector.write(new byte[10]);
 				Thread.sleep(5000);
 			} catch (Exception e) {
 				e.printStackTrace(System.err);
@@ -241,47 +155,6 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		return null;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.ot.endpoint.AbstractEndpoint#connectImpl()
-	 */
-	@Override
-	protected void connectImpl() throws EndpointConnectException {
-		channelFuture = bootstrap.connect();
-		for(ChannelFutureListener listener: connectListeners) {
-			channelFuture.addListener(listener);
-		}
-		channelFuture.awaitUninterruptibly();
-		 if (channelFuture.isCancelled()) {
-			 throw new EndpointConnectException("Connection request cancelled");
-		 } else if (!channelFuture.isSuccess()) {
-			 throw new EndpointConnectException(channelFuture.getCause().getMessage());		     
-		 } else {
-			 // no exception means a good connect
-			 socketChannel = (SocketChannel)channelFuture.getChannel();
-			 log.info("Socket Channel Connected [" + socketChannel + "]");
-			 socketChannel.getCloseFuture().addListener(new ChannelFutureListener(){
-				 @Override
-				public void operationComplete(ChannelFuture future)throws Exception {
-					 log.warn("\n\tHELIOS ENDPOINT DISCONNECTED:" + future + "\n\t");
-				}
-			 });
-		 }
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.ot.endpoint.AbstractEndpoint#disconnectImpl()
-	 */
-	@Override
-	protected void disconnectImpl() {
-		final ClientSocketChannelFactory finalFactory = socketChannelFactory;		
-		channelFuture.getChannel().getCloseFuture().addListener(new ChannelFutureListener(){
-			public void operationComplete(ChannelFuture future) throws Exception {				
-				finalFactory.releaseExternalResources();				
-			}
-		});		 
-	}
 	
 
 	/**

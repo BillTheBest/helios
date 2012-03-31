@@ -34,9 +34,25 @@ package org.helios.ot.helios;
 
 public enum Protocol {
 	/** TCP/IP */
-	TCP,
+	TCP(new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointTCPConnector(endpoint);}}),
 	/** UDP */
-	UDP;
+	UDP(new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointUDPConnector(endpoint);}});
+	
+	private Protocol(ConnectorFactory factory) {
+		this.factory = factory;
+	}
+	
+	private final ConnectorFactory factory;
+	
+	/**
+	 * Creates a connector of this protocol's type for the passed endpoint
+	 * @param The endpoint to create the connector for
+	 * @return a new connector
+	 */
+	public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint) {
+		return factory.createConnector(endpoint);
+	}
+	
 	
 	/**
 	 * Decodes the passed string into a protocol using trim and uppercase
@@ -51,5 +67,24 @@ public enum Protocol {
 			throw new IllegalArgumentException("The passed value was an invalid Protocol name [" + value + "]", new Throwable());
 		}
 	}
+	
+	/**
+	 * <p>Title: ConnectorFactory</p>
+	 * <p>Description: Defines the connector factories that create connectors associated with each supported protocol</p> 
+	 * <p>Company: Helios Development Group LLC</p>
+	 * @author Whitehead (nwhitehead AT heliosdev DOT org)
+	 * <p><code>org.helios.ot.helios.Protocol.ConnectorFactory</code></p>
+	 */
+	public static interface ConnectorFactory {
+		/**
+		 * Creates a new connector
+		 * @param endpoint The endpoint to create the connector for
+		 * @return a new connector
+		 */
+		@SuppressWarnings("rawtypes")
+		public AbstractEndpointConnector createConnector(HeliosEndpoint endpoint);
+	}
+	
+	
 	
 }
