@@ -75,14 +75,14 @@ public class SubmissionProcessor implements Runnable {
 		this.queue = queue;
 		this.accSwitch = accSwitch;
 		log = Logger.getLogger(getClass().getName() + "#" + mod);
-		log.info("Created SubmissionProcessor");
+		if(log.isDebugEnabled()) log.debug("Created SubmissionProcessor");
 	}
 	
 	/**
 	 * Stops the processor
 	 */
 	void stopProcessor() {
-		log.info("Stopping SubmissionProcessor");
+		if(log.isDebugEnabled()) log.debug("Stopping SubmissionProcessor");
 		run.set(false);
 		if(processorThread!=null) {
 			processorThread.interrupt();
