@@ -140,7 +140,7 @@ public class AccumulatorSwitch {
 				it.runPhaseTriggers(Phase.ATTACHED);
 			}
 		}
-		log.info("Submission Processor#" + mod + " Flushed [" + metricCount + "] traces in " + SystemClock.endTimer());
+		if(log.isTraceEnabled()) log.trace("Submission Processor#" + mod + " Flushed [" + metricCount + "] traces in " + SystemClock.endTimer());
 		submissionProcessorLatch.get().countDown();
 	}
 	
@@ -189,7 +189,7 @@ public class AccumulatorSwitch {
 			accSwitch.set(true);
 			// the flush is complete so drop the flush complete latch and let the submission processors continue
 			flushCompleteLatch.get().countDown();
-			log.info("Submission Processors Flushed interval traces in [" + elapsed + "] ns. [" + TimeUnit.MILLISECONDS.convert(elapsed, TimeUnit.NANOSECONDS) + "] ms.");
+			if(log.isDebugEnabled()) log.debug("Submission Processors Flushed interval traces in [" + elapsed + "] ns. [" + TimeUnit.MILLISECONDS.convert(elapsed, TimeUnit.NANOSECONDS) + "] ms.");
 			int i = 0;
 			SystemClock.startTimer();
 			// This needs to go in a seperate thread.
