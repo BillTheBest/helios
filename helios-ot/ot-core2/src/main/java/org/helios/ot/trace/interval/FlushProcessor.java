@@ -66,7 +66,7 @@ public class FlushProcessor implements Runnable {
 	 */
 	@Override
 	public void run() {
-		log.info("\n\t**************\n\tFlush Signal\n\tSerial#:" + System.identityHashCode(this) + "\n\t**************");
+		if(log.isDebugEnabled()) log.debug("\n\t**************\n\tFlush Signal\n\tSerial#:" + System.identityHashCode(this) + "\n\t**************");
 		long serial = flushSerial.incrementAndGet();
 		ia.fireFlushSignalStart(serial);
 		long currentTime = SystemClock.time();

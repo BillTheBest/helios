@@ -103,7 +103,7 @@ public class SubmissionProcessor implements Runnable {
 	@Override
 	public void run() {
 		processorThread = Thread.currentThread();
-		log.info("SubmissionProcessor Started Processing");
+		if(log.isDebugEnabled()) log.debug("SubmissionProcessor Started Processing");
 		boolean intervalHasAction = false;
 		while(run.get()) {
 			try {					
