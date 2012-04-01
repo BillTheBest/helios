@@ -73,7 +73,7 @@ public class FlushProcessor implements Runnable {
 		long start = System.nanoTime();
 		accSwitch.switchChannel(currentTime);
 		long elapsed = System.nanoTime() - start;		
-		log.info("AccSwitch Waited [" + elapsed + "] ns. [" + TimeUnit.MILLISECONDS.convert(elapsed, TimeUnit.NANOSECONDS) + "] ms. for processing flush");
+		if(log.isDebugEnabled()) log.debug("AccSwitch Waited [" + elapsed + "] ns. [" + TimeUnit.MILLISECONDS.convert(elapsed, TimeUnit.NANOSECONDS) + "] ms. for processing flush");
 		ia.fireFlushSignalEnd(serial);
 	}
 
