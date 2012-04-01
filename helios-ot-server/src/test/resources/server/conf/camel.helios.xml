@@ -99,9 +99,11 @@
 			<camel:jaxb contextPath="org.helios.trace" id="OTStreamDataFormatXML"  />
 			<camel:serialization id="OTStreamDataFormatJAVA" />
 		</camel:dataFormats>
-	  <route id="TopicTreeRepub" autoStartup="true" >
+	  <route id="TopicTreeRepub" autoStartup="true" >	  	
 	    <from uri="activemq:queue:helios.agent.in.>"/>
 	    <from uri="seda:otlocal?concurrentConsumers=2" id="OTLocalConsumer" />
+	    <from uri="netty:tcp://0.0.0.0:9428?decoders=#object-decoder&amp;sync=false"/>
+	    <from uri="netty:udp://0.0.0.0:9427?decoders=#object-decoder&amp;sync=false"/>	    
 	    <camel:split id="TopicTreeRepubSplitter" >
 	    	<camel:method  id="splitter" bean="traceArraySplitter" method="split"/>
 	    		<log message="A received:${body}"/>
@@ -146,13 +148,41 @@
 			  
 	  </route>
 
-    	<route autoStartup="true" id="NettyRoute" >
+
+		<!-- 
+    	<route autoStartup="true" id="NettyRouteUDP" >
+           <from uri="netty:udp://127.0.0.1:9427?decoders=#object-decoder&amp;sync=false"/>
+           <to uri="log:org.helios.ot.Trace?level=WARN&amp;showBody=true&amp;showCaughtException=true"/>
+    	</route>
+    	
+    	<route autoStartup="true" id="NettyRouteTCP" >
+           <from uri="netty:tcp://localhost:9428?decoders=#object-decoder&amp;sync=false"/>
+           <to uri="log:org.helios.ot.Trace?level=WARN&amp;showBody=true&amp;showCaughtException=true"/>
+    	</route>
+    	-->
+
+		
+
+		<!--
+    	<route autoStartup="true" id="NettyRouteTCP" >
+           <from uri="netty:tcp://localhost:9428?decoders=#object-decoder&amp;sync=false"/>
+           <to uri="log:org.helios.ot.Trace?level=WARN&amp;showBody=true&amp;showCaughtException=true"/>
+    	</route>
+		 
+    	<route autoStartup="true" id="NettyRouteTCP" >
            <from uri="netty:tcp://localhost:9428?decoders=#object-decoder&amp;sync=false"/>
            <to uri="mock:multiple-codec"/>
     	</route>
+    	<route autoStartup="true" id="NettyRouteUDP" >
+           <from uri="netty:udp://localhost:9427?decoders=#object-decoder&amp;sync=false"/>
+           <to uri="mock:multiple-codec"/>
+    	</route>
+    	-->
+    	
+    	
 	</camelContext>
 	
-	<bean id="object-decoder" class="org.jboss.netty.handler.codec.string.StringDecoder"/>
+	<bean id="object-decoder" class="org.jboss.netty.handler.codec.serialization.ObjectDecoder"/>
 	
   	<bean name="PollingHttpSubscriptionProcessor" class="org.helios.server.ot.session.camel.routing.http.PollingHttpSubscriptionProcessor" scope="prototype" lazy-init="true">
   		<constructor-arg type="java.lang.String" ><null/></constructor-arg>
