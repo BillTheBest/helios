@@ -77,7 +77,7 @@ public class ConnectorChannelInstrumentation implements ChannelUpstreamHandler, 
 	 */
 	@Override
 	public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-		eventsRead.incrementAndGet();
+		eventsWritten.incrementAndGet();
 		measure(e, false);
 		ctx.sendDownstream(e);
 	}
@@ -88,7 +88,7 @@ public class ConnectorChannelInstrumentation implements ChannelUpstreamHandler, 
 	 */
 	@Override
 	public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-		eventsWritten.incrementAndGet();
+		eventsRead.incrementAndGet();
 		measure(e, true);
 		ctx.sendUpstream(e);
 	}
@@ -104,7 +104,7 @@ public class ConnectorChannelInstrumentation implements ChannelUpstreamHandler, 
 				 if(ce instanceof MessageEvent) {
 					 MessageEvent me = (MessageEvent) ce;
 					 if (me.getMessage() instanceof ChannelBuffer) {
-						 if(up) bytesWritten.addAndGet(((ChannelBuffer)me.getMessage()).array().length);
+						 if(!up) bytesWritten.addAndGet(((ChannelBuffer)me.getMessage()).array().length);
 						 else bytesRead.addAndGet(((ChannelBuffer)me.getMessage()).array().length);
 					 }
 				 }

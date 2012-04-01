@@ -25,37 +25,25 @@
 package org.helios.ot.helios;
 
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.net.InetSocketAddress;
-import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.helios.helpers.JMXHelper;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
-import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.helios.ot.endpoint.AbstractEndpoint;
 import org.helios.ot.endpoint.EndpointConnectException;
 import org.helios.ot.endpoint.EndpointTraceException;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.types.ITraceValue;
+import org.helios.ot.tracer.TracerManager3;
 import org.helios.ot.tracer.disruptor.TraceCollection;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.ChannelFuture;
+import org.helios.time.SystemClock;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.SocketChannel;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
-import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
 
 /**
  * <p>Title: HeliosEndpoint</p>
@@ -84,7 +72,9 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	
 	/**  */
 	private static final long serialVersionUID = -433677190518825263L;
-
+	/** The last elapsed message */
+	protected String lastElapsed = null;
+	
 	
 	/**
 	 * Creates a new HeliosEndpoint from system properties and an optional external XML file
@@ -94,7 +84,8 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		host = HeliosEndpointConstants.getHost();
 		port = HeliosEndpointConstants.getPort();
 		protocol = HeliosEndpointConstants.getProtocol();
-		connector = protocol.createConnector(this); 		
+		connector = protocol.createConnector(this); 
+		reflectObject(connector);
 	}
 	
 	
@@ -120,14 +111,16 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	public static void main(String[] args) {
 		BasicConfigurator.configure();
 		Logger LOG = Logger.getLogger(HeliosEndpoint.class);
+		LOG.getRootLogger().setLevel(Level.INFO);
 		LOG.info("Test");
 		HeliosEndpoint he = new HeliosEndpoint();
 		he.reflectObject(he.connector.getInstrumentation());
+		TracerManager3.getInstance(TracerManager3.Configuration.getDefaultConfiguration().appendEndPoint(he));
 		boolean b = he.connect();
 		LOG.info("Connected:"+b);
-		for(int i = 0; i < 1000; i++) {
+		for(int i = 0; i < 1000000; i++) {
 			try {
-				he.connector.write(new byte[10]);
+				
 				Thread.sleep(5000);
 			} catch (Exception e) {
 				e.printStackTrace(System.err);
@@ -155,6 +148,14 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		return null;
 	}
 
+	/**
+	 * Returns the system clock measurement of the last submission elapsed time
+	 * @return the system clock measurement of the last submission elapsed time
+	 */
+	@JMXAttribute(name="LastElapsed", description="The system clock measurement of the last submission elapsed time", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String getLastElapsed() {
+		return lastElapsed;
+	}
 	
 
 	/**
@@ -163,8 +164,15 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	 */
 	@Override
 	protected boolean processTracesImpl(TraceCollection<T> traceCollection) throws EndpointConnectException, EndpointTraceException {
+		SystemClock.startTimer();
+		if(isConnected()) {
+			connector.write(traceCollection);
+			lastElapsed = SystemClock.endTimer().toString();
+			return true;
+		} 
 		return false;
 	}
+	
 
 	
 	

@@ -34,15 +34,17 @@ package org.helios.ot.helios;
 
 public enum Protocol {
 	/** TCP/IP */
-	TCP(new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointTCPConnector(endpoint);}}),
+	TCP(9428, new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointTCPConnector(endpoint);}}),
 	/** UDP */
-	UDP(new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointUDPConnector(endpoint);}});
+	UDP(9427, new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointUDPConnector(endpoint);}});
 	
-	private Protocol(ConnectorFactory factory) {
+	private Protocol(int defaultPort, ConnectorFactory factory) {
 		this.factory = factory;
+		this.defaultPort = defaultPort;
 	}
 	
 	private final ConnectorFactory factory;
+	private final int defaultPort;
 	
 	/**
 	 * Creates a connector of this protocol's type for the passed endpoint
@@ -51,6 +53,14 @@ public enum Protocol {
 	 */
 	public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint) {
 		return factory.createConnector(endpoint);
+	}
+	
+	/**
+	 * Returns the default listening port for this protocol
+	 * @return the default listening port for this protocol
+	 */
+	public int getDefaultPort() {
+		return defaultPort;
 	}
 	
 	

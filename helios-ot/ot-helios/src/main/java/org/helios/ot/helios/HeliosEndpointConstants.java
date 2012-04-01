@@ -43,8 +43,6 @@ public class HeliosEndpointConstants {
 	public static final String PROTOCOL = "org.helios.ot.protocol";
 	/** The default helios ot server host name or ip address */
 	public static final String DEFAULT_HOST = "localhost";
-	/** The default helios ot server listening port */
-	public static final int DEFAULT_PORT = 9428;
 	/** The default protocol the agent should use to comm with the helios-ot server (UDP or TCP) */
 	public static final String DEFAULT_PROTOCOL = "TCP";
 	
@@ -61,7 +59,7 @@ public class HeliosEndpointConstants {
 	 * @return the configured port
 	 */
 	public static int getPort() {
-		return ConfigurationHelper.getIntSystemThenEnvProperty(PORT, DEFAULT_PORT);
+		return ConfigurationHelper.getIntSystemThenEnvProperty(PORT, getProtocol().getDefaultPort());
 	}
 	
 	/**

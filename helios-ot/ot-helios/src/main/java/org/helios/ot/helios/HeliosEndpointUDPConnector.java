@@ -26,6 +26,10 @@ package org.helios.ot.helios;
 
 import java.net.InetSocketAddress;
 
+import org.helios.jmx.dynamic.annotations.JMXManagedObject;
+import org.helios.ot.trace.Trace;
+import org.helios.ot.tracer.disruptor.TraceCollection;
+import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ConnectionlessBootstrap;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -34,7 +38,6 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.FixedReceiveBufferSizePredictorFactory;
 import org.jboss.netty.channel.socket.DatagramChannel;
-import org.jboss.netty.channel.socket.DatagramChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioDatagramChannelFactory;
 import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
 import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
@@ -47,20 +50,18 @@ import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.ot.helios.HeliosEndpointUDPConnector</code></p>
  */
-
+@JMXManagedObject (declared=false, annotated=true)
 public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 	/** The channel socket factory */
 	protected final NioDatagramChannelFactory datagramChannelFactory;
 	/** The datagram channel */
 	protected DatagramChannel datagramChannel;
-	/** The UDP bootstrap */
-	protected ConnectionlessBootstrap bootstrap; 
 
-	
+	protected InetSocketAddress serverSocket;
 
 	
 	/** This connector's protocol */
-	public static final Protocol PROTOCOL = Protocol.UDP;
+	public static final Protocol PROTOCOL = Protocol.UDP; 
 	
 	
 	/**
@@ -71,7 +72,7 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 		super(endpoint);
 	    // Configure the client.
 		datagramChannelFactory = new NioDatagramChannelFactory(workerExecutor);
-		bootstrap = new ConnectionlessBootstrap(datagramChannelFactory);
+		bootstrap = new ClientBootstrap(datagramChannelFactory);
 		// Set up the pipeline factory.
 		channelPipelineFactory = new ChannelPipelineFactory() {
 	          public ChannelPipeline getPipeline() throws Exception {
@@ -82,7 +83,8 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 	          }
 		};	                     
 		bootstrap.setOption("receiveBufferSizePredictorFactory", new FixedReceiveBufferSizePredictorFactory(1024));		
-		
+		bootstrap.setPipelineFactory(channelPipelineFactory);
+		bootstrap.setOption("remoteAddress", new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
 //	    bootstrap.setOption("broadcast", "true");
 //		bootstrap.setPipelineFactory(channelPipelineFactory);
 //		bootstrap.setOption("remoteAddress", new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
@@ -100,7 +102,20 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 	 */
 	public void connect() {
 		if(isConnected()) throw new IllegalStateException("This connector is already connected", new Throwable());
-		datagramChannel = (DatagramChannel) bootstrap.bind(new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
+		ChannelFuture future = bootstrap.connect();
+		future.addListener(new ChannelFutureListener(){
+			@Override
+			public void operationComplete(ChannelFuture f) throws Exception {
+				if(f.isSuccess()) {
+					setConnected();					
+					datagramChannel = (DatagramChannel) f.getChannel();
+					localSocketAddress =  datagramChannel.getLocalAddress();
+				}
+			}
+		});
+		
+//		bootstrap.
+//		serverSocket = new InetSocketAddress(endpoint.getHost(), endpoint.getPort());
 		setConnected();
 	}
 	/**
@@ -117,14 +132,18 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 		});		 
 	}
 	
+	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.ot.helios.AbstractEndpointConnector#write(java.lang.Object)
+	 * @see org.helios.ot.helios.AbstractEndpointConnector#write(org.helios.ot.tracer.disruptor.TraceCollection)
 	 */
-	public void write(Object obj) {
-		datagramChannel.write(obj);
+	public void write(TraceCollection<?> traceCollection) {
+		Trace[] t = new Trace[1];
+		for(Trace trace: traceCollection.getTraces()) {
+			t[0] = trace;
+			datagramChannel.write(t).addListener(sendListener);
+		}
 	}
-	
 
 	/**
 	 * {@inheritDoc}

@@ -24,14 +24,21 @@
  */
 package org.helios.ot.helios;
 
+import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.helios.helpers.JMXHelper;
+import org.helios.jmx.dynamic.annotations.JMXAttribute;
+import org.helios.jmx.dynamic.annotations.JMXManagedObject;
+import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
+import org.helios.ot.tracer.disruptor.TraceCollection;
+import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -43,7 +50,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.ot.helios.AbstractEndpointConnector</code></p>
  */
-
+@JMXManagedObject (declared=false, annotated=true)
 public abstract class AbstractEndpointConnector {
 	/** The worker thread pool */
 	protected Executor workerExecutor;
@@ -51,6 +58,28 @@ public abstract class AbstractEndpointConnector {
 	protected ChannelPipelineFactory channelPipelineFactory;
 	/** The connection's channel future */
 	protected ChannelFuture channelFuture;
+	/** The client bootstrap */
+	protected ClientBootstrap bootstrap; 
+	/** The failed send counter */
+	protected final AtomicLong failedSendCounter = new AtomicLong(0);
+	/** The send counter */
+	protected final AtomicLong sendCounter = new AtomicLong(0);
+	/** The local bind address */
+	protected InetSocketAddress localSocketAddress = null;
+	
+	/** The send listener */
+	protected final ChannelFutureListener sendListener = new ChannelFutureListener() {
+		@Override
+		public void operationComplete(ChannelFuture f) throws Exception {
+			if(f.isDone()) {
+				if(f.isSuccess()) {
+					sendCounter.incrementAndGet();   
+				} else {
+					failedSendCounter.incrementAndGet();
+				}
+			}
+		}
+	};
 	/** The endpoint this connector was created for */
 	@SuppressWarnings("rawtypes")
 	protected final HeliosEndpoint endpoint;
@@ -63,6 +92,34 @@ public abstract class AbstractEndpointConnector {
 	
 	/** A set of connect listeners that will be added when an asynch connect is initiated */
 	protected final Set<ChannelFutureListener> connectListeners = new CopyOnWriteArraySet<ChannelFutureListener>();
+	
+
+	/**
+	 * Returns the string representation of the local socket address
+	 * @return the string representation of the local socket address
+	 */
+	@JMXAttribute(name="LocalAddress", description="The string representation of the local socket address", mutability=AttributeMutabilityOption.READ_ONLY) 
+	public String getLocalAddress() {
+		return localSocketAddress!=null ? localSocketAddress.toString() : "Not Connected";
+	}
+	
+	/**
+	 * Returns the local bind address
+	 * @return the local bind address
+	 */
+	@JMXAttribute(name="LocalBindAddress", description="The local bind address", mutability=AttributeMutabilityOption.READ_ONLY) 
+	public String getLocalBindAddress() {
+		return localSocketAddress!=null ? localSocketAddress.getAddress().getHostAddress() : "Not Connected";
+	}
+
+	/**
+	 * Returns the local bind port
+	 * @return the local bind port
+	 */
+	@JMXAttribute(name="LocalBindPort", description="The local bind port", mutability=AttributeMutabilityOption.READ_ONLY) 
+	public int getLocalBindPort() {
+		return localSocketAddress!=null ? localSocketAddress.getPort() : -1;
+	}
 	
 
 	/**
@@ -81,6 +138,7 @@ public abstract class AbstractEndpointConnector {
 				.setKeepAliveTime(15000)
 				.setMaxThreads(100)
 				.setJmxDomains(JMXHelper.getRuntimeHeliosMBeanServer().getDefaultDomain())
+				// org.helios.endpoints:type=HeliosEndpoint,name=HeliosEndpoint
 				.setPoolObjectName(new StringBuilder("org.helios.endpoints:name=").append(getClass().getSimpleName()).append(",service=ThreadPool,type=Worker,protocol=").append(getProtocol().name()))
 				.setPrestartThreads(1)
 				.setTaskQueueSize(1000)
@@ -104,10 +162,11 @@ public abstract class AbstractEndpointConnector {
 	
 	
 	/**
-	 * Writes an object out to the listener at the end of the connector
-	 * @param obj The object to send
+	 * Writes a trace collection out to the listener at the end of the connector
+	 * @param traceCollection The closed traces to send
 	 */
-	public abstract void write(Object obj);
+	public abstract void write(TraceCollection<?> traceCollection);
+
 	
 
 	/**
@@ -121,6 +180,8 @@ public abstract class AbstractEndpointConnector {
 		}		
 		//channelFuture.removeListener(listener);
 	}
+	
+	
 	
 	
 	/**
@@ -187,6 +248,25 @@ public abstract class AbstractEndpointConnector {
 	public ConnectorChannelInstrumentation getInstrumentation() {
 		return instrumentation;
 	}
+
+	/**
+	 * Returns the number of failed sends
+	 * @return the failedSendCounter
+	 */
+	@JMXAttribute(name="FailedSends", description="The number of failed sends", mutability=AttributeMutabilityOption.READ_ONLY)
+	public long getFailedSendCounter() {
+		return failedSendCounter.get();
+	}
+	
+	/**
+	 * Returns the number of sends
+	 * @return the sendCounter
+	 */
+	@JMXAttribute(name="Sends", description="The number of sends", mutability=AttributeMutabilityOption.READ_ONLY)
+	public long getSendCounter() {
+		return sendCounter.get();
+	}
+	
 
 	
 }

@@ -25,11 +25,14 @@
 package org.helios.ot.helios;
 
 import java.net.InetSocketAddress;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 import org.helios.helpers.JMXHelper;
+import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
-import org.helios.ot.endpoint.EndpointConnectException;
+import org.helios.ot.trace.Trace;
+import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -49,14 +52,12 @@ import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.ot.helios.HeliosEndpointTCPConnector</code></p>
  */
-
+@JMXManagedObject (declared=false, annotated=true)
 public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	/** The channel socket factory */
 	protected NioClientSocketChannelFactory socketChannelFactory;
 	/** The channel socket  */
 	protected SocketChannel socketChannel;
-	/** The client bootstrap */
-	protected ClientBootstrap bootstrap; 
 	
 	/** The boss thread pool */
 	protected Executor bossExecutor;
@@ -145,7 +146,8 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 			 throw new RuntimeException(channelFuture.getCause().getMessage());		     
 		 } else {
 			 // no exception means a good connect
-			 socketChannel = (SocketChannel)channelFuture.getChannel();			 
+			 socketChannel = (SocketChannel)channelFuture.getChannel();
+			 localSocketAddress = socketChannel.getLocalAddress();
 			 socketChannel.getCloseFuture().addListener(new ChannelFutureListener(){
 				 @Override
 				public void operationComplete(ChannelFuture future)throws Exception {
@@ -154,10 +156,11 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 						 log.warn("Waiting for future to complete...");
 						 future.awaitUninterruptibly(10000);
 					 }
+					 
 					 Throwable t = future.getCause();
 					 if(t!=null) {
 						 t.printStackTrace(System.err);
-					 }
+					 } 
 				}
 			 });
 			 setConnected();
@@ -179,12 +182,16 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 		});		 
 	}
 	
+	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.ot.helios.AbstractEndpointConnector#write(java.lang.Object)
+	 * @see org.helios.ot.helios.AbstractEndpointConnector#write(org.helios.ot.tracer.disruptor.TraceCollection)
 	 */
-	public void write(Object obj) {
-		socketChannel.write(obj);
+	public void write(TraceCollection<?> traceCollection) {
+		Set<?> traces = traceCollection.getTraces();
+		Trace[] traceArr = traces.toArray(new Trace[traces.size()]);
+//		System.out.println("Submitting [" + traceArr.length + "] in one [" + traceArr.getClass().getName() + "]");
+		socketChannel.write(traceArr).addListener(sendListener);;
 	}
 	
 	
