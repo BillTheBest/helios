@@ -10,7 +10,7 @@
 cls
 set M2_REPO=%HOME%\.m2\repository
 set EXE_JAR=%M2_REPO%\org\helios\helios-spring\helios-spring-launcher\1.0-SNAPSHOT\helios-spring-launcher-1.0-SNAPSHOT.jar
-set CMD_LINE=-el .\src\test\resources\server\conf\OTServer.launch -conf .\src\test\resources\server\conf -log4j .\src\test\resources\server\conf\log4j\log4j.xml -daemon 
+set CMD_LINE=-el .\src\test\resources\server\conf\DevOTServer.launch -conf .\src\test\resources\server\conf -log4j .\src\test\resources\server\conf\log4j\log4j.xml -daemon 
 set CMD_LINE=%CMD_LINE% -lib %M2_REPO%\org\helios\helios-ot-server\1.0-SNAPSHOT 
 set CMD_LINE=%CMD_LINE% -lib %M2_REPO%\org\helios\helios-collectors\helios-collectors-core\1.0-SNAPSHOT 
 set CMD_LINE=%CMD_LINE% -lib %M2_REPO%\org\helios\helios-scripting\1.0-SNAPSHOT 

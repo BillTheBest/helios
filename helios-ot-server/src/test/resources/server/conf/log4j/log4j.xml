@@ -2,7 +2,7 @@
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
 
-	<renderer renderedClass="[Lorg.helios.ot.trace.Trace;" renderingClass="org.helios.server.ot.logging.render.SimpleArrayRenderer"/>
+	
 
    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
       <param name="Target" value="System.out"/>
