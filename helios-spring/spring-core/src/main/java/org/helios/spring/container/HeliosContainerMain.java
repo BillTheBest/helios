@@ -31,11 +31,11 @@ import java.lang.management.RuntimeMXBean;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -66,7 +66,6 @@ import org.helios.version.VersionHelper;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.beans.PropertyEditorRegistrySupport;
-import org.springframework.beans.factory.BeanIsAbstractException;
 import org.springframework.beans.factory.config.CustomEditorConfigurer;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
@@ -406,8 +405,12 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 			}
 			LOG.info("Added [" + addToClassPath.size() + "] Jar files and directories to the classpath");
 			if(LOG.isDebugEnabled()) {
-				StringBuilder b = new StringBuilder("Added following jar files to classpath:");
+				Set<String> sortedSet = new TreeSet<String>();
 				for(URL url: addToClassPath.values()) {
+					sortedSet.add(url.toString());
+				}
+				StringBuilder b = new StringBuilder("Added following jar files to classpath:");
+				for(String url: sortedSet) {
 					b.append("\n\t").append(url);
 				}
 				b.append("\n");
@@ -499,7 +502,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 		String[] tConfigFiles = RecursiveDirectorySearch.searchDirectories(new ConfigurableFileExtensionFilter(HELIOS_XML_TEMPLATE), configDirectories);
 		String[] dConfigFiles = RecursiveDirectorySearch.searchDirectories(new ConfigurableFileExtensionFilter(HELIOS_XML_DYNAMIC), configDirectories);
 		String[] tmpConfigFiles = RecursiveDirectorySearch.searchDirectories(new ConfigurableFileExtensionFilter(HELIOS_XML_DYNAMIC_TEMPLATIZED), configDirectories);
-		LOG.info("Located [" + configFiles.length + "] static configuration files.");
+		LOG.info("Located [" + configFiles.length + "] static configuration files.\n" + Arrays.toString(configFiles));
 		LOG.info("Located [" + tConfigFiles.length + "] template configuration files.");
 		LOG.info("Located [" + dConfigFiles.length + "] dynamic configuration files.");
 		LOG.info("Located [" + tmpConfigFiles.length + "] dynamic templatized configuration files.");

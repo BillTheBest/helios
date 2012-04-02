@@ -239,6 +239,13 @@ public class EclipseLauncher {
 				} else if(kind.equals("lib")) {
 					File cp = new File(XMLHelper.getAttributeValueByName(entry, "path"));
 					classpathEntries.add(cp.toURI().toURL());
+				} else if(kind.equals("src")) {
+					String srcPathRoot = XMLHelper.getAttributeValueByName(entry, "path");
+					String classPath = ".." + srcPathRoot + "/target/classes";
+					File cp = new File(classPath);
+					if(cp.exists() && cp.isDirectory()) {
+						classpathEntries.add(cp.toURI().toURL());
+					}
 				} else {
 					//LOG.info("Unhandled kind: [" + kind + "]");
 				}

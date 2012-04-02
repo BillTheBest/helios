@@ -178,7 +178,7 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	 */
 	public void disconnect() {
 		final ClientSocketChannelFactory finalFactory = socketChannelFactory;		
-		channelFuture.getChannel().getCloseFuture().addListener(new ChannelFutureListener(){
+		socketChannel.close().addListener(new ChannelFutureListener(){
 			public void operationComplete(ChannelFuture future) throws Exception {				
 				finalFactory.releaseExternalResources();	
 				setDisconnected(true);

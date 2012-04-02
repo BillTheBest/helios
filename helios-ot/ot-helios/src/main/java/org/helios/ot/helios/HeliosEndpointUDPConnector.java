@@ -79,13 +79,16 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 	              return Channels.pipeline(
 	            		  instrumentation,
 	                      new ObjectEncoder(),
-	                      new ObjectDecoder());
+	                      new ObjectDecoder(),
+	                      responseProcessor, 
+	                      responseProcessor2,
+	                      exceptionListener);
 	          }
 		};	                     
 		bootstrap.setOption("receiveBufferSizePredictorFactory", new FixedReceiveBufferSizePredictorFactory(1024));		
 		bootstrap.setPipelineFactory(channelPipelineFactory);
 		bootstrap.setOption("remoteAddress", new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
-//	    bootstrap.setOption("broadcast", "true");
+	    bootstrap.setOption("broadcast", "true");
 //		bootstrap.setPipelineFactory(channelPipelineFactory);
 //		bootstrap.setOption("remoteAddress", new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
 //		bootstrap.setOption("tcpNoDelay", true);

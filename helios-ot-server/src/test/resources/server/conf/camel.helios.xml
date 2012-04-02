@@ -92,8 +92,9 @@
 	 </bean>
 	 
 	 <bean id="TraceCountWireTap" class="org.helios.server.ot.wiretaps.TraceCountWireTap" />
-   	<!-- <camel:to uri="bean:TraceCountWireTap" />  -->
-	<camelContext xmlns="http://camel.apache.org/schema/spring" trace="true" id="HeliosContext" depends-on="SubscriberRouteRegistry" >
+
+   	
+	<camelContext xmlns="http://camel.apache.org/schema/spring" trace="false" id="HeliosContext" depends-on="SubscriberRouteRegistry"   >
 		<camel:dataFormats>
 			<camel:string id="OTStreamDataFormatText" />
 			<!-- <camel:json library="Jackson" id="OTStreamDataFormatJSON"/> -->
@@ -140,6 +141,14 @@
 		    <to uri="bean:TraceCountWireTap" /> 
 	    </camel:multicast>
 	  </route>
+	  
+		<camel:route id="HotDeployedRoute" autoStartup="true">
+			<camel:from uri="netty:udp://0.0.0.0:9421?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyUDPBroadcaster" />
+   			<camel:multicast id="NettyUDPBroadcastMulticast" >	 
+	    		<camel:to id="NettyUDPBroadcasterProcessor" uri="direct:agentin" />
+	    		<camel:to uri="bean:TraceCountWireTap" /> 
+    		</camel:multicast>
+		</camel:route>
 	  
 	  
 	  <route id="MetricSubListener" trace="true"  >

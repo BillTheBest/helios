@@ -101,6 +101,10 @@
       <appender-ref ref="CONSOLE"/>
    </category>
  
+   <category name="org.helios.spring.container.HeliosContainerMain" additivity="false">
+      <priority value="DEBUG"/>
+      <appender-ref ref="CONSOLE"/>
+   </category>
    
    
    <category name="org.helios.spring.monitors" additivity="false">

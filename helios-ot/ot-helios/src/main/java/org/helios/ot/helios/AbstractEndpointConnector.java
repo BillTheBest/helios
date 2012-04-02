@@ -243,6 +243,15 @@ public abstract class AbstractEndpointConnector {
 	 */
 	protected void setConnected() {
 		connected.set(true);
+		Runtime.getRuntime().addShutdownHook(new Thread(){
+			public void run() {
+				try {
+					log.info("Disconnecting......");
+					disconnect();
+					log.info("Disconnected.");
+				} catch (Exception e) {}
+			}
+		});
 		fireConnectedEvent();
 	}
 	
