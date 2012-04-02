@@ -75,7 +75,7 @@
 		</property>
 	</bean>	
 
-	<!-- 
+ 
 	<bean id="MBeanServerConnector" class="javax.management.remote.JMXConnectorServerFactory"
 		lazy-init="false" init-method="start" factory-method="newJMXConnectorServer"
 		depends-on="RMIRegistry">
@@ -101,7 +101,6 @@
 		<property name="server" ref="MBeanServer" />
 	</bean>
 	
-	-->
 
 
 

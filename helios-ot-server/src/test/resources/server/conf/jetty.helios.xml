@@ -10,8 +10,8 @@
 	  <bean id="consoleProperties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 	  	<property name="properties">
     		<value>
-    			m2Home=/home/nwhitehead/.m2/repository
-    			console.version=2.8.1
+    			m2Home=c:/users/nwhitehe/.m2/repository
+    			console.version=2.9.1
     		</value>
  		</property>
 	  </bean>
@@ -48,11 +48,20 @@
           	<ref bean="HeliosWar" />
           	<ref bean="JolokiaWar" />
           	<ref bean="NettyWar" />
+          	<!-- <ref bean="CamelWar" /> -->
           	<!-- <ref bean="ActiveMQWar" /> -->
           </list>
         </property>
         <property name="server" ref="HttpServer" />
       </bean>
+
+
+	  <bean id="CamelWar" class="org.eclipse.jetty.webapp.WebAppContext">
+	      <property name="contextPath" value="/camel"/>
+	      <property name="war" value="C:/camel-web/camel.war" />
+	      <property name="logUrlOnStart" value="true"/>  
+	  </bean>
+
 	
 <!-- 	  
 	  <bean id="CamelWar" class="org.eclipse.jetty.webapp.WebAppContext">

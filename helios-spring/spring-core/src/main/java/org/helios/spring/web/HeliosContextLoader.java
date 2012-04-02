@@ -24,17 +24,17 @@
  */
 package org.helios.spring.web;
 
-import javax.management.ObjectName;
 import javax.servlet.ServletContext;
 
 import org.apache.log4j.Logger;
 import org.helios.helpers.JMXHelper;
-import org.helios.helpers.JMXHelperExtended;
 import org.helios.spring.container.HeliosApplicationContext;
 import org.helios.spring.container.jmx.ApplicationContextService;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.web.context.ContextLoader;
+import org.springframework.web.context.support.GenericWebApplicationContext;
 
 /**
  * <p>Title: HeliosContextLoader</p>
@@ -77,9 +77,12 @@ public class HeliosContextLoader extends ContextLoader {
 				}
 			}
 		}
-		ApplicationContext parent = (ApplicationContext)JMXHelper.getRuntimeHeliosMBeanServer().getAttribute(ApplicationContextService.OBJECT_NAME, "AppContext");		
+		GenericApplicationContext parent = (GenericApplicationContext)JMXHelper.getRuntimeHeliosMBeanServer().getAttribute(ApplicationContextService.OBJECT_NAME, "AppContext");		
 		LOG.info("Returning Helios App Context as parent of WebAppContext");
-		return parent;
+		GenericWebApplicationContext gwac = new GenericWebApplicationContext(servletContext);
+		gwac.setParent(parent);
+		gwac.refresh();
+		return gwac;
 	}
 
 }
