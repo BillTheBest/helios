@@ -90,7 +90,9 @@
 	 		</map>
 	 	</property>
 	 </bean>
-   	
+	 
+	 <bean id="TraceCountWireTap" class="org.helios.server.ot.wiretaps.TraceCountWireTap" />
+   	<!-- <camel:to uri="bean:TraceCountWireTap" />  -->
 	<camelContext xmlns="http://camel.apache.org/schema/spring" trace="true" id="HeliosContext" depends-on="SubscriberRouteRegistry" >
 		<camel:dataFormats>
 			<camel:string id="OTStreamDataFormatText" />
@@ -99,86 +101,46 @@
 			<camel:jaxb contextPath="org.helios.trace" id="OTStreamDataFormatXML"  />
 			<camel:serialization id="OTStreamDataFormatJAVA" />
 		</camel:dataFormats>
-	  <route id="TopicTreeRepub" autoStartup="true" >	  	
-	    <from uri="activemq:queue:helios.agent.in.>"/>
-	    <from uri="seda:otlocal?concurrentConsumers=2" id="OTLocalConsumer" />
-	    <from uri="netty:tcp://0.0.0.0:9428?decoders=#object-decoder&amp;sync=false"/>
-	    <from uri="netty:udp://0.0.0.0:9427?decoders=#object-decoder&amp;sync=false"/>	    
-	    <camel:split id="TopicTreeRepubSplitter" >
-	    	<camel:method  id="splitter" bean="traceArraySplitter" method="split"/>
-	    		<log message="A received:${body}"/>
-	    			    	
-		    	<camel:process ref="metaCache" id="metaCacheProcessor" />		    			    			    	
-		    	
-		    	<!-- <camel:process ref="traceHandler" id="traceHandlerConvert" /> -->
-		    	<camel:bean ref="traceHandler" method="send" id="traceHandlerSend"/>
-		    	<!-- The following fragment shows logging in JSON format -->
-		    	
-				<!-- 
-		    	<camel:marshal id="OTJsonMarshall" >
-		    		<camel:custom ref="OTXStreamDataFormatJSON"/>
-		    	</camel:marshal>
-    			
-		    	
-		    	<to uri="log:org.helios.ot?level=INFO&amp;multiline=true&amp;showAll=false&amp;showBodyType=false&amp;showExchangePattern=false"/>
-				
-				 -->		    	
-		    	<!-- The following fragment shows logging in XML format -->
-		    	<!-- 
-		    	<camel:marshal id="xmlMarshall" >
-		    		<camel:xstream encoding="UTF-8" />
-		    	</camel:marshal>
-		    	<to uri="log:org.helios.ot?level=INFO"/>
-		    	-->
-		    	
-	    </camel:split>
+		
+		<route id="OTMulticastRoute" autoStartup="true" >
+			<from uri="direct:agentin" />
+		    <camel:multicast id="OTMulticast" >	    	
+			    <camel:split id="TopicTreeRepubSplitter" >
+			    	<camel:method  id="splitter" bean="traceArraySplitter" method="split"/>
+				    	<camel:process ref="metaCache" id="metaCacheProcessor" />		    			    			    	
+				    	<camel:bean ref="traceHandler" method="send" id="traceHandlerSend"/>
+			    </camel:split>
+			</camel:multicast>
+			
+		</route>
+		
+		
+	  <route id="AMQAgentListener" autoStartup="true" >	  	
+	    <from uri="activemq:queue:helios.agent.in.>" id="OTAMQConsumer" />	    
+	    <to id="AMQOTProcessor" uri="direct:agentin" />
 	  </route>
+	  
+	  <route id="LocalAgentListener" autoStartup="true" >	  	
+	    <from uri="seda:otlocal?concurrentConsumers=2" id="OTLocalConsumer" />
+	    <to id="LocalOTProcessor" uri="direct:agentin" />
+	  </route>
+	  
+	  <route id="NettyTCPAgentListener" autoStartup="true" >	  	
+	    <from uri="netty:tcp://0.0.0.0:9428?decoders=#object-decoder&amp;sync=false" id="NettyTCPOTConsumer" />
+	    <to id="NettyTCPOTProcessor" uri="direct:agentin" />
+	    <to uri="bean:TraceCountWireTap" /> 
+	  </route>
+	  
+	  <route id="NettyUDPAgentListener" autoStartup="true" >	  	
+	    <from uri="netty:udp://0.0.0.0:9427?decoders=#object-decoder&amp;sync=false" id="NettyUDPOTConsumer" />
+	    <to id="NettyUDPOTProcessor" uri="direct:agentin" />
+	  </route>
+	  
 	  
 	  <route id="MetricSubListener" trace="true"  >
 		<from uri="activemq:topic:ActiveMQ.Advisory.Consumer.Topic.helios.metrictree.>"/>
 		<camel:process ref="subPatternListener" />
-		<!-- 
-		<convertBodyTo type="java.lang.String"/>
-   			<transform>
-      			<simple>${in.header.JMSDestination}&#13;</simple>
-   			</transform>
-		
-		<to uri="log:org.helios.ot.advisory?level=INFO"/>
-		<camel:process ref="subPatternListener" /> -->
-			  
 	  </route>
-
-
-		<!-- 
-    	<route autoStartup="true" id="NettyRouteUDP" >
-           <from uri="netty:udp://127.0.0.1:9427?decoders=#object-decoder&amp;sync=false"/>
-           <to uri="log:org.helios.ot.Trace?level=WARN&amp;showBody=true&amp;showCaughtException=true"/>
-    	</route>
-    	
-    	<route autoStartup="true" id="NettyRouteTCP" >
-           <from uri="netty:tcp://localhost:9428?decoders=#object-decoder&amp;sync=false"/>
-           <to uri="log:org.helios.ot.Trace?level=WARN&amp;showBody=true&amp;showCaughtException=true"/>
-    	</route>
-    	-->
-
-		
-
-		<!--
-    	<route autoStartup="true" id="NettyRouteTCP" >
-           <from uri="netty:tcp://localhost:9428?decoders=#object-decoder&amp;sync=false"/>
-           <to uri="log:org.helios.ot.Trace?level=WARN&amp;showBody=true&amp;showCaughtException=true"/>
-    	</route>
-		 
-    	<route autoStartup="true" id="NettyRouteTCP" >
-           <from uri="netty:tcp://localhost:9428?decoders=#object-decoder&amp;sync=false"/>
-           <to uri="mock:multiple-codec"/>
-    	</route>
-    	<route autoStartup="true" id="NettyRouteUDP" >
-           <from uri="netty:udp://localhost:9427?decoders=#object-decoder&amp;sync=false"/>
-           <to uri="mock:multiple-codec"/>
-    	</route>
-    	-->
-    	
     	
 	</camelContext>
 	

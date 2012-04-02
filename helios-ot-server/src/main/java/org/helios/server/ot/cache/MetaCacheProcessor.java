@@ -32,6 +32,7 @@ import org.apache.camel.Message;
 import org.apache.camel.Processor;
 import org.apache.log4j.Logger;
 import org.helios.ot.trace.ClosedTrace;
+import org.helios.ot.trace.Trace;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

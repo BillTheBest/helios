@@ -43,7 +43,7 @@
    	<beans profile="linux,nwhitehead">  
 	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
 	   		 <property name="agentName" value="OTServer" />
-	   		 <property name="emHost" value="hdog" />
+	   		 <property name="emHost" value="localhost" />
 	   		 <property name="emPort" value="5001" />
 	   		 <property name="processName" value="Helios" />   		 
 	   		 <property name="agentJar" value="/home/nwhitehead/introscope/9.0/agent/wily/Agent.jar" />
