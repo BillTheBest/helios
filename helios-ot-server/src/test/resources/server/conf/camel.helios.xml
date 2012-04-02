@@ -73,7 +73,9 @@
 
 	</bean>
 	
-	
+	<bean id="RemoteRelay" class="org.helios.server.ot.endpoint.local.RemoteRelay">
+		<property name="endpoint" ref="IntroscopeEndpoint"/>
+	</bean>
 	<!-- 
 	<util:constant static-field="org.helios.server.ot.session.OutputFormatNames.TEXT_NAME" id="OUTPUT_TEXT" />
 	<util:constant static-field="org.helios.server.ot.session.OutputFormatNames.JSON_NAME" id="OUTPUT_JSON" />
@@ -128,23 +130,25 @@
 	  
 	  <route id="NettyTCPAgentListener" autoStartup="true" >	  	
 	    <from uri="netty:tcp://0.0.0.0:9428?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyTCPOTConsumer" />
-	    <camel:multicast id="NettyTCPMulticast" >	 
-		    <to id="NettyTCPOTProcessor" uri="direct:agentin" />
-		    <to uri="bean:TraceCountWireTap" /> 
+	    <camel:multicast id="NettyTCPMulticast" executorServiceRef="MetricInputStreamThreadPool" >	 
+		    <camel:to id="NettyTCPOTProcessor" uri="direct:agentin" />
+		    <camel:to id="NettyTCPOTRelay" uri="bean:RemoteRelay"/>
+		    <camel:to uri="bean:TraceCountWireTap" /> 		    
 	    </camel:multicast>
 	  </route>
 	  
 	  <route id="NettyUDPAgentListener" autoStartup="true" >	  	
 	    <from uri="netty:udp://0.0.0.0:9427?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyUDPOTConsumer" />
-	    <camel:multicast id="NettyUDPMulticast" >	 
-		    <to id="NettyUDPOTProcessor" uri="direct:agentin" />
-		    <to uri="bean:TraceCountWireTap" /> 
+	    <camel:multicast id="NettyUDPMulticast" executorServiceRef="MetricInputStreamThreadPool" >	 
+		    <camel:to id="NettyUDPOTProcessor" uri="direct:agentin" />
+		    <camel:to id="NettyUDPOTRelay" uri="bean:RemoteRelay"/>
+		    <camel:to uri="bean:TraceCountWireTap" /> 
 	    </camel:multicast>
 	  </route>
 	  
 		<camel:route id="HotDeployedRoute" autoStartup="true">
 			<camel:from uri="netty:udp://0.0.0.0:9421?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyUDPBroadcaster" />
-   			<camel:multicast id="NettyUDPBroadcastMulticast" >	 
+   			<camel:multicast id="NettyUDPBroadcastMulticast"  executorServiceRef="MetricInputStreamThreadPool">	 
 	    		<camel:to id="NettyUDPBroadcasterProcessor" uri="direct:agentin" />
 	    		<camel:to uri="bean:TraceCountWireTap" /> 
     		</camel:multicast>

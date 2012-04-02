@@ -122,15 +122,7 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		TracerManager3.getInstance(TracerManager3.Configuration.getDefaultConfiguration().appendEndPoint(he));
 		boolean b = he.connect();
 		LOG.info("Connected:"+b);
-		for(int i = 0; i < 2; i++) {
-			try {
-				
-				Thread.sleep(16000);
-			} catch (Exception e) {
-				e.printStackTrace(System.err);
-			}
-		}
-		//try { Thread.currentThread().join(60500); } catch (Exception e) {}
+		try { Thread.currentThread().join(); } catch (Exception e) {}
 		LOG.info("Exiting.......");
 		System.exit(-1);
 	}
