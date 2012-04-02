@@ -534,9 +534,7 @@ public class SubscriptionRequester implements ApplicationContextAware, CamelCont
 		if(element==null) return null;
 		MetricTreeEntry me = (MetricTreeEntry)element.getValue();
 		if(me==null) return null;
-		//log.info("Returning DynaTreeNodes for \n" + me);
 		DynaTreeMetricNode[] nodes = me.getDynaTreeNodes();
-		log.info("Returning DynaTreeNodes:\n" + Arrays.toString(nodes));
 		return me.getDynaTreeNodes();
 	}
 	

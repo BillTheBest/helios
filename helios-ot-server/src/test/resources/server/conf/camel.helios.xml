@@ -126,14 +126,19 @@
 	  </route>
 	  
 	  <route id="NettyTCPAgentListener" autoStartup="true" >	  	
-	    <from uri="netty:tcp://0.0.0.0:9428?decoders=#object-decoder&amp;sync=false" id="NettyTCPOTConsumer" />
-	    <to id="NettyTCPOTProcessor" uri="direct:agentin" />
-	    <to uri="bean:TraceCountWireTap" /> 
+	    <from uri="netty:tcp://0.0.0.0:9428?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyTCPOTConsumer" />
+	    <camel:multicast id="NettyTCPMulticast" >	 
+		    <to id="NettyTCPOTProcessor" uri="direct:agentin" />
+		    <to uri="bean:TraceCountWireTap" /> 
+	    </camel:multicast>
 	  </route>
 	  
 	  <route id="NettyUDPAgentListener" autoStartup="true" >	  	
-	    <from uri="netty:udp://0.0.0.0:9427?decoders=#object-decoder&amp;sync=false" id="NettyUDPOTConsumer" />
-	    <to id="NettyUDPOTProcessor" uri="direct:agentin" />
+	    <from uri="netty:udp://0.0.0.0:9427?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyUDPOTConsumer" />
+	    <camel:multicast id="NettyUDPMulticast" >	 
+		    <to id="NettyUDPOTProcessor" uri="direct:agentin" />
+		    <to uri="bean:TraceCountWireTap" /> 
+	    </camel:multicast>
 	  </route>
 	  
 	  
@@ -145,6 +150,7 @@
 	</camelContext>
 	
 	<bean id="object-decoder" class="org.jboss.netty.handler.codec.serialization.ObjectDecoder"/>
+	<bean id="object-encoder" class="org.jboss.netty.handler.codec.serialization.ObjectEncoder"/>
 	
   	<bean name="PollingHttpSubscriptionProcessor" class="org.helios.server.ot.session.camel.routing.http.PollingHttpSubscriptionProcessor" scope="prototype" lazy-init="true">
   		<constructor-arg type="java.lang.String" ><null/></constructor-arg>

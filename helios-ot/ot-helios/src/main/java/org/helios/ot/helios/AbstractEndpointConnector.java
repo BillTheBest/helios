@@ -112,7 +112,7 @@ public abstract class AbstractEndpointConnector {
 			//log.info("Handling Downstream:" + e.getClass().getSimpleName());
 			if(e instanceof MessageEvent) {
 				Object obj = ((MessageEvent)e).getMessage();
-				log.info("Downstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
+				//log.info("Downstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
 			}
 			ctx.sendDownstream(e);			
 		}
