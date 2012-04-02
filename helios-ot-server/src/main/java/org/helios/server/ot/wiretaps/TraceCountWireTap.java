@@ -44,7 +44,7 @@ public class TraceCountWireTap {
 	 * @return the number of traces.
 	 */
 	public void wireTap(Exchange exchange) {
-		Object body = (Trace[])exchange.getIn().getBody();
+		Object body = exchange.getIn().getBody();
 		if(body!=null &&  body instanceof Trace[]) {
 			exchange.getOut().setBody(Array.getLength(body));
 		} else {
