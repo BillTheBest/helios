@@ -95,7 +95,11 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	 */
 	@Override
 	protected void connectImpl() throws EndpointConnectException {
-		connector.connect();
+		try {
+			connector.connect();
+		} catch (Exception e) {
+			throw new EndpointConnectException("HeliosEndpoint failed to connect:" + e);			
+		}
 	}
 	
 	/**

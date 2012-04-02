@@ -57,8 +57,7 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	/** The channel socket factory */
 	protected NioClientSocketChannelFactory socketChannelFactory;
 	/** The channel socket  */
-	protected SocketChannel socketChannel;
-	
+	protected SocketChannel socketChannel;	
 	/** The boss thread pool */
 	protected Executor bossExecutor;
 	
@@ -97,7 +96,11 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	              return Channels.pipeline(
 	            		  instrumentation, 
 	                      new ObjectEncoder(),
-	                      new ObjectDecoder());
+	                      new ObjectDecoder(),
+	                      responseProcessor, 
+	                      responseProcessor2,
+	                      exceptionListener
+	                      );
 	          }
 		};	                     
 		bootstrap.setPipelineFactory(channelPipelineFactory);
@@ -144,10 +147,11 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 			 throw new RuntimeException("Connection request cancelled");
 		 } else if (!channelFuture.isSuccess()) {
 			 throw new RuntimeException(channelFuture.getCause().getMessage());		     
-		 } else {
+		 } else {			 
 			 // no exception means a good connect
 			 socketChannel = (SocketChannel)channelFuture.getChannel();
 			 localSocketAddress = socketChannel.getLocalAddress();
+			 log.info("Connected [" + socketChannel + "]");
 			 socketChannel.getCloseFuture().addListener(new ChannelFutureListener(){
 				 @Override
 				public void operationComplete(ChannelFuture future)throws Exception {

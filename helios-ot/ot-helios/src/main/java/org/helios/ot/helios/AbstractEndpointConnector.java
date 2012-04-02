@@ -39,9 +39,14 @@ import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.channel.ChannelDownstreamHandler;
+import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.ChannelUpstreamHandler;
+import org.jboss.netty.channel.MessageEvent;
 
 /**
  * <p>Title: AbstractEndpointConnector</p>
@@ -66,7 +71,8 @@ public abstract class AbstractEndpointConnector {
 	protected final AtomicLong sendCounter = new AtomicLong(0);
 	/** The local bind address */
 	protected InetSocketAddress localSocketAddress = null;
-	
+	/** The exception listener */
+	protected final ExceptionListener exceptionListener = new ExceptionListener();
 	/** The send listener */
 	protected final ChannelFutureListener sendListener = new ChannelFutureListener() {
 		@Override
@@ -89,6 +95,29 @@ public abstract class AbstractEndpointConnector {
 	protected final ConnectorChannelInstrumentation instrumentation = new ConnectorChannelInstrumentation();
 	/** Instance logger */
 	protected final Logger log = Logger.getLogger(getClass());
+	/** The receive listener */
+	protected final ChannelUpstreamHandler responseProcessor = new ChannelUpstreamHandler() {
+		public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
+			//log.info("Handling Upstream:" + e.getClass().getSimpleName());
+			if(e instanceof MessageEvent) {
+				Object obj = ((MessageEvent)e).getMessage();
+				log.info("Upstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
+			}
+			ctx.sendUpstream(e);			
+		}
+	};
+	/** The receive listener */
+	protected final ChannelDownstreamHandler responseProcessor2 = new ChannelDownstreamHandler() {
+		public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
+			//log.info("Handling Downstream:" + e.getClass().getSimpleName());
+			if(e instanceof MessageEvent) {
+				Object obj = ((MessageEvent)e).getMessage();
+				log.info("Downstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
+			}
+			ctx.sendDownstream(e);			
+		}
+	};
+	
 	
 	/** A set of connect listeners that will be added when an asynch connect is initiated */
 	protected final Set<ChannelFutureListener> connectListeners = new CopyOnWriteArraySet<ChannelFutureListener>();
