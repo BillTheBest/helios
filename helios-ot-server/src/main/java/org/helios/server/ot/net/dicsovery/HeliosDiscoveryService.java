@@ -277,3 +277,27 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 		return exceptionCounter.get();
 	}
 }
+
+
+
+/*
+ds = new DatagramSocket(new InetSocketAddress("localhost", 1928));
+recBuf = new byte[2048];
+packet = new DatagramPacket(recBuf, 2048);
+Thread.start({
+    ds.receive(packet);
+    println "Received Response Packet:";
+    println new String(recBuf);
+    ds.close();
+});
+
+
+
+ms =  new MulticastSocket(1836);
+group = InetAddress.getByName("224.9.3.7");
+buff = "INFO|udp://localhost:1928".getBytes();
+dp = new DatagramPacket(buff, buff.length, group, 1836);
+ms.send(dp);
+ms.close();
+
+ */ 
