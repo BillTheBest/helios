@@ -673,7 +673,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 //		} else {
 //			osProfile = "os";
 //		}
-		activeProfiles.add(osProfile);
+//		activeProfiles.add(osProfile);
 		activeProfiles.add(System.getProperty("user.name"));
 		   
 		if(profiles!=null && !profiles.isEmpty()) {
