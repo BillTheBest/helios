@@ -187,17 +187,16 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	}
 	
 	
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.ot.helios.AbstractEndpointConnector#write(org.helios.ot.tracer.disruptor.TraceCollection)
-	 */
-	public void write(TraceCollection<?> traceCollection) {
-		Set<?> traces = traceCollection.getTraces();
-		Trace[] traceArr = traces.toArray(new Trace[traces.size()]);
-//		System.out.println("Submitting [" + traceArr.length + "] in one [" + traceArr.getClass().getName() + "]");
-		socketChannel.write(traceArr).addListener(sendListener);;
-	}
 	
+	/**
+	 * Writes the passed trace array to the remote
+	 * @param traces the trace array
+	 */
+	protected void flushTraceBuffer(Trace[] traces) {
+		if(traces!=null && traces.length>0) {
+			socketChannel.write(traces).addListener(sendListener);
+		}
+	}
 	
 	/**
 	 * {@inheritDoc}

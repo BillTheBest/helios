@@ -136,18 +136,19 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 	}
 	
 	
+
 	/**
-	 * {@inheritDoc}
-	 * @see org.helios.ot.helios.AbstractEndpointConnector#write(org.helios.ot.tracer.disruptor.TraceCollection)
+	 * Writes the passed trace array to the remote
+	 * @param traces the trace array
 	 */
-	public void write(TraceCollection<?> traceCollection) {
-		Trace[] t = new Trace[1];
-		for(Trace trace: traceCollection.getTraces()) {
-			t[0] = trace;
-			datagramChannel.write(t).addListener(sendListener);
+	protected void flushTraceBuffer(Trace[] traces) {
+		if(traces!=null && traces.length>0) {
+			for(Trace t: traces) {
+				datagramChannel.write(t).addListener(sendListener);
+			}
 		}
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 * @see org.helios.ot.helios.AbstractEndpointConnector#getProtocol()

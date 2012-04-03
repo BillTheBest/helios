@@ -81,9 +81,9 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	 */
 	public HeliosEndpoint() {
 		// Read the basic config
-		host = HeliosEndpointConstants.getHost();
-		port = HeliosEndpointConstants.getPort();
-		protocol = HeliosEndpointConstants.getProtocol();
+		host = HeliosEndpointConfiguration.getHost();
+		port = HeliosEndpointConfiguration.getPort();
+		protocol = HeliosEndpointConfiguration.getProtocol();
 		connector = protocol.createConnector(this); 
 		reflectObject(connector);
 	}

@@ -25,10 +25,14 @@
 package org.helios.ot.helios;
 
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
@@ -37,6 +41,7 @@ import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
+import org.helios.ot.trace.Trace;
 import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.ChannelDownstreamHandler;
@@ -56,7 +61,7 @@ import org.jboss.netty.channel.MessageEvent;
  * <p><code>org.helios.ot.helios.AbstractEndpointConnector</code></p>
  */
 @JMXManagedObject (declared=false, annotated=true)
-public abstract class AbstractEndpointConnector {
+public abstract class AbstractEndpointConnector implements Runnable {
 	/** The worker thread pool */
 	protected Executor workerExecutor;
 	/** The pipeline factory */
@@ -71,6 +76,15 @@ public abstract class AbstractEndpointConnector {
 	protected final AtomicLong sendCounter = new AtomicLong(0);
 	/** The local bind address */
 	protected InetSocketAddress localSocketAddress = null;
+	/** Flag to indicate the flush thread should keep running */
+	protected boolean flushThreadRunning = false;
+	/** Flag to indicate that a flush is executing */
+	protected final AtomicBoolean flushRunning = new AtomicBoolean(false);
+	/** The flush thread */
+	protected Thread flushThread;
+	/** The flush count */
+	protected long flushCount = 0;
+	
 	/** The exception listener */
 	protected final ExceptionListener exceptionListener = new ExceptionListener();
 	/** The send listener */
@@ -117,7 +131,14 @@ public abstract class AbstractEndpointConnector {
 			ctx.sendDownstream(e);			
 		}
 	};
-	
+	/** The max trace buffer size before a flush */
+	protected final int maxFlushSize;
+	/** The max elapsed time before a flush */
+	protected long maxFlushTime;
+	/** The blocking queue for buffering flushes */
+	protected final BlockingQueue<Trace[]> traceBuffer;
+	/** Serial number factory for flush thread naming */
+	protected static final AtomicInteger serial = new AtomicInteger(0);
 	
 	/** A set of connect listeners that will be added when an asynch connect is initiated */
 	protected final Set<ChannelFutureListener> connectListeners = new CopyOnWriteArraySet<ChannelFutureListener>();
@@ -140,6 +161,62 @@ public abstract class AbstractEndpointConnector {
 	public String getLocalBindAddress() {
 		return localSocketAddress!=null ? localSocketAddress.getAddress().getHostAddress() : "Not Connected";
 	}
+	
+	/**
+	 * Returns the trace buffer size
+	 * @return the trace buffer size
+	 */
+	@JMXAttribute(name="FlushQueueSize", description="The flush queue size", mutability=AttributeMutabilityOption.READ_ONLY)
+	public int getFlushQueueSize() {
+		return traceBuffer.size();
+	}
+	
+	/**
+	 * Returns the flush queue size that triggers a flush
+	 * @return the flush queue size that triggers a flush
+	 */
+	@JMXAttribute(name="FlushQueueTriggerSize", description="The flush queue size that triggers a flush", mutability=AttributeMutabilityOption.READ_ONLY)
+	public int getFlushQueueTriggerSize() {
+		return maxFlushSize;
+	}  
+	
+	/**
+	 * Returns the maximum elapsed time between flush attempts (ms.)
+	 * @return the maximum elapsed time between flush attempts (ms.)
+	 */
+	@JMXAttribute(name="FlushQueueTriggerTime", description="The maximum elapsed time between flush attempts (ms.)", mutability=AttributeMutabilityOption.READ_WRITE)
+	public long getFlushQueueTriggerTime() {
+		return maxFlushTime;
+	}  
+	
+	/**
+	 * Sets the maximum elapsed time between flush attempts (ms.)
+	 * @param time the maximum elapsed time between flush attempts (ms.)
+	 */
+	public void setFlushQueueTriggerTime(long time) {
+		maxFlushTime = time;
+	}
+	
+
+	
+	/**
+	 * Returns the flush count
+	 * @return the flush count
+	 */
+	@JMXAttribute(name="FlushCount", description="The number of flush events", mutability=AttributeMutabilityOption.READ_ONLY)
+	public long getFlushCount() {
+		return flushCount;
+	}
+	
+	/**
+	 * Returns the flush thread state
+	 * @return the flush thread state
+	 */
+	@JMXAttribute(name="FlushThreadState", description="The state of the flush thread", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String getFlushThreadState() {
+		return flushThread==null ? "Null" : flushThread.getState().name();
+	}
+	
 
 	/**
 	 * Returns the local bind port
@@ -156,6 +233,9 @@ public abstract class AbstractEndpointConnector {
 	 * @param endpoint The endpoint this connector was created for
 	 */
 	protected AbstractEndpointConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint) {
+		maxFlushTime = HeliosEndpointConfiguration.getMaxFlushTime();
+		maxFlushSize = HeliosEndpointConfiguration.getMaxFlushSize();
+		traceBuffer = new ArrayBlockingQueue<Trace[]>(maxFlushSize, false);
 		this.endpoint = endpoint;
 		// Initialize the worker worker pool
 		workerExecutor = ExecutorBuilder.newBuilder()
@@ -178,6 +258,21 @@ public abstract class AbstractEndpointConnector {
 	}
 	
 	/**
+	 * Creates and starts the flush thread
+	 */
+	protected void createFlushThread() {
+		if(flushThread==null) {
+			flushThread = new Thread(this, getClass().getSimpleName() + "FlushThread#" + serial.incrementAndGet());
+			flushThread.setDaemon(true);
+			flushThread.setPriority(Thread.MAX_PRIORITY);
+			flushThreadRunning = true;
+			flushThread.start();
+		} else {
+			throw new IllegalStateException("creatFlushThread called but flush thread already exists", new Throwable());
+		}
+	}
+	
+	/**
 	 * Adds a channel listener
 	 * @param listener the listener
 	 * @see org.jboss.netty.channel.ChannelFuture#addListener(org.jboss.netty.channel.ChannelFutureListener)
@@ -190,13 +285,13 @@ public abstract class AbstractEndpointConnector {
 	}
 	
 	
-	/**
-	 * Writes a trace collection out to the listener at the end of the connector
-	 * @param traceCollection The closed traces to send
-	 */
-	public abstract void write(TraceCollection<?> traceCollection);
-
 	
+
+	/**
+	 * Writes the passed traces out to the listening server
+	 * @param traces The array of traces to write
+	 */
+	protected abstract void flushTraceBuffer(Trace[] traces); 
 
 	/**
 	 * Removes a channel listener
@@ -210,8 +305,93 @@ public abstract class AbstractEndpointConnector {
 		//channelFuture.removeListener(listener);
 	}
 	
+	/**
+	 * The runnable execution for the flush thread
+	 */
+	public void run() {
+		log.info("[" + Thread.currentThread().toString() + "] Started");
+		while(flushThreadRunning) {
+			
+			try {
+				Thread.currentThread().join(maxFlushTime);
+			} catch (InterruptedException e) {
+				flushRunning.set(true);
+				Thread.interrupted();
+			}
+			try { 
+				flush();
+				flushCount++;
+			} catch (Exception e) {
+				e.printStackTrace(System.err);
+			} finally {
+				flushRunning.set(false);
+			}
+		}
+		log.info("[" + Thread.currentThread().toString() + "] Terminating");
+	}
+	
+	/**
+	 * Trips a flush on account of a full buffer
+	 */
+	protected void tripFlush() {
+		if(!flushRunning.get()) {
+			flushThread.interrupt();
+		}
+	}
 	
 	
+	/**
+	 * Writes the passed trace collection to the flush queue
+	 * @param traceCollection the trace collection to enqueue
+	 */
+	@SuppressWarnings("rawtypes")
+	public void write(TraceCollection<?> traceCollection) {
+		Set<?> traces = traceCollection.getTraces();
+		if(traces.size()<1) return;
+		Trace[] traceArr = traces.toArray(new Trace[traces.size()]);
+		int dropCount = 0;
+		boolean trippedFlush = false;
+		if(traceArr.length>0) {
+			if(!traceBuffer.offer(traceArr)) {
+				if(!trippedFlush) {
+					tripFlush();
+					trippedFlush=true;
+					if(!traceBuffer.offer(traceArr)) {
+						dropCount += traceArr.length;
+					}
+				}
+				dropCount += traceArr.length;
+			} 
+		}
+		if(dropCount>0) failedSendCounter.addAndGet(dropCount);
+	}
+
+	
+	/**
+	 * Writes out the trace buffer
+	 */
+	@SuppressWarnings("rawtypes")
+	protected void flush() {
+		int flushSize = traceBuffer.size();
+		if(flushSize<1) return;
+		Set<Trace[]> flushItems = new HashSet<Trace[]>(flushSize);
+		traceBuffer.drainTo(flushItems);
+		
+		int traceCount = 0;
+		for(Trace[] traceArr: flushItems) {
+			traceCount += traceArr.length;
+		}
+		Trace[] bigTraceArr = new Trace[traceCount];
+		int cntr = 0;
+		for(Trace[] traceArr: flushItems) {
+			for(Trace t: traceArr) {
+				bigTraceArr[cntr] = t;
+				cntr++;
+			}
+		}
+		log.info("Flushing [" + cntr + "] Traces from flush queue");
+		flushTraceBuffer(bigTraceArr);
+	}
 	
 	/**
 	 * Returns this connector's protocol
@@ -243,6 +423,7 @@ public abstract class AbstractEndpointConnector {
 	 */
 	protected void setConnected() {
 		connected.set(true);
+		createFlushThread();
 		Runtime.getRuntime().addShutdownHook(new Thread(){
 			public void run() {
 				try {
@@ -268,6 +449,11 @@ public abstract class AbstractEndpointConnector {
 	 */
 	protected void setDisconnected(boolean deliberate) {
 		connected.set(false);
+		flushThreadRunning = false;
+		if(flushThread!=null && flushThread.isAlive()) {
+			flushThread.interrupt();
+			flushThread = null;
+		}
 		fireDisconnectedEvent(deliberate);
 	}
 	
