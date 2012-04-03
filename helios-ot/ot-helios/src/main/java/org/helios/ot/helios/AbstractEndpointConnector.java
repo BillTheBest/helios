@@ -36,11 +36,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
-import org.helios.helpers.JMXHelper;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
-import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -110,23 +108,21 @@ public abstract class AbstractEndpointConnector implements Runnable {
 	/** Instance logger */
 	protected final Logger log = Logger.getLogger(getClass());
 	/** The receive listener */
-	protected final ChannelUpstreamHandler responseProcessor = new ChannelUpstreamHandler() {
+	protected final ChannelUpstreamHandler receiveDebugListener = new ChannelUpstreamHandler() {
 		public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-			//log.info("Handling Upstream:" + e.getClass().getSimpleName());
 			if(e instanceof MessageEvent) {
 				Object obj = ((MessageEvent)e).getMessage();
-				log.info("Upstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
+				if(log.isDebugEnabled()) log.debug("Upstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
 			}
 			ctx.sendUpstream(e);			
 		}
 	};
-	/** The receive listener */
-	protected final ChannelDownstreamHandler responseProcessor2 = new ChannelDownstreamHandler() {
+	/** The send listener */
+	protected final ChannelDownstreamHandler sendDebugListener = new ChannelDownstreamHandler() {
 		public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-			//log.info("Handling Downstream:" + e.getClass().getSimpleName());
 			if(e instanceof MessageEvent) {
 				Object obj = ((MessageEvent)e).getMessage();
-				//log.info("Downstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
+				if(log.isDebugEnabled()) log.debug("Downstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
 			}
 			ctx.sendDownstream(e);			
 		}
@@ -136,6 +132,7 @@ public abstract class AbstractEndpointConnector implements Runnable {
 	/** The max elapsed time before a flush */
 	protected long maxFlushTime;
 	/** The blocking queue for buffering flushes */
+	@SuppressWarnings("rawtypes")
 	protected final BlockingQueue<Trace[]> traceBuffer;
 	/** Serial number factory for flush thread naming */
 	protected static final AtomicInteger serial = new AtomicInteger(0);
@@ -232,29 +229,12 @@ public abstract class AbstractEndpointConnector implements Runnable {
 	 * Creates a new AbstractEndpointConnector
 	 * @param endpoint The endpoint this connector was created for
 	 */
-	protected AbstractEndpointConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint) {
+	@SuppressWarnings("rawtypes")
+	protected AbstractEndpointConnector(HeliosEndpoint endpoint) {
 		maxFlushTime = HeliosEndpointConfiguration.getMaxFlushTime();
 		maxFlushSize = HeliosEndpointConfiguration.getMaxFlushSize();
 		traceBuffer = new ArrayBlockingQueue<Trace[]>(maxFlushSize, false);
 		this.endpoint = endpoint;
-		// Initialize the worker worker pool
-		workerExecutor = ExecutorBuilder.newBuilder()
-				.setCoreThreads(5)
-				.setCoreThreadTimeout(false)
-				.setDaemonThreads(true)
-				.setExecutorType(true)
-				.setFairSubmissionQueue(false)
-				.setKeepAliveTime(15000)
-				.setMaxThreads(100)
-				.setJmxDomains(JMXHelper.getRuntimeHeliosMBeanServer().getDefaultDomain())
-				// org.helios.endpoints:type=HeliosEndpoint,name=HeliosEndpoint
-				.setPoolObjectName(new StringBuilder("org.helios.endpoints:name=").append(getClass().getSimpleName()).append(",service=ThreadPool,type=Worker,protocol=").append(getProtocol().name()))
-				.setPrestartThreads(1)
-				.setTaskQueueSize(1000)
-				.setTerminationTime(5000)
-				.setThreadGroupName(getClass().getSimpleName() + "WorkerThreadGroup")
-				.setUncaughtExceptionHandler(endpoint)
-				.build();
 	}
 	
 	/**
@@ -291,6 +271,7 @@ public abstract class AbstractEndpointConnector implements Runnable {
 	 * Writes the passed traces out to the listening server
 	 * @param traces The array of traces to write
 	 */
+	@SuppressWarnings("rawtypes")
 	protected abstract void flushTraceBuffer(Trace[] traces); 
 
 	/**

@@ -112,10 +112,11 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	}
 	
 	
+	@SuppressWarnings("rawtypes")
 	public static void main(String[] args) {
 		BasicConfigurator.configure();
 		Logger LOG = Logger.getLogger(HeliosEndpoint.class);
-		LOG.getRootLogger().setLevel(Level.INFO);
+		Logger.getRootLogger().setLevel(Level.INFO);
 		LOG.info("Test");
 		HeliosEndpoint he = new HeliosEndpoint();
 		he.reflectObject(he.connector.getInstrumentation());

@@ -98,8 +98,8 @@
 	 <bean id="TraceCountWireTap" class="org.helios.server.ot.wiretaps.TraceCountWireTap" />
 
    	
-	<camelContext xmlns="http://camel.apache.org/schema/spring" trace="false" id="HeliosContext" depends-on="SubscriberRouteRegistry"   >
-	
+	<camelContext xmlns="http://camel.apache.org/schema/spring" trace="false" id="HeliosContext" depends-on="SubscriberRouteRegistry"  autoStartup="true"  >
+			
 		<camel:threadPoolProfile id="MetricMulticastThreadPool" poolSize="5"  maxPoolSize="10" maxQueueSize="1000" />		
 		
 	
@@ -149,7 +149,12 @@
 	    <camel:to uri="bean:TraceCountWireTap" />
 	  </route>
 	  
-	  
+		<!-- 
+	  <route id="NettyAgentDiscoveryListener" autoStartup="true" >	  	
+	    <camel:from uri="netty:udp://224.1.2.3:0?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=false&amp;broadcast=true" id="NettyDiscoveryConsumer" />
+	    <camel:to uri="netty:udp://224.1.2.3:0?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=false&amp;broadcast=true" id="NettyDiscoveryProducer" />
+	  </route>
+		 -->	  
 	  
 	  <route id="MetricSubListener" trace="true"  >
 		<from uri="activemq:topic:ActiveMQ.Advisory.Consumer.Topic.helios.metrictree.>"/>
@@ -160,6 +165,12 @@
 	
 	<bean id="object-decoder" class="org.jboss.netty.handler.codec.serialization.ObjectDecoder"/>
 	<bean id="object-encoder" class="org.jboss.netty.handler.codec.serialization.ObjectEncoder"/>
+	
+	<bean id="HeliosDiscoveryService" class="org.helios.server.ot.net.dicsovery.HeliosDiscoveryService" init-method="start" destroy-method="stop">
+		<property name="network" value="224.9.3.7" />
+		<property name="port" value="1836" />
+	</bean>
+	
 	
   	<bean name="PollingHttpSubscriptionProcessor" class="org.helios.server.ot.session.camel.routing.http.PollingHttpSubscriptionProcessor" scope="prototype" lazy-init="true">
   		<constructor-arg type="java.lang.String" ><null/></constructor-arg>

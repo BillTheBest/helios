@@ -25,14 +25,12 @@
 package org.helios.ot.helios;
 
 import java.net.InetSocketAddress;
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 import org.helios.helpers.JMXHelper;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.helios.ot.trace.Trace;
-import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -70,6 +68,24 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	 */
 	public HeliosEndpointTCPConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint) {
 		super(endpoint);
+		// Initialize the worker worker pool
+		workerExecutor = ExecutorBuilder.newBuilder()
+				.setCoreThreads(5)
+				.setCoreThreadTimeout(false)
+				.setDaemonThreads(true)
+				.setExecutorType(true)
+				.setFairSubmissionQueue(false)
+				.setKeepAliveTime(15000)
+				.setMaxThreads(100)
+				.setJmxDomains(JMXHelper.getRuntimeHeliosMBeanServer().getDefaultDomain())
+				// org.helios.endpoints:type=HeliosEndpoint,name=HeliosEndpoint
+				.setPoolObjectName(new StringBuilder("org.helios.endpoints:name=").append(getClass().getSimpleName()).append(",service=ThreadPool,type=Worker,protocol=").append(getProtocol().name()))
+				.setPrestartThreads(1)
+				.setTaskQueueSize(1000)
+				.setTerminationTime(5000)
+				.setThreadGroupName(getClass().getSimpleName() + "WorkerThreadGroup")
+				.setUncaughtExceptionHandler(endpoint)
+				.build();		
 		// Initialize the boss worker pool
 		bossExecutor = ExecutorBuilder.newBuilder()
 				.setCoreThreads(1)
@@ -97,8 +113,8 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	            		  instrumentation, 
 	                      new ObjectEncoder(),
 	                      new ObjectDecoder(),
-	                      responseProcessor, 
-	                      responseProcessor2,
+	                      receiveDebugListener, 
+	                      sendDebugListener,
 	                      exceptionListener
 	                      );
 	          }
@@ -192,6 +208,7 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	 * Writes the passed trace array to the remote
 	 * @param traces the trace array
 	 */
+	@SuppressWarnings("rawtypes")
 	protected void flushTraceBuffer(Trace[] traces) {
 		if(traces!=null && traces.length>0) {
 			socketChannel.write(traces).addListener(sendListener);
