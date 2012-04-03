@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:util="http://www.springframework.org/schema/util"
-       xmlns:lang="http://www.springframework.org/schema/lang"       
+       xmlns:lang="http://www.springframework.org/schema/lang"
        xsi:schemaLocation="
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
        http://www.springframework.org/schema/lang http://www.springframework.org/schema/lang/spring-lang.xsd
        "  >
-   	
+
    	<util:list id="TMEndpoints" >
    		<ref bean="OTLocalEndpoint" />
-   		<ref bean="IntroscopeEndpoint" />		
+   		<ref bean="IntroscopeEndpoint" />
    	</util:list>
-   	
+
    	<bean id="TracerManager3" class="org.helios.ot.tracer.TracerManager3" factory-method="getInstance" lazy-init="false" >
    		<constructor-arg>
    			<bean id="TracerManager3.Configuration" class="org.helios.ot.tracer.TracerManager3.Configuration" factory-method="getDefaultConfiguration">
@@ -23,37 +23,46 @@
    			</bean>
    		</constructor-arg>
    	</bean>
-   	
+
 
    	<bean id="IntroscopeEndpoint" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint" >
    		<constructor-arg ref="IntroscopeBuilder" />
-   	</bean>   	   	  
+   	</bean>
 
-    
-   	<beans profile="windows,nwhitehe">
+
+   	<beans profile="malhotrs">
+	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
+	   		 <property name="agentName" value="OTServer" />
+	   		 <property name="emHost" value="dev-em" />
+	   		 <property name="emPort" value="5001" />
+	   		 <property name="agentJar" value="C:/download/wily/Agent.jar" />
+	   	</bean>
+   	</beans>
+
+   	<beans profile="smalhotra">
 	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
 	   		 <property name="agentName" value="OTServer" />
 	   		 <property name="emHost" value="localhost" />
-	   		 <property name="emPort" value="5001" />
-	   		 <property name="processName" value="Helios" />   		 
-	   		 <property name="agentJar" value="c:\\Introscope\\Introscope8.2.0.0\\agents\\jboss\\Agent.jar" />
-	   	</bean>
-   	</beans>
-   	
-   	<beans profile="smalhotra">  
-	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
-	   		 <property name="agentName" value="OTServer" />
-	   		 <property name="emHost" value="localhost" />  		 
 	   		 <property name="agentJar" value="/home/smalhotra/tools/wily/Agent.jar" />
 	   	</bean>
    	</beans>
 
-   	<beans profile="nwhitehead">  
+   	<beans profile="nwhitehe">
 	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
 	   		 <property name="agentName" value="OTServer" />
 	   		 <property name="emHost" value="localhost" />
 	   		 <property name="emPort" value="5001" />
-	   		 <property name="processName" value="Helios" />   		 
+	   		 <property name="processName" value="Helios" />
+	   		 <property name="agentJar" value="c:\\Introscope\\Introscope8.2.0.0\\agents\\jboss\\Agent.jar" />
+	   	</bean>
+   	</beans>
+
+   	<beans profile="nwhitehead">
+	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
+	   		 <property name="agentName" value="OTServer" />
+	   		 <property name="emHost" value="localhost" />
+	   		 <property name="emPort" value="5001" />
+	   		 <property name="processName" value="Helios" />
 	   		 <property name="agentJar" value="/home/nwhitehead/introscope/9.0/agent/wily/Agent.jar" />
 	   	</bean>
    	</beans>
