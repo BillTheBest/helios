@@ -662,18 +662,18 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 	protected void setProfiles(Set<String> profiles, GenericApplicationContext gac) {
 		Set<String> activeProfiles = new HashSet<String>();
 		if(gac==null) throw new IllegalArgumentException("The passed application context was null", new Throwable());
-		String os = System.getProperty("os.name", "Unknown").toLowerCase();
-		String osProfile = null;
-		if(os.contains("windows")) {
-			osProfile = "windows";
-		} else if(os.contains("linux")) {
-			osProfile = "linux";
-		} else if(os.contains("solaris")) {
-			osProfile = "solaris";
-		} else {
-			osProfile = "os";
-		}
-		activeProfiles.add(osProfile);
+//		String os = System.getProperty("os.name", "Unknown").toLowerCase();
+//		String osProfile = null;
+//		if(os.contains("windows")) {
+//			osProfile = "windows";
+//		} else if(os.contains("linux")) {
+//			osProfile = "linux";
+//		} else if(os.contains("solaris")) {
+//			osProfile = "solaris";
+//		} else {
+//			osProfile = "os";
+//		}
+//		activeProfiles.add(osProfile);
 		activeProfiles.add(System.getProperty("user.name"));
 		   
 		if(profiles!=null && !profiles.isEmpty()) {

@@ -40,7 +40,15 @@
 	   	</bean>
    	</beans>
    	
-   	<beans profile="linux,nwhitehead">  
+   	<beans profile="smalhotra">  
+	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
+	   		 <property name="agentName" value="OTServer" />
+	   		 <property name="emHost" value="localhost" />  		 
+	   		 <property name="agentJar" value="/home/smalhotra/tools/wily/Agent.jar" />
+	   	</bean>
+   	</beans>
+
+   	<beans profile="nwhitehead">  
 	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
 	   		 <property name="agentName" value="OTServer" />
 	   		 <property name="emHost" value="localhost" />
