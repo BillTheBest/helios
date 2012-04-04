@@ -180,7 +180,7 @@
 	<bean id="object-decoder" class="org.jboss.netty.handler.codec.serialization.ObjectDecoder"/>
 	<bean id="object-encoder" class="org.jboss.netty.handler.codec.serialization.ObjectEncoder"/>
 	
-	<bean id="HeliosDiscoveryService" class="org.helios.server.ot.net.dicsovery.HeliosDiscoveryService" init-method="start" destroy-method="stop">
+	<bean id="HeliosDiscoveryService" class="org.helios.server.ot.net.discovery.HeliosDiscoveryService" init-method="start" destroy-method="stop">
 		<property name="network" value="224.9.3.7" />
 		<property name="port" value="1836" />
 	</bean>

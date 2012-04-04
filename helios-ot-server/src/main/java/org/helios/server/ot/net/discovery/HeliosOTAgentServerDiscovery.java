@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.server.ot.net.dicsovery;
+package org.helios.server.ot.net.discovery;
 
 import java.net.URI;
 
@@ -37,13 +37,13 @@ import org.springframework.context.ApplicationContext;
  * <p>Description: Discovery service to send a broadcasting agent the endpoints for connection.</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.server.ot.net.dicsovery.HeliosOTAgentServerDiscovery</code></p>
+ * <p><code>org.helios.server.ot.net.discovery.HeliosOTAgentServerDiscovery</code></p>
  */
 public class HeliosOTAgentServerDiscovery implements IDiscoveryCommand {
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.server.ot.net.dicsovery.IDiscoveryCommand#getCommandName()
+	 * @see org.helios.server.ot.net.discovery.IDiscoveryCommand#getCommandName()
 	 */
 	@Override
 	public String getCommandName() {
@@ -52,7 +52,7 @@ public class HeliosOTAgentServerDiscovery implements IDiscoveryCommand {
 
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.server.ot.net.dicsovery.IDiscoveryCommand#execute(java.lang.String[], org.springframework.context.ApplicationContext)
+	 * @see org.helios.server.ot.net.discovery.IDiscoveryCommand#execute(java.lang.String[], org.springframework.context.ApplicationContext)
 	 */
 	@Override
 	public String execute(String[] fullCommandString, ApplicationContext ctx) {

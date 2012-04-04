@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.server.ot.net.dicsovery;
+package org.helios.server.ot.net.discovery;
 
 import org.springframework.context.ApplicationContext;
 
@@ -31,7 +31,7 @@ import org.springframework.context.ApplicationContext;
  * <p>Description: Defines a discovery based command that is executed to return an informative message to a discovery client</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.server.ot.net.dicsovery.IDiscoveryCommand</code></p>
+ * <p><code>org.helios.server.ot.net.discovery.IDiscoveryCommand</code></p>
  */
 public interface IDiscoveryCommand {
 	/**

@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.server.ot.net.dicsovery;
+package org.helios.server.ot.net.discovery;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -35,6 +35,7 @@ import java.net.URI;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
@@ -44,6 +45,7 @@ import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -52,7 +54,7 @@ import org.springframework.context.ApplicationContextAware;
  * <p>Description: Server discovery service to help Helios OT Clients locate a Helios OT Server through Multicast</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.server.ot.net.dicsovery.HeliosDiscoveryService</code></p>
+ * <p><code>org.helios.server.ot.net.discovery.HeliosDiscoveryService</code></p>
  */
 @JMXManagedObject(annotated=true, declared=true)
 public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements ApplicationContextAware, Runnable {
@@ -80,7 +82,8 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 	protected final AtomicLong invalidCounter = new AtomicLong(0);	
 	/** The exception counter */
 	protected final AtomicLong exceptionCounter = new AtomicLong(0);
-	
+	/** The discovery service thread pool */
+	protected ThreadPoolExecutor threadPool = null;
 	
 	/** A map of commands keyed by the command name */
 	protected static final Map<String, IDiscoveryCommand> commands = new HashMap<String, IDiscoveryCommand>(); 
@@ -103,11 +106,28 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 	 */
 	public void start() throws Exception {
 		log.info(Banner.banner("=", 3, 10, "Starting HeliosDiscoveryService....", "Network:" + network, "Port:" + port));
-		objectName = JMXHelper.objectName(new StringBuilder(getClass().getPackage().getName()).append(":network=").append(network).append(",port=").append(port));
+		objectName = JMXHelper.objectName(new StringBuilder(getClass().getPackage().getName()).append(":service=").append(getClass().getSimpleName()).append(",network=").append(network).append(",port=").append(port));
 		if(JMXHelper.getHeliosMBeanServer().isRegistered(objectName)) {
 			log.info(Banner.banner("#", 3, 10, "HeliosDiscoveryService [" + network + ":" + port + "] already running" ));
 			return;
 		}		
+		threadPool = ExecutorBuilder.newBuilder()
+				.setCoreThreads(1)
+				.setCoreThreadTimeout(false)
+				.setDaemonThreads(true)
+				.setExecutorType(true)
+				.setFairSubmissionQueue(false)
+				.setKeepAliveTime(15000)
+				.setMaxThreads(5)
+				.setJmxDomains(JMXHelper.getRuntimeHeliosMBeanServer().getDefaultDomain())
+				// org.helios.endpoints:type=HeliosEndpoint,name=HeliosEndpoint
+				.setPoolObjectName(new StringBuilder(objectName.toString()).append(",device=ThreadPool"))
+				.setPrestartThreads(1)
+				.setTaskQueueSize(100)
+				.setTerminationTime(5000)
+				.setThreadGroupName(getClass().getSimpleName() + "ThreadGroup")				
+				.build();		
+
 		mcastGroup = new InetSocketAddress(network, port);
 		mcastSocket = new MulticastSocket(port);
 		boolean joined = false;
@@ -143,6 +163,8 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 		mcastThread.setDaemon(true);
 		keepRunning = true;
 		mcastThread.start();
+		this.reflectObject(this);
+		JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(this, objectName);
 		log.info(Banner.banner("=", 3, 10, "Started HeliosDiscoveryService.", "Network:" + network, "Port:" + port));
 	}
 	
@@ -150,13 +172,15 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 	 * Stops the discovery service if it was started. 
 	 */
 	public void stop() {
+		log.info(Banner.banner("=", 3, 10, "Stopping HeliosDiscoveryService....", "Network:" + network, "Port:" + port));
+		threadPool.shutdownNow();
 		if(mcastSocket!=null) {
-			log.info(Banner.banner("=", 3, 10, "Stopping HeliosDiscoveryService....", "Network:" + network, "Port:" + port));		
 			keepRunning = false;
 			mcastThread.interrupt();
-			JMXHelper.getRuntimeHeliosMBeanServer().unregisterMBean(objectName);
-			log.info(Banner.banner("=", 3, 10, "Stopped HeliosDiscoveryService....", "Network:" + network, "Port:" + port));
+			JMXHelper.getRuntimeHeliosMBeanServer().unregisterMBean(objectName);			
 		} 
+		
+		log.info(Banner.banner("=", 3, 10, "Stopped HeliosDiscoveryService....", "Network:" + network, "Port:" + port));
 		
 	}
 	
@@ -168,19 +192,22 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 		while(keepRunning) {
 			try {
 				byte[] message = new byte[1024];
-				DatagramPacket packet = new DatagramPacket(message, message.length, mcastGroup.getAddress(), port);
+				final DatagramPacket packet = new DatagramPacket(message, message.length, mcastGroup.getAddress(), port);
 				mcastSocket.receive(packet);
 				requestCounter.incrementAndGet();
-				String request = new String(packet.getData()).trim();
-				if(log.isDebugEnabled()) log.debug("Discovery Request[" + request + "]");
-				String[] frags = request.split("\\|");
-				if(frags.length>0 && commands.containsKey(frags[0].trim().toUpperCase()))  {
-					String response = commands.get(frags[0].trim().toUpperCase()).execute(frags, applicationContext);
-					sendResponse(frags, response);
-					
-				} else {
-					log.warn("Discovery Request[" + request + "] could not be interpreted");
-				}
+				threadPool.execute(new Runnable(){
+					public void run() {
+						String request = new String(packet.getData()).trim();
+						if(log.isDebugEnabled()) log.debug("Discovery Request[" + request + "]");
+						String[] frags = request.split("\\|");
+						if(frags.length>0 && commands.containsKey(frags[0].trim().toUpperCase()))  {
+							String response = commands.get(frags[0].trim().toUpperCase()).execute(frags, applicationContext);
+							sendResponse(frags, response);							
+						} else {
+							log.warn("Discovery Request[" + request + "] could not be interpreted");
+						}						
+					}
+				});
 			} catch (Exception e) {
 				exceptionCounter.incrementAndGet();
 				log.error("HeliosDiscoveryService Error", e);

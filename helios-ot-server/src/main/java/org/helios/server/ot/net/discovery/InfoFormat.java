@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.server.ot.net.dicsovery;
+package org.helios.server.ot.net.discovery;
 
 import java.util.Map;
 
@@ -33,7 +33,7 @@ import org.helios.helpers.Banner;
  * <p>Description: Enumerates the available formats for delivering multicast info and a formater for each</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.server.ot.net.dicsovery.InfoFormat</code></p>
+ * <p><code>org.helios.server.ot.net.discovery.InfoFormat</code></p>
  */
 
 public enum InfoFormat {
