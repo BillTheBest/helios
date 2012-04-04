@@ -42,9 +42,9 @@ public interface IDiscoveryCommand {
 	
 	/**
 	 * Executes the command
-	 * @param fullCommandString The full command string from the client
+	 * @param fullCommandString The full command string fragments from the client
 	 * @param ctx The application context
 	 * @return the response
 	 */
-	public String execute(String fullCommandString, ApplicationContext ctx);
+	public String execute(String[] fullCommandString, ApplicationContext ctx);
 }

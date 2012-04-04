@@ -29,8 +29,10 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -107,7 +109,34 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 		}		
 		mcastGroup = new InetSocketAddress(network, port);
 		mcastSocket = new MulticastSocket(port);
-		mcastSocket.joinGroup(mcastGroup.getAddress());
+		boolean joined = false;
+		try {
+			mcastSocket.joinGroup(mcastGroup.getAddress());
+			joined = true;
+		} catch (Exception e) {
+			if(e.getMessage().contains("No such device")) {
+				log.warn("\n\tFailed to bind to multicast group because of a \"No such device\" error."
+						+ "\n\tYou are probably not connected to a network or do not have a link."
+						+ "\n\tWill attempt overriding the network interface...."
+				);
+				for(Enumeration<NetworkInterface> nifaces = NetworkInterface.getNetworkInterfaces(); nifaces.hasMoreElements();) {
+					NetworkInterface niface = nifaces.nextElement();
+					try {						
+						mcastSocket.setNetworkInterface(niface);
+						mcastSocket.joinGroup(mcastGroup.getAddress());
+						joined = true;
+						log.info("SUCCESS! Joined Multicast Group [" + mcastGroup.getAddress() + "] with Network Interface [" + niface + "]");
+						break;
+					} catch (Exception ex) {
+						log.warn("Failed with network interface override [" + niface + "]");
+					}
+				}
+				if(!joined) {
+					log.error("Failed to join multicast group [" + mcastGroup.getAddress() + "] with any NetworkInterface");
+					throw new IllegalStateException("Failed to join multicast group [" + mcastGroup.getAddress() + "] with any NetworkInterface");
+				}
+			}
+		}
 		
 		mcastThread = new Thread(this, getClass().getSimpleName() + "Thread[" + network + ":" + port + "]");
 		mcastThread.setDaemon(true);
@@ -145,7 +174,7 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 				log.info("Discovery Request[" + request + "]");
 				String[] frags = request.split("\\|");
 				if(frags.length>0 && commands.containsKey(frags[0].trim().toUpperCase()))  {
-					String response = commands.get(frags[0].trim().toUpperCase()).execute(request, applicationContext);
+					String response = commands.get(frags[0].trim().toUpperCase()).execute(frags, applicationContext);
 					sendResponse(frags, response);
 					
 				} else {
