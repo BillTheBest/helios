@@ -90,7 +90,7 @@
 						<property name="name" value="HttpTunnelingServlet" />
 						<property name="initParameters">
 							<map>
-								<entry key="endpoint" value="local:org.helios.netty" />
+								<entry key="endpoint" value="local:netty" />
 							</map>
 						</property>
 					</bean>

@@ -25,6 +25,7 @@
 package org.helios.ot.helios;
 
 import org.helios.helpers.ConfigurationHelper;
+import org.helios.helpers.InetAddressHelper;
 
 /**
  * <p>Title: HeliosEndpointConfiguration</p>
@@ -45,6 +46,7 @@ public class HeliosEndpointConfiguration {
 	public static final String FLUSH_SIZE_MAX = "org.helios.ot.flush.maxsize";
 	/** The property name for the maximum amount of time in ms. before a non empty trace buffer is flushed */
 	public static final String FLUSH_TIME_MAX = "org.helios.ot.flush.maxtime";
+
 	
 	/** The default helios ot server host name or ip address */
 	public static final String DEFAULT_HOST = "localhost";
@@ -54,6 +56,35 @@ public class HeliosEndpointConfiguration {
 	public static final int DEFAULT_FLUSH_SIZE_MAX = 200;
 	/** The default maximum amount of time in ms. before a non empty trace buffer is flushed */
 	public static final long DEFAULT_FLUSH_TIME_MAX = 5000;
+	
+	//=============================================
+	//   Discovery 
+	//=============================================
+	/** The property name for the helios ot server discovery multicast network */
+	public static final String DISCOVERY_NETWORK = "org.helios.ot.discovery.network";
+	/** The property name for the helios ot server discovery multicast port */
+	public static final String DISCOVERY_PORT = "org.helios.ot.discovery.port";
+	/** The property name for the helios ot server discovery multicast timeout in ms. */
+	public static final String DISCOVERY_TIMEOUT = "org.helios.ot.discovery.timeout";
+	/** The property name for the helios ot server discovery preferred protocol */
+	public static final String DISCOVERY_PREF_PROTOCOL = "org.helios.ot.discovery.prefprotocol";
+	/** The property name for the helios ot server discovery listening interface */
+	public static final String DISCOVERY_LISTEN_IFACE = "org.helios.ot.discovery.interface";
+
+	
+	/** The default ot server discovery multicast network */
+	public static final String DEFAULT_DISCOVERY_NETWORK = "224.9.3.7";
+	/** The default ot server discovery multicast port */
+	public static final int DEFAULT_DISCOVERY_PORT = 1836;
+	/** The default helios ot server discovery multicast timeout in ms. */
+	public static final int DEFAULT_DISCOVERY_TIMEOUT = 3000;
+	/** The default helios ot server discovery preferred protocol */
+	public static final String DEFAULT_DISCOVERY_PREF_PROTOCOL = "TCP";
+	/** The default helios ot server discovery listening interface */
+	public static final String DEFAULT_DISCOVERY_LISTEN_IFACE = InetAddressHelper.hostName();
+	
+	//=============================================
+	
 	
 	/**
 	 * Returns the maximum amount of time in ms. before a non empty trace buffer is flushed
@@ -96,6 +127,50 @@ public class HeliosEndpointConfiguration {
 	public static Protocol getProtocol() {
 		return Protocol.forValue(ConfigurationHelper.getSystemThenEnvProperty(PROTOCOL, DEFAULT_PROTOCOL));
 	}
+
+	/**
+	 * Returns the configured discovery response listening interface address
+	 * @return the configured discovery response listening interface address
+	 */
+	public static String getDiscoveryListenAddress() {
+		return ConfigurationHelper.getSystemThenEnvProperty(DISCOVERY_LISTEN_IFACE, DEFAULT_DISCOVERY_LISTEN_IFACE);
+	}
+	
+	
+	/**
+	 * Returns the configured discovery preferred protocol
+	 * @return the configured discovery preferred protocol
+	 */
+	public static String getDiscoveryPreferredProtocol() {
+		return ConfigurationHelper.getSystemThenEnvProperty(DISCOVERY_PREF_PROTOCOL, DEFAULT_DISCOVERY_PREF_PROTOCOL);
+	}
+	
+	
+	/**
+	 * Returns the configured discovery network
+	 * @return the configured discovery network
+	 */
+	public static String getDiscoveryNetwork() {
+		return ConfigurationHelper.getSystemThenEnvProperty(DISCOVERY_NETWORK, DEFAULT_DISCOVERY_NETWORK);
+	}
+	
+	/**
+	 * Returns the configured discovery port
+	 * @return the configured discovery port
+	 */
+	public static int getDiscoveryPort() {
+		return ConfigurationHelper.getIntSystemThenEnvProperty(DISCOVERY_PORT, DEFAULT_DISCOVERY_PORT);
+	}
+	
+	/**
+	 * Returns the configured discovery timeout in ms.
+	 * @return the configured discovery timeout in ms.
+	 */
+	public static int getDiscoveryTimeout() {
+		return ConfigurationHelper.getIntSystemThenEnvProperty(DISCOVERY_TIMEOUT, DEFAULT_DISCOVERY_TIMEOUT);
+	}
+	
+	
 	
 	
 }

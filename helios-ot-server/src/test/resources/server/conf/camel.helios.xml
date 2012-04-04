@@ -140,6 +140,20 @@
 	    <camel:to uri="bean:TraceCountWireTap" /> 	
 	  </route>
 	  
+	  
+	  <!-- Needs enhanced camel-netty 2.9.1 with support for local channel -->
+	  <!-- 
+	  <route id="NettyHTTPAgentListener" autoStartup="true" >	  	
+	    <from uri="netty:local://0.0.0.0:0?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyHTTPOTConsumer" />
+	    <camel:multicast id="NettyHTTPMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >	 
+		    <camel:to id="NettyHTTPOTProcessor" uri="direct:agentin" />
+		    <camel:to id="NettyHTTPOTRelay" uri="bean:RemoteRelay"/>		    	    
+	    </camel:multicast>
+	    <camel:to uri="bean:TraceCountWireTap" /> 	
+	  </route>
+	  -->
+	  
+	  
 	  <route id="NettyUDPAgentListener" autoStartup="true" >	  	
 	    <from uri="netty:udp://0.0.0.0:9427?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyUDPOTConsumer" />
 	    <camel:multicast id="NettyUDPMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >	 

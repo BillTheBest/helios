@@ -24,65 +24,178 @@
  */
 package org.helios.ot.helios;
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
+import java.net.MulticastSocket;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.bootstrap.ConnectionlessBootstrap;
-import org.jboss.netty.channel.ChannelDownstreamHandler;
-import org.jboss.netty.channel.ChannelEvent;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelUpstreamHandler;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.FixedReceiveBufferSizePredictorFactory;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.socket.DatagramChannel;
-import org.jboss.netty.channel.socket.oio.OioDatagramChannelFactory;
-import org.jboss.netty.handler.codec.string.StringDecoder;
-import org.jboss.netty.handler.codec.string.StringEncoder;
 
 /**
  * <p>Title: OTServerDiscovery</p>
  * <p>Description: Multicast discovery agent for Helios OT Endpoint</p> 
  * <p>Company: Helios Development Group LLC</p>
+ * <p>An InfoDump response in (<b><code>TXT</code></b> format looks something like this:<pre>
+************************
+Helios Open Trace Server
+************************
+
+Version:Crazy Unstable Dev Build 0.00001
+Spring Version:3.1.0.RELEASE
+Deployed Bean Count:113
+JVM:Sun Microsystems Inc.Java HotSpot(TM) 64-Bit Server VM 20.5-b03
+Java Runtime Version:1.6.0_30-b12
+PID:147032
+Host:NE-WK-NWHI-01
+Start Time:Wed Apr 04 12:00:42 EDT 2012
+Up Time:250 minutes
+Helios OT Remote Endpoints
+	tcp://0.0.0.0:9428
+	udp://0.0.0.0:9427
+WebApp Endpoints
+	http://localhost:8161/helios
+	http://localhost:8161/netty
+	http://localhost:8161/jmx
+JMX Connector URLs
+	service:jmx:rmi://localhost:8002/jndi/rmi://localhost:8005/jmxrmi
+************************
+ * </pre><p>
+ * <p>An InfoDump response in (<b><code>XML</code></b> format looks something like this:<pre>
+&lt;HeliosOpenTraceServer&gt;
+	&lt;Version&gt;Crazy Unstable Dev Build 0.00001&lt;/Version&gt;
+	&lt;SpringVersion&gt;3.1.0.RELEASE&lt;/SpringVersion&gt;
+	&lt;DeployedBeanCount&gt;113&lt;/DeployedBeanCount&gt;
+	&lt;JVM&gt;Sun Microsystems Inc.Java HotSpot(TM) 64-Bit Server VM 20.5-b03&lt;/JVM&gt;
+	&lt;PID&gt;263736&lt;/PID&gt;
+	&lt;Host&gt;NE-WK-NWHI-01&lt;/Host&gt;
+	&lt;StartTime&gt;Wed Apr 04 09:26:22 EDT 2012&lt;/StartTime&gt;
+	&lt;UpTime&gt;7 minutes&lt;/UpTime&gt;
+	&lt;HeliosOTRemoteEndpoints&gt;
+		&lt;tcp&gt;tcp://0.0.0.0:9428&lt;/tcp&gt;
+		&lt;udp&gt;udp://0.0.0.0:9427&lt;/udp&gt;
+	&lt;/HeliosOTRemoteEndpoints&gt;
+	&lt;WebAppEndpoints&gt;
+		&lt;HeliosWebConsole&gt;http://localhost:8161/helios&lt;/HeliosWebConsole&gt;
+		&lt;TheNettyHTTPEndpoint&gt;http://localhost:8161/netty&lt;/TheNettyHTTPEndpoint&gt;
+		&lt;JSONJMXAgent&gt;http://localhost:8161/jmx&lt;/JSONJMXAgent&gt;
+	&lt;/WebAppEndpoints&gt;
+	&lt;JMXConnectorURLs&gt;
+		&lt;rmi&gt;service:jmx:rmi://localhost:8002/jndi/rmi://localhost:8005/jmxrmi&lt;/rmi&gt;
+	&lt;/JMXConnectorURLs&gt;
+&lt;/HeliosOpenTraceServer&gt;
+ * </pre></p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.ot.helios.OTServerDiscovery</code></p>
  */
-public class OTServerDiscovery implements ChannelUpstreamHandler, ChannelDownstreamHandler {
-	/** The response latch to wait on */
-	protected CountDownLatch responseLatch = null;
-	/** The multicast network to broadcast on */
-	protected String network = "224.9.3.7";
-	/** The multicast port to broadcast on */
-	protected int port = 1836;
-	/** The worker thread pool */
-	protected Executor workerExecutor;
-	/** The pipeline factory */
-	protected ChannelPipelineFactory channelPipelineFactory;
-	/** The connection's channel future */
-	protected ChannelFuture channelFuture;
-	/** The client bootstrap */
-	protected ConnectionlessBootstrap bootstrap; 
-	/** The channel factory */
-	protected OioDatagramChannelFactory datagramChannelFactory;
+public class OTServerDiscovery  {
+	/** Static class logger */
+	protected static final Logger log = Logger.getLogger(OTServerDiscovery.class);
+	/** Discovery thread serial */
+	protected static final AtomicInteger serial = new AtomicInteger(0);
 	
-	protected long responseWaitTime = 5000;
-	protected long requestCount = 5;
-	protected long timeBetweenRequests = 750;
-	protected final AtomicBoolean responded = new AtomicBoolean(false);
-	protected final Logger log = Logger.getLogger(getClass());
-	protected DatagramChannel datagramChannel = null;
+	
+	/**
+	 * Issues an InfoDump command over the multicast network and prints the response.
+	 * @param format The format of the output (<b><code>TXT</code></b> or <b><code>XML</code></b>)
+	 * @return The info dump output which may be null if the request times out.
+	 */
+	public static String info(String format) {
+		return rt("INFO|udp://%s:%s" + (format==null ? "" : "|" + format));
+	}
+	
+	/**
+	 * Issues an InfoDump command over the multicast network and prints the response in <b><code>TXT</code></b> format.
+	 * @return The info dump output which may be null if the request times out.
+	 */
+	public static String info() {
+		return info(null);
+	}
+	
+	/**
+	 * Issues a Discover request over the multicast network and returns the URI of the endpoint to connect to
+	 * @param protocol The preferred protocol to connect to
+	 * @return the URI of the endpoint to connect to which will be of the preferred protocol if available and may be null of no server answered.
+	 */
+	public static String discover(String protocol) {
+		return rt("DISCOVER|udp://%s:%s"  + (protocol==null ? "" : "|" + protocol));
+	}
+	
+	/**
+	 * Issues a Discover request over the multicast network and returns the URI of the endpoint to connect to
+	 * @return the URI of the endpoint to connect to which will be of the first protocol located and may be null of no server answered.
+	 */
+	public static String discover() {
+		return discover(null);
+	}
+	
+	
+	
+	/**
+	 * Executes an OT Server discovery service call
+	 * @return the OT Server Discovery Service supplied response or null if there was no response.
+	 */
+	protected static String rt(String command) {
+		final CountDownLatch latch = new CountDownLatch(1);
+		final CountDownLatch listeningLatch = new CountDownLatch(1);
+		MulticastSocket ms =  null;
+		final AtomicReference<String> responseRef = new AtomicReference<String>(); 
+		try {
+			InetSocketAddress insock = new InetSocketAddress(HeliosEndpointConfiguration.getDiscoveryListenAddress(), 0); 
+			final DatagramSocket ds = new DatagramSocket(insock);
+			final int dsTimeout = HeliosEndpointConfiguration.getDiscoveryTimeout();
+			ds.setSoTimeout(dsTimeout);
+			final byte[] buffer = new byte[1000];
+			final DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
+			Runnable runnable = new Runnable(){
+				public void run() {
+					try {
+						listeningLatch.countDown();
+						ds.receive(dp);
+						log.info("Received Discovery Service Response");
+						responseRef.set(new String(dp.getData()).trim());
+					} catch (SocketTimeoutException  ste) {
+						log.warn("Discovery Request Timed Out After [" + dsTimeout + "] ms.");
+					} catch (Exception e) {
+						log.warn("Unexpected Discovery Request Failure", e);
+					} finally {
+						try { ds.close(); } catch (Exception ex) {}
+						latch.countDown();
+					}
+				}
+			};
+			Thread t = new Thread(runnable, "OTServerDiscoveryThread#" + serial.incrementAndGet());
+			t.setDaemon(true);
+			// ==============================================
+			ms =  new MulticastSocket(HeliosEndpointConfiguration.getDiscoveryPort());
+			InetAddress group = InetAddress.getByName(HeliosEndpointConfiguration.getDiscoveryNetwork());
+			String fc = String.format(command, HeliosEndpointConfiguration.getDiscoveryListenAddress(), ds.getLocalPort());
+			log.info("Discovery Request [" + fc + "]");
+			byte[] buff = fc.getBytes();	
+			t.start();
+			listeningLatch.await();
+			ms.send(new DatagramPacket(buff, buff.length, group, HeliosEndpointConfiguration.getDiscoveryPort()));
+			ms.close();			
+			try {
+				latch.await(HeliosEndpointConfiguration.getDiscoveryTimeout()*2, TimeUnit.MILLISECONDS);
+			} catch (Exception e) {
+				e.printStackTrace(System.err);
+			}
+			
+			return responseRef.get();
+		} catch (Exception e) {
+			return null;
+		} finally {
+			try { ms.close(); } catch (Exception e) {}
+		}
+	}
 	
 	
 	/**
@@ -91,113 +204,21 @@ public class OTServerDiscovery implements ChannelUpstreamHandler, ChannelDownstr
 	 */
 	public static void main(String[] args) {
 		BasicConfigurator.configure();
-		Logger LOG = Logger.getLogger(OTServerDiscovery.class);
-		LOG.info("OTServerDiscovery Test");
-		OTServerDiscovery otsd = new OTServerDiscovery();
-		boolean b = otsd.start();
-		LOG.info("Responded:" + b);
-		otsd.stop();
+		Logger.getRootLogger().setLevel(Level.INFO);
+		log("Discovery Test");
+//		log(rt("INFO|udp://%s:%s"));
+		//log(rt("INFO|udp://%s:%s|TEXT"));
+		log(discover());
+		log(discover("UDP"));
+		log(discover("TCP"));
+//		log(rt("DISCOVER|udp://%s:%s"));
+//		log(rt("DISCOVER|udp://%s:%s|UDP"));
 	}
 	
 	
-	public void stop() {
-		try {
-			if(datagramChannel!=null) datagramChannel.close();
-			datagramChannelFactory.releaseExternalResources();
-			log.info("Closed Discovery Agent");
-		} catch (Exception e) {
-			e.printStackTrace(System.err);
-		}
+	public static void log(Object msg) {
+		System.out.println(msg);
 	}
 	
-	/**
-	 * Starts the discovery request
-	 */
-	public boolean start() {
-		try {
-			
-			String MCAST_GROUP_IP = "224.9.3.7";
-			int MCAST_GROUP_PORT = port;
-			String BIND_ADDRESS = InetAddress.getLocalHost().getHostAddress();
-			
-			
-			
-			workerExecutor = Executors.newCachedThreadPool();
-		    // Configure the client.
-			datagramChannelFactory = new OioDatagramChannelFactory(workerExecutor);
-			bootstrap = new ConnectionlessBootstrap(datagramChannelFactory);
-			// Set up the pipeline factory.
-			final ChannelUpstreamHandler uhandler = this;
-			channelPipelineFactory = new ChannelPipelineFactory() {
-		          public ChannelPipeline getPipeline() throws Exception {
-		              return Channels.pipeline(
-		                      new StringEncoder(),
-		                      new StringDecoder(),
-		                      uhandler);	          
-		              }
-			};	                     
-			bootstrap.setOption("receiveBufferSizePredictorFactory", new FixedReceiveBufferSizePredictorFactory(1024));		
-			bootstrap.setPipelineFactory(channelPipelineFactory);
-//			bootstrap.setOption("remoteAddress", new InetSocketAddress(network, port));
-		    bootstrap.setOption("broadcast", "true");
-		    
-		    
-		    InetAddress multicastAddress = InetAddress.getByName(MCAST_GROUP_IP);	        
-		    datagramChannel = (DatagramChannel) bootstrap.bind(new InetSocketAddress("localhost", 6789));
-	        datagramChannel.joinGroup(multicastAddress); 
-//	        NetworkInterface networkInterface = NetworkInterface.getByInetAddress(InetAddress.getByName(BIND_ADDRESS));
-//	        datagramChannel.joinGroup(multicastAddress, networkInterface);		    
-		    
-		    
-		    
-		    responseLatch = new CountDownLatch(1);
-		    for(int i = 0; i < requestCount; i++) {
-		    	datagramChannel.write("Hello World");
-		    	log.info("Issued Request #" + (i+1));
-		    	Thread.currentThread().join(timeBetweenRequests);
-		    	if(responded.get()) break;		    	
-		    }
-		    responseLatch.await(responseWaitTime, TimeUnit.MILLISECONDS);
-		    return responded.get();
-		} catch (Exception e) {
-			log.error("Failed to issue request", e);
-			return false;
-		}
-		
-	}
-
-
-	/**
-	 * {@inheritDoc}
-	 * @see org.jboss.netty.channel.ChannelUpstreamHandler#handleUpstream(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ChannelEvent)
-	 */
-	@Override
-	public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-		//log.info("Upstream Event:" + e);
-		if(e instanceof MessageEvent) {
-			String response = ((MessageEvent)e).getMessage().toString();
-			log.info("Upstream: [" + response + "]" );
-//			responded.set(true);
-//			responseLatch.countDown();
-		}
-		ctx.sendUpstream(e);
-	}
-
-
-	/**
-	 * {@inheritDoc}
-	 * @see org.jboss.netty.channel.ChannelDownstreamHandler#handleDownstream(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ChannelEvent)
-	 */
-	@Override
-	public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
-		//log.info("DownStream Event:" + e);
-		if(e instanceof MessageEvent) {
-			String response = ((MessageEvent)e).getMessage().toString();
-			log.info("Upstream: [" + response + "]" );
-		}		
-		ctx.sendDownstream(e);
-	}
-
-
 
 }
