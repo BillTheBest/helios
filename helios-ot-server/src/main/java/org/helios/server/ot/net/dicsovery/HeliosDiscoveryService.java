@@ -91,6 +91,7 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 	
 	static {
 		register(new InfoDumpDiscoveryCommand());
+		register(new HeliosOTAgentServerDiscovery());		
 	}
 	
 	/** Instance logger */
@@ -171,7 +172,7 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 				mcastSocket.receive(packet);
 				requestCounter.incrementAndGet();
 				String request = new String(packet.getData()).trim();
-				log.info("Discovery Request[" + request + "]");
+				if(log.isDebugEnabled()) log.debug("Discovery Request[" + request + "]");
 				String[] frags = request.split("\\|");
 				if(frags.length>0 && commands.containsKey(frags[0].trim().toUpperCase()))  {
 					String response = commands.get(frags[0].trim().toUpperCase()).execute(frags, applicationContext);
@@ -204,7 +205,7 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 					byte[] bytes = message.getBytes();
 					DatagramPacket dp = new DatagramPacket(bytes, bytes.length, ina, uri.getPort());
 					socket.send(dp);
-					log.info("Sent Repsonse to [" + uri + "] with [" + bytes.length + "] bytes");
+					if(log.isDebugEnabled()) log.debug("Sent Repsonse to [" + uri + "] with [" + bytes.length + "] bytes");
 				} finally {
 					try { socket.close(); } catch (Exception e) {}
 				}
@@ -221,6 +222,16 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 	}
+	
+	/**
+	 * Returns an array of the names of the discovery commands registered
+	 * @return an array of the names of the discovery commands registered
+	 */
+	@JMXAttribute(name="DiscoveryCommands", description="An array of the names of the discovery commands registered", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String[] getDiscoveryCommands() {
+		return commands.keySet().toArray(new String[commands.size()]);
+	}
+	
 
 	/**
 	 * Returns the multicast network this discovery service is listening on

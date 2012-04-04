@@ -39,13 +39,12 @@ import org.apache.camel.Endpoint;
 import org.apache.camel.component.netty.NettyEndpoint;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.helios.helpers.Banner;
 import org.helios.helpers.InetAddressHelper;
 import org.springframework.context.ApplicationContext;
 
 /**
  * <p>Title: InfoDumpDiscoveryCommand</p>
- * <p>Description: </p> 
+ * <p>Description: Discovery service command to dump out some general information about this server to the caller</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.server.ot.net.dicsovery.InfoDumpDiscoveryCommand</code></p>
@@ -91,7 +90,7 @@ public class InfoDumpDiscoveryCommand implements IDiscoveryCommand {
 				}
 			}
 		}
-		data.put("ENDOF|Helios OT Remote Endpoints", "");
+		data.put(InfoFormat.HEADER_PREFIX +  "Helios OT Remote Endpoints", "");
 		data.put("WebApp Endpoints", "");
 		for(WebAppContext webApp: ctx.getBeansOfType(WebAppContext.class).values()) {
 			for(Connector ct: webApp.getServer().getConnectors()) {
@@ -102,12 +101,12 @@ public class InfoDumpDiscoveryCommand implements IDiscoveryCommand {
 				data.put(webApp.getDisplayName(), webapp.toString());
 			}			
 		}
-		data.put("ENDOF|WebApp Endpoints", "");
+		data.put(InfoFormat.HEADER_PREFIX +  "WebApp Endpoints", "");
 		data.put("JMX Connector URLs", "");
 		for(JMXServiceURL svc: ctx.getBeansOfType(JMXServiceURL.class).values()) {
 			data.put(svc.getProtocol(), svc.toString());
 		}
-		data.put("ENDOF|JMX Connector URLs", "");
+		data.put(InfoFormat.HEADER_PREFIX +  "JMX Connector URLs", "");
 		if(fullCommandString.length>2) {
 			return InfoFormat.getInstance(fullCommandString[2]).format(data);
 		} else {

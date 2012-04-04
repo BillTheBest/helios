@@ -40,6 +40,11 @@ public enum InfoFormat {
 	TEXT(new TextFormater()),
 	XML(new XMLFormater());
 	
+	/** The data map header prefix indicating the end of a header */
+	public static final String HEADER_PREFIX = "ENDOF|";
+	/** The length of the header prefix  */
+	public static final int HEADER_PREFIX_LENGTH = HEADER_PREFIX.length();
+	
 	
 	/**
 	 * Returns the InfoFormat that matches the passed name, or TEXT if no match can be made/
@@ -82,15 +87,20 @@ public enum InfoFormat {
 	
 	public static class TextFormater implements InfoFormater {
 		public String format(Map<String, String> data) {
-			StringBuilder b = new StringBuilder(Banner.banner("*", 0, 20, "Helios Open Trace Server"));
+			StringBuilder b = new StringBuilder(Banner.banner("*", 0, 24, "Helios Open Trace Server"));
 			boolean inSub = false;
 			for(Map.Entry<String, String> entry: data.entrySet()) {
 				String k = entry.getKey();
 				String v = entry.getValue();
 				if(!v.isEmpty()) {
-					b.append(inSub ? "\n\t" : "\n").append(k).append(":").append(v);
+					if(inSub) {
+						b.append("\n\t").append(v);
+					} else {
+						b.append("\n\t").append(k).append(":").append(v);
+					}
+					
 				} else {
-					if(!k.startsWith("ENDOF|")) {
+					if(!k.startsWith(HEADER_PREFIX)) {
 						b.append("\n").append(k);
 						inSub = true;
 					} else {
@@ -98,7 +108,7 @@ public enum InfoFormat {
 					}
 				}
 			}
-			b.append("\n********************\n");
+			b.append("\n************************\n");
 			return b.toString();
 		}
 	}
@@ -112,10 +122,10 @@ public enum InfoFormat {
 				if(!v.isEmpty()) {
 					b.append("<").append(k).append(">").append(v).append("</").append(k).append(">");
 				} else {
-					if(!k.startsWith("ENDOF|")) {
+					if(!k.startsWith(HEADER_PREFIX)) {
 						b.append("<").append(k).append(">");						
 					} else {
-						b.append("</").append(k).append(">");
+						b.append("</").append(k.substring(HEADER_PREFIX_LENGTH)).append(">");
 					}
 				}
 			}
