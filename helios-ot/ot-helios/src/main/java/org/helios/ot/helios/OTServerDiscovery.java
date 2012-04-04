@@ -29,7 +29,9 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.net.SocketTimeoutException;
+import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -100,7 +102,8 @@ public class OTServerDiscovery  {
 	protected static final Logger log = Logger.getLogger(OTServerDiscovery.class);
 	/** Discovery thread serial */
 	protected static final AtomicInteger serial = new AtomicInteger(0);
-	
+	/** A NetworkInterface that was discovered to work with multicast after the original join failed */
+	protected static NetworkInterface goodNic = null;
 	
 	/**
 	 * Issues an InfoDump command over the multicast network and prints the response.
@@ -176,6 +179,38 @@ public class OTServerDiscovery  {
 			// ==============================================
 			ms =  new MulticastSocket(HeliosEndpointConfiguration.getDiscoveryPort());
 			InetAddress group = InetAddress.getByName(HeliosEndpointConfiguration.getDiscoveryNetwork());
+			boolean joined = false;
+			try {
+				if(goodNic!=null) {
+					ms.setNetworkInterface(goodNic);
+				}
+				ms.joinGroup(group);
+				joined = true;
+			} catch (Exception e) {
+				if(e.getMessage().contains("No such device")) {
+					log.warn("\n\tFailed to bind to multicast group because of a \"No such device\" error."
+							+ "\n\tYou are probably not connected to a network or do not have a link."
+							+ "\n\tWill attempt overriding the network interface...."
+					);
+					for(Enumeration<NetworkInterface> nifaces = NetworkInterface.getNetworkInterfaces(); nifaces.hasMoreElements();) {
+						NetworkInterface niface = nifaces.nextElement();
+						try {						
+							ms.setNetworkInterface(niface);
+							ms.joinGroup(group);
+							joined = true;
+							log.info("SUCCESS! Joined Multicast Group [" + group + "] with Network Interface [" + niface + "]");
+							goodNic = niface;
+							break;
+						} catch (Exception ex) {
+							log.warn("Failed with network interface override [" + niface + "]");
+						}
+					}
+					if(!joined) {
+						log.error("Failed to join multicast group [" + group + "] with any NetworkInterface");
+						throw new IllegalStateException("Failed to join multicast group [" + group + "] with any NetworkInterface");
+					}
+				}
+			}					
 			String fc = String.format(command, HeliosEndpointConfiguration.getDiscoveryListenAddress(), ds.getLocalPort());
 			log.info("Discovery Request [" + fc + "]");
 			byte[] buff = fc.getBytes();	
@@ -208,9 +243,11 @@ public class OTServerDiscovery  {
 		log("Discovery Test");
 //		log(rt("INFO|udp://%s:%s"));
 		//log(rt("INFO|udp://%s:%s|TEXT"));
-		log(discover());
-		log(discover("UDP"));
-		log(discover("TCP"));
+		while(true) {
+			log(discover());
+			log(discover("UDP"));
+			log(discover("TCP"));
+		}
 //		log(rt("DISCOVER|udp://%s:%s"));
 //		log(rt("DISCOVER|udp://%s:%s|UDP"));
 	}
