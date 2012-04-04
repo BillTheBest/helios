@@ -96,7 +96,7 @@ public enum InfoFormat {
 					if(inSub) {
 						b.append("\n\t").append(v);
 					} else {
-						b.append("\n\t").append(k).append(":").append(v);
+						b.append("\n").append(k).append(":").append(v);
 					}
 					
 				} else {

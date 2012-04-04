@@ -75,6 +75,10 @@ public class InfoDumpDiscoveryCommand implements IDiscoveryCommand {
 		data.put("Deployed Bean Count", "" + ctx.getBeanDefinitionCount());		
 		RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
 		data.put("JVM", new StringBuilder(runtimeMXBean.getVmVendor()).append("").append(runtimeMXBean.getVmName()).append(" ").append(runtimeMXBean.getVmVersion()).toString());
+		data.put("Java Runtime Version", System.getProperty("java.runtime.version", "Unknown"));
+		
+		
+		
 		data.put("PID", runtimeMXBean.getName().split("@")[0]);
 		data.put("Host", runtimeMXBean.getName().split("@")[1]);
 		data.put("Start Time", new Date(runtimeMXBean.getStartTime()).toString());
