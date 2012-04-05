@@ -55,12 +55,14 @@
         <property name="server" ref="HttpServer" />
       </bean>
 
-
+		<!-- 
 	  <bean id="CamelWar" class="org.eclipse.jetty.webapp.WebAppContext">
+	  	<description>The Camel Management Web App</description>
 	      <property name="contextPath" value="/camel"/>
 	      <property name="war" value="C:/camel-web/camel.war" />
 	      <property name="logUrlOnStart" value="true"/>  
 	  </bean>
+	   -->
 
 	
 <!-- 	  
@@ -88,7 +90,7 @@
 						<property name="name" value="HttpTunnelingServlet" />
 						<property name="initParameters">
 							<map>
-								<entry key="endpoint" value="local:org.helios.netty" />
+								<entry key="endpoint" value="local:netty" />
 							</map>
 						</property>
 					</bean>
@@ -105,13 +107,17 @@
 		</bean>
 		 
 	  <bean id="HeliosWar" class="org.eclipse.jetty.webapp.WebAppContext">
+	  <description>The Helios Management Web App</description>
 	      <property name="contextPath" value="/helios"/>
+	      <property name="displayName" value="The Helios Management Web App" />
 	      <property name="war" value="./src/test/resources/helios.war" />
 	      <property name="logUrlOnStart" value="true"/>  
 	  </bean>
 	  
 	  <bean id="NettyWar" class="org.eclipse.jetty.webapp.WebAppContext">
+	  	<description>The Netty HTTP Endpoint</description>
 	      <property name="contextPath" value="/netty"/>	      
+	      <property name="displayName" value="The Netty HTTP Endpoint" />
 	      <property name="logUrlOnStart" value="true"/>
 	        <property name="resourceBase" value="c:/temp/"/>
 	      <property name="servletHandler" ref="NettyHttpListener"/>
@@ -119,7 +125,9 @@
 	  	
 	
 	  <bean id="JolokiaWar" class="org.eclipse.jetty.webapp.WebAppContext">
+	  <description>The Jolokia JMX Web App</description>
 	      <property name="contextPath" value="/jmx"/>
+	      <property name="displayName" value="The Jolokia JMX Web App" />
 	      <property name="war" value="./src/test/resources/jolokia.war" />
 	      <property name="logUrlOnStart" value="true"/>  
 	  </bean>	

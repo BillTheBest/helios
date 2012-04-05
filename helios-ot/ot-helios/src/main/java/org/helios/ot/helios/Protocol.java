@@ -36,7 +36,10 @@ public enum Protocol {
 	/** TCP/IP */
 	TCP(9428, new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointTCPConnector(endpoint);}}),
 	/** UDP */
-	UDP(9427, new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointUDPConnector(endpoint);}});
+	UDP(9427, new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointUDPConnector(endpoint);}}),
+	/** HTTP */
+	HTTP(8176, new ConnectorFactory(){public AbstractEndpointConnector createConnector(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint){return new HeliosEndpointHttpConnector(endpoint);}});
+	
 	
 	private Protocol(int defaultPort, ConnectorFactory factory) {
 		this.factory = factory;

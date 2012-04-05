@@ -26,12 +26,15 @@ package org.helios.spring.container;
 
 import java.beans.PropertyEditorManager;
 import java.io.File;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -496,7 +499,7 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 				File f = new File(configFiles[i]);
 				configFiles[i] = f.toURI().toURL().toString();
 			} catch (Exception e) {
-				LOG.error("Failed to conver file to URL:[" + configFiles[i] + "]", e);
+				LOG.error("Failed to convert file to URL:[" + configFiles[i] + "]", e);
 			}
 		}
 		String[] tConfigFiles = RecursiveDirectorySearch.searchDirectories(new ConfigurableFileExtensionFilter(HELIOS_XML_TEMPLATE), configDirectories);
@@ -559,13 +562,37 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 //		}
 		
 //		applicationContext.setParent(templateFactory);
-		
+		final List<Throwable> contextBootExceptions = new ArrayList<Throwable>();
+		UncaughtExceptionHandler currentHandler = Thread.currentThread().getUncaughtExceptionHandler();
+		Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+			public void uncaughtException(Thread t, Throwable e) {
+				contextBootExceptions.add(e);
+			}
+		});
 		try {
 			applicationContext.refresh();
 		} catch (Exception e) {
 			LOG.error("Failed to refresh app context", e);
 			System.exit(0);
+		} finally {
+			Thread.currentThread().setUncaughtExceptionHandler(currentHandler);
 		}
+		if(contextBootExceptions.size() > 0) {
+			
+			LOG.error(Banner.banner("#", 3, 10,
+					"There were [" + contextBootExceptions.size() + "] uncaught exceptions during the helios container boot so startup will not continue.",
+					"The exception detail follows:"
+			));
+			
+			int cntr = 1;
+			for(Throwable t: contextBootExceptions) {
+				LOG.error("Exception #" + cntr, t);
+				cntr++;
+			}
+			LOG.error(Banner.banner("#", 3, 10, "End of exception report"));
+			System.exit(-1);
+		}
+		
 		applicationContext.registerShutdownHook();
 		warDeployer.setApplicationContext(applicationContext);
 		warDeployer.run();

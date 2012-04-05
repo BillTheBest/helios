@@ -25,11 +25,13 @@
 		<property name="showRouteId" value="true" />
 	</bean>
 	
+	<camel:threadPool id="MetricInputStreamThreadPool" poolSize="5" threadName="MetricInputStreamThread"  maxPoolSize="10" maxQueueSize="1000" />
+	
 	<context:annotation-config/>
 	<context:mbean-export/>
 	
   	
-  	<camel:threadPool id="MetricInputStreamThreadPool" poolSize="5" threadName="MetricsInThread" maxPoolSize="10" maxQueueSize="1000" />
+  	
   	
 	<bean id="activemq" class="org.apache.activemq.camel.component.ActiveMQComponent">
       <property name="brokerURL" value="vm://helios?create=false"/>
@@ -96,7 +98,11 @@
 	 <bean id="TraceCountWireTap" class="org.helios.server.ot.wiretaps.TraceCountWireTap" />
 
    	
-	<camelContext xmlns="http://camel.apache.org/schema/spring" trace="false" id="HeliosContext" depends-on="SubscriberRouteRegistry"   >
+	<camelContext xmlns="http://camel.apache.org/schema/spring" trace="false" id="HeliosContext" depends-on="SubscriberRouteRegistry"  autoStartup="true"  >
+			
+		<camel:threadPoolProfile id="MetricMulticastThreadPool" poolSize="5"  maxPoolSize="10" maxQueueSize="1000" />		
+		
+	
 		<camel:dataFormats>
 			<camel:string id="OTStreamDataFormatText" />
 			<!-- <camel:json library="Jackson" id="OTStreamDataFormatJSON"/> -->
@@ -107,14 +113,11 @@
 		
 		<route id="OTMulticastRoute" autoStartup="true" >
 			<from uri="direct:agentin" />
-		    <camel:multicast id="OTMulticast" >	    	
-			    <camel:split id="TopicTreeRepubSplitter" >
-			    	<camel:method  id="splitter" bean="traceArraySplitter" method="split"/>
-				    	<camel:process ref="metaCache" id="metaCacheProcessor" />		    			    			    	
-				    	<camel:bean ref="traceHandler" method="send" id="traceHandlerSend"/>
-			    </camel:split>
-			</camel:multicast>
-			
+		    <camel:split id="TopicTreeRepubSplitter" >
+		    	<camel:method  id="splitter" bean="traceArraySplitter" method="split"/>
+			    	<camel:process ref="metaCache" id="metaCacheProcessor" />		    			    			    	
+			    	<camel:bean ref="traceHandler" method="send" id="traceHandlerSend"/>
+		    </camel:split>
 		</route>
 		
 		
@@ -130,30 +133,42 @@
 	  
 	  <route id="NettyTCPAgentListener" autoStartup="true" >	  	
 	    <from uri="netty:tcp://0.0.0.0:9428?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyTCPOTConsumer" />
-	    <camel:multicast id="NettyTCPMulticast" executorServiceRef="MetricInputStreamThreadPool" >	 
+	    <camel:multicast id="NettyTCPMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >	 
 		    <camel:to id="NettyTCPOTProcessor" uri="direct:agentin" />
-		    <camel:to id="NettyTCPOTRelay" uri="bean:RemoteRelay"/>
-		    <camel:to uri="bean:TraceCountWireTap" /> 		    
+		    <camel:to id="NettyTCPOTRelay" uri="bean:RemoteRelay"/>		    	    
 	    </camel:multicast>
+	    <camel:to uri="bean:TraceCountWireTap" /> 	
 	  </route>
+	  
+	  
+	  <!-- Needs enhanced camel-netty 2.9.1 with support for local channel -->
+	  <!-- 
+	  <route id="NettyHTTPAgentListener" autoStartup="true" >	  	
+	    <from uri="netty:local://0.0.0.0:0?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyHTTPOTConsumer" />
+	    <camel:multicast id="NettyHTTPMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >	 
+		    <camel:to id="NettyHTTPOTProcessor" uri="direct:agentin" />
+		    <camel:to id="NettyHTTPOTRelay" uri="bean:RemoteRelay"/>		    	    
+	    </camel:multicast>
+	    <camel:to uri="bean:TraceCountWireTap" /> 	
+	  </route>
+	  -->
+	  
 	  
 	  <route id="NettyUDPAgentListener" autoStartup="true" >	  	
 	    <from uri="netty:udp://0.0.0.0:9427?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyUDPOTConsumer" />
-	    <camel:multicast id="NettyUDPMulticast" executorServiceRef="MetricInputStreamThreadPool" >	 
+	    <camel:multicast id="NettyUDPMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >	 
 		    <camel:to id="NettyUDPOTProcessor" uri="direct:agentin" />
-		    <camel:to id="NettyUDPOTRelay" uri="bean:RemoteRelay"/>
-		    <camel:to uri="bean:TraceCountWireTap" /> 
+		    <camel:to id="NettyUDPOTRelay" uri="bean:RemoteRelay"/>		    
 	    </camel:multicast>
+	    <camel:to uri="bean:TraceCountWireTap" />
 	  </route>
 	  
-		<camel:route id="HotDeployedRoute" autoStartup="true">
-			<camel:from uri="netty:udp://0.0.0.0:9421?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyUDPBroadcaster" />
-   			<camel:multicast id="NettyUDPBroadcastMulticast"  executorServiceRef="MetricInputStreamThreadPool">	 
-	    		<camel:to id="NettyUDPBroadcasterProcessor" uri="direct:agentin" />
-	    		<camel:to uri="bean:TraceCountWireTap" /> 
-    		</camel:multicast>
-		</camel:route>
-	  
+		<!-- 
+	  <route id="NettyAgentDiscoveryListener" autoStartup="true" >	  	
+	    <camel:from uri="netty:udp://224.1.2.3:0?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=false&amp;broadcast=true" id="NettyDiscoveryConsumer" />
+	    <camel:to uri="netty:udp://224.1.2.3:0?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=false&amp;broadcast=true" id="NettyDiscoveryProducer" />
+	  </route>
+		 -->	  
 	  
 	  <route id="MetricSubListener" trace="true"  >
 		<from uri="activemq:topic:ActiveMQ.Advisory.Consumer.Topic.helios.metrictree.>"/>
@@ -164,6 +179,12 @@
 	
 	<bean id="object-decoder" class="org.jboss.netty.handler.codec.serialization.ObjectDecoder"/>
 	<bean id="object-encoder" class="org.jboss.netty.handler.codec.serialization.ObjectEncoder"/>
+	
+	<bean id="HeliosDiscoveryService" class="org.helios.server.ot.net.dicsovery.HeliosDiscoveryService" init-method="start" destroy-method="stop">
+		<property name="network" value="224.9.3.7" />
+		<property name="port" value="1836" />
+	</bean>
+	
 	
   	<bean name="PollingHttpSubscriptionProcessor" class="org.helios.server.ot.session.camel.routing.http.PollingHttpSubscriptionProcessor" scope="prototype" lazy-init="true">
   		<constructor-arg type="java.lang.String" ><null/></constructor-arg>

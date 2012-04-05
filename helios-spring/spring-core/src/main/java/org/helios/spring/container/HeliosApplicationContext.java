@@ -211,18 +211,14 @@ public class HeliosApplicationContext extends GenericXmlApplicationContext imple
 	public void refresh() {
 		// load files
 		if(!configurationLoaded) {
-			try {
-				beanDefsLoaded = initBeans();
-			} catch (MalformedURLException mue) {
-				throw new FatalBeanException("Failed to load bean definitions", mue);
-			}
+				try {
+					beanDefsLoaded = initBeans();
+				} catch (MalformedURLException e) {
+					throw new RuntimeException("Failed to initialize beans", e);
+				}
 		}
 		this.registerShutdownHook();
-		try {
-			super.refresh();
-		} catch (Exception e) {
-			log.error("Faied to refresh HeliosApplicationContext", e);
-		}
+		super.refresh();
 	}
 
 
