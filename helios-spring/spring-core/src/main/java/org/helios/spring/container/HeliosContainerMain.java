@@ -682,27 +682,17 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 	}
 	
 	/**
-	 * Activates the container profiles
-	 * @param profiles A set fo command lines supplied profiles
+	 * Activates the container profiles.  If profile(s) are provided through command line argument - use it.  If not, 
+	 * use the default profile which is <OS-name>-<user.name system property>. For example, on Linux for current user
+	 * helios, the default profile would be "linux-helios".   
+	 *   
+	 * @param profiles A set of command lines supplied profiles
 	 * @param gac The application context
 	 */
 	protected void setProfiles(Set<String> profiles, GenericApplicationContext gac) {
 		Set<String> activeProfiles = new HashSet<String>();
 		if(gac==null) throw new IllegalArgumentException("The passed application context was null", new Throwable());
-//		String os = System.getProperty("os.name", "Unknown").toLowerCase();
-//		String osProfile = null;
-//		if(os.contains("windows")) {
-//			osProfile = "windows";
-//		} else if(os.contains("linux")) {
-//			osProfile = "linux";
-//		} else if(os.contains("solaris")) {
-//			osProfile = "solaris";
-//		} else {
-//			osProfile = "os";
-//		}
-//		activeProfiles.add(osProfile);
-		activeProfiles.add(System.getProperty("user.name"));
-		   
+		
 		if(profiles!=null && !profiles.isEmpty()) {
 			for(String profile: profiles) {
 				profile = profile.trim();
@@ -717,8 +707,27 @@ public class HeliosContainerMain implements ApplicationListener, PropertyEditorR
 					activeProfiles.add(profile);
 				}
 			}
-		}
+		}else{
+			activeProfiles.add(getDefaultProfileName());
+		}		
+		   
 		gac.getEnvironment().setActiveProfiles(activeProfiles.toArray(new String[activeProfiles.size()]));
+	}
+
+	private String getDefaultProfileName() {
+		String os = System.getProperty("os.name", "Unknown").toLowerCase();
+		String defaultProfile = null;
+		if(os.contains("windows")) {
+			defaultProfile = "windows";
+		} else if(os.contains("linux")) {
+			defaultProfile = "linux";
+		} else if(os.contains("solaris")) {
+			defaultProfile = "solaris";
+		} else {
+			defaultProfile = "os";
+		}
+		defaultProfile += "-"+System.getProperty("user.name");
+		return defaultProfile;
 	}
 	
 	/**

@@ -257,7 +257,7 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 	}
 	
 	/**
-	 * This method tries to connect to Introscope agent with a 30 seconds timeout window.  An EndpointConnectException
+	 * This method tries to connect to Introscope agent with a 10 seconds timeout window.  An EndpointConnectException
 	 * if thrown if that timeout period expires before the connection is established.
 	 * 
 	 * @throws EndpointConnectException
@@ -268,17 +268,17 @@ public class IntroscopeEndpoint<T extends Trace<? extends ITraceValue>> extends 
 		}
 		else{
 			try{
-				log.debug("Waiting to connect to Introscope EM with 30 seconds timeout period...");
-				if(adapter.get().connectWithWait(30, TimeUnit.SECONDS)) {
+				log.debug("Waiting to connect to Introscope EM with 15 seconds timeout period...");
+				if(adapter.get().connectWithWait(15, TimeUnit.SECONDS)) {
 					log.debug("Triplet:" + Arrays.toString(adapter.get().getHostProcessAgent()));
 					host.set(adapter.get().getHost());
 					agent.set(adapter.get().getName());
 				} else {
-					Banner.bannerErr("Unable to connect to Introscope EM within 30 seconds ");
-					throw new EndpointConnectException("Unable to connect to Introscope EM within 30 seconds ");
+					Banner.bannerErr("Unable to connect to Introscope EM within 15 seconds ");
+					throw new EndpointConnectException("Unable to connect to Introscope EM within 15 seconds ");
 				}
 			}catch (Exception e) {
-				throw new EndpointConnectException("An error occured while connecting to Introscope EM", e);
+				throw new EndpointConnectException("An error occured while connecting to Introscope EM within 15 seconds", e);
 			}
 		}
 	}

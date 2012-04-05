@@ -418,12 +418,6 @@
 			<artifactId>helios-ot-core2</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.helios.helios-spring</groupId>
-			<artifactId>helios-spring-launcher</artifactId>
-			<version>${helios.version}</version>
-			<scope>runtime</scope>
-		</dependency>
 
 		<dependency>
 			  <groupId>org.helios.helios-collectors</groupId>
@@ -448,6 +442,7 @@
 		    <artifactId>helios-spring-launcher</artifactId>
 		    <version>${helios.version}</version>
 		    <scope>runtime</scope>
+		    <type>pom</type>
 		</dependency>
 		<dependency>				
 			<groupId>org.helios</groupId>
