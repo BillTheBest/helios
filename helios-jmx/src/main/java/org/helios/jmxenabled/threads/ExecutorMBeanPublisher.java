@@ -99,8 +99,8 @@ public class ExecutorMBeanPublisher extends ManagedObjectDynamicMBean implements
 	protected MBeanServer server = null;
 	/** Instance logger */
 	protected Logger log = Logger.getLogger(getClass());
-	/** static class logger */
-	protected static Logger LOG = Logger.getLogger(ExecutorMBeanPublisher.class);
+//	/** static class logger */
+//	protected static Logger LOG = Logger.getLogger(ExecutorMBeanPublisher.class);
 	
 	/** A cache of registered mbeans keyed by the ThreadPoolExecutor that is wrapped */
 	private static final Map<ThreadPoolExecutor, ObjectName> registered = new ConcurrentHashMap<ThreadPoolExecutor, ObjectName>();
@@ -164,7 +164,7 @@ public class ExecutorMBeanPublisher extends ManagedObjectDynamicMBean implements
 					count++;
 				}
 			} catch (Exception e) {
-				LOG.warn("Failed to terminate Published Thread Pool [" + poolObjectName + "] in JMX MBeanServer Domain [" + jmxDomain + "]:" + e);
+				//LOG.warn("Failed to terminate Published Thread Pool [" + poolObjectName + "] in JMX MBeanServer Domain [" + jmxDomain + "]:" + e);
 			}
 		}
 		return count;

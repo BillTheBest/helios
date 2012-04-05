@@ -129,7 +129,11 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 //		System.exit(-1);
 //	}
 	
-	public static void main(String[] args) {		
+	public static void main(String[] args) {	
+		BasicConfigurator.configure();
+		Logger.getLogger("org.helios").setLevel(Level.OFF);
+		Logger.getLogger("org.helios.jmxenabled.threads.ExecutorMBeanPublisher").setLevel(Level.OFF);
+		Logger.getLogger("DefaultNotificationThreadPool").setLevel(Level.OFF);
 		System.out.println(banner());
 		if(args.length>0) {
 			if("server".equalsIgnoreCase(args[0])) {
