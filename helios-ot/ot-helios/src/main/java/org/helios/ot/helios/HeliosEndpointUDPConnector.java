@@ -119,9 +119,9 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.ot.helios.AbstractEndpointConnector#connect()
+	 * @see org.helios.ot.helios.AbstractEndpointConnector#doConnect()
 	 */
-	public void connect() {
+	public void doConnect() {
 		if(isConnected()) throw new IllegalStateException("This connector is already connected", new Throwable());
 		ChannelFuture future = bootstrap.connect();
 		future.addListener(new ChannelFutureListener(){

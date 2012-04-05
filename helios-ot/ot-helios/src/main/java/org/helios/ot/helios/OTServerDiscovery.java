@@ -247,6 +247,8 @@ public class OTServerDiscovery  {
 			log(discover());
 			log(discover("UDP"));
 			log(discover("TCP"));
+			info();
+			info("XML");
 		}
 //		log(rt("DISCOVER|udp://%s:%s"));
 //		log(rt("DISCOVER|udp://%s:%s|UDP"));

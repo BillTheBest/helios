@@ -25,7 +25,9 @@
 package org.helios.ot.helios;
 
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -36,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
+import org.helios.helpers.ConfigurationHelper;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
@@ -370,7 +373,7 @@ public abstract class AbstractEndpointConnector implements Runnable {
 				cntr++;
 			}
 		}
-		log.info("Flushing [" + cntr + "] Traces from flush queue");
+		if(log.isDebugEnabled()) log.debug("Flushing [" + cntr + "] Traces from flush queue");
 		flushTraceBuffer(bigTraceArr);
 	}
 	
@@ -381,14 +384,81 @@ public abstract class AbstractEndpointConnector implements Runnable {
 	protected abstract Protocol getProtocol();
 	
 	/**
-	 * Directs the connector to connect to the configured endpoint
+	 * Directs the connector to connect to the configured endpoint.
+	 * This is the sequence of connection attempt procedures:<ol>
+	 * <li>If the environment or system property {@link HeliosEndpointConfiguration#HOST} is set, the endpoint will attempt to connect to that host
+	 * reading the remaining connection properties from set environment variables/system properties and the default properties, with the former taking presedence.</li>
+	 * <li>If the environment or system property {@link HeliosEndpointConfiguration#DISCOVERY_ENABLED} is true (the default)
+	 * then OT server discovery will be executed first. If a response is acquired, the endpoint will attempt to connect to the returned URI.</li>
+	 * <li>If the discovery fails, or a connect to the discovered URI fails, the endpoint will attempt to connect using the merged properties defined
+	 * between the set environment variables/system properties and the default properties, with the former taking presedence.</li>
+	 * </ol>
+	 * In short, discovery takes presedence unless a host has been defined. After that, default values overriden by env/system properties take over. This connection procedure
+	 * continues until a connection is made. 
+	 * 
+	 * Note that when the endpoint discovery request receives a response, the URI is parsed and the system properties of the JVM are set in accordance with 
+	 * the properties therein. However, if the post discovery connection fails, the system properties set as a result of the discovery response are
+	 * reset to their former values under the assumption that some contraint is preventing the discovery supplied URI connection to be made.
+	 * @param endpoint The endpoint being connected
+	 * @return the connected connector
 	 */
-	public abstract void connect();
+	public static synchronized AbstractEndpointConnector connect(@SuppressWarnings("rawtypes") HeliosEndpoint endpoint) {
+		Logger LOG = Logger.getLogger(HeliosEndpoint.class);
+		AbstractEndpointConnector connector = null;
+		// If the OT Server host name is specified, first do a standard connect attempt
+		if(ConfigurationHelper.isDefined(HeliosEndpointConfiguration.HOST)) {
+			try {
+				connector = HeliosEndpointConfiguration.getProtocol().createConnector(endpoint);
+				connector.doConnect();
+				if(!connector.isConnected()) throw new Exception();
+			} catch (Exception e) {
+				// connection failed.
+				connector = null;
+			}
+		}
+		if(connector!=null) return connector;
+		// Since the HOST was not defined, or this attempt failed, we will try discovery
+		// First, backup all the connection sysprops
+		Properties beforeDiscoveryProperties = HeliosEndpointConfiguration.getAllConnectionProperties();
+		try {
+			try {
+				String discoveredURI = OTServerDiscovery.discover(HeliosEndpointConfiguration.getDiscoveryPreferredProtocol());
+				if(discoveredURI!=null && !discoveredURI.trim().isEmpty()) {
+					// We got a discovery response, so parse it and set the ac cording system props.
+					URI uri = new URI(discoveredURI);
+					System.setProperty(HeliosEndpointConfiguration.PROTOCOL, uri.getScheme().toUpperCase().trim());
+					System.setProperty(HeliosEndpointConfiguration.HOST, uri.getHost().toUpperCase().trim());
+					System.setProperty(HeliosEndpointConfiguration.PORT, "" + uri.getPort());					
+					connector = HeliosEndpointConfiguration.getProtocol().createConnector(endpoint);
+					connector.doConnect();					
+				}
+				if(!connector.isConnected()) throw new Exception();
+			} catch (Exception e) {
+				// connection failed.
+				connector = null;
+			}			
+		} catch (Exception e) {
+			
+		}
+		if(connector!=null) return connector;
+		// If we get here, discovery got no response or we failed to connect with the properties supplied by the discovery
+		// First reset the OT related connection system props to what they were before discovery
+		System.setProperties(beforeDiscoveryProperties);
+		// Now try and standard connect
+		connector = HeliosEndpointConfiguration.getProtocol().createConnector(endpoint);
+		
+		return connector;
+	}
 	
 	/**
 	 * Directs the connector to disconnect
 	 */
 	public abstract void disconnect();
+	
+	/**
+	 * Directs the connector to connect to the configured endpoint
+	 */
+	public abstract void doConnect();
 	
 	
 	/**

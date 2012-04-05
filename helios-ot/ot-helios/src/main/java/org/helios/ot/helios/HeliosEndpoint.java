@@ -61,7 +61,7 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	/** The helios OT server comm protocol */
 	protected Protocol protocol;
 	/** The helios OT connector of the configured protocol */
-	protected final AbstractEndpointConnector connector;
+	protected AbstractEndpointConnector connector;
 	
 	/** The count of exceptions */
 	protected final AtomicLong exceptionCount = new AtomicLong(0);
@@ -84,8 +84,6 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		host = HeliosEndpointConfiguration.getHost();
 		port = HeliosEndpointConfiguration.getPort();
 		protocol = HeliosEndpointConfiguration.getProtocol();
-		connector = protocol.createConnector(this); 
-		reflectObject(connector);
 	}
 	
 	
@@ -96,7 +94,8 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	@Override
 	protected void connectImpl() throws EndpointConnectException {
 		try {
-			connector.connect();
+			connector = AbstractEndpointConnector.connect(this);
+			reflectObject(connector);
 		} catch (Exception e) {
 			throw new EndpointConnectException("HeliosEndpoint failed to connect:" + e);			
 		}
@@ -119,6 +118,7 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		Logger.getRootLogger().setLevel(Level.INFO);
 		LOG.info("Test");
 		HeliosEndpoint he = new HeliosEndpoint();
+		he.connect();
 		he.reflectObject(he.connector.getInstrumentation());
 		TracerManager3.getInstance(TracerManager3.Configuration.getDefaultConfiguration().appendEndPoint(he));
 		boolean b = he.connect();

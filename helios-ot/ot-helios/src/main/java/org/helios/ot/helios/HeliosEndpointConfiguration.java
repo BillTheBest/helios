@@ -24,6 +24,10 @@
  */
 package org.helios.ot.helios;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
 import org.helios.helpers.ConfigurationHelper;
 import org.helios.helpers.InetAddressHelper;
 
@@ -36,16 +40,21 @@ import org.helios.helpers.InetAddressHelper;
  */
 
 public class HeliosEndpointConfiguration {
+	/** The property name prefix for all connection properties */
+	public static final String CONNECTION_PREFIX = "org.helios.ot.connection";	
+	
+	
+	
 	/** The property name for the helios ot server host name or ip address */
-	public static final String HOST = "org.helios.ot.host";
+	public static final String HOST = CONNECTION_PREFIX + ".host";
 	/** The property name for the helios ot server listening port */
-	public static final String PORT = "org.helios.ot.port";
+	public static final String PORT = CONNECTION_PREFIX + ".port";
 	/** The property name for the protocol the agent should use to comm with the helios-ot server */
-	public static final String PROTOCOL = "org.helios.ot.protocol";
+	public static final String PROTOCOL = CONNECTION_PREFIX + ".protocol";
 	/** The property name for the maximum size of the trace buffer before it is flushed */
-	public static final String FLUSH_SIZE_MAX = "org.helios.ot.flush.maxsize";
+	public static final String FLUSH_SIZE_MAX = CONNECTION_PREFIX + ".maxsize";
 	/** The property name for the maximum amount of time in ms. before a non empty trace buffer is flushed */
-	public static final String FLUSH_TIME_MAX = "org.helios.ot.flush.maxtime";
+	public static final String FLUSH_TIME_MAX = CONNECTION_PREFIX + ".maxtime";
 
 	
 	/** The default helios ot server host name or ip address */
@@ -60,16 +69,21 @@ public class HeliosEndpointConfiguration {
 	//=============================================
 	//   Discovery 
 	//=============================================
+	/** The property name prefix for discovery properties */
+	public static final String DISCOVERY_PREFIX = CONNECTION_PREFIX + ".discovery";	
 	/** The property name for the helios ot server discovery multicast network */
-	public static final String DISCOVERY_NETWORK = "org.helios.ot.discovery.network";
+	public static final String DISCOVERY_NETWORK = DISCOVERY_PREFIX + ".network";
+	/** The property name for the helios ot discovery enablement */
+	public static final String DISCOVERY_ENABLED = DISCOVERY_PREFIX + ".enabled";
+	
 	/** The property name for the helios ot server discovery multicast port */
-	public static final String DISCOVERY_PORT = "org.helios.ot.discovery.port";
+	public static final String DISCOVERY_PORT = DISCOVERY_PREFIX + ".port";
 	/** The property name for the helios ot server discovery multicast timeout in ms. */
-	public static final String DISCOVERY_TIMEOUT = "org.helios.ot.discovery.timeout";
+	public static final String DISCOVERY_TIMEOUT = DISCOVERY_PREFIX + ".timeout";
 	/** The property name for the helios ot server discovery preferred protocol */
-	public static final String DISCOVERY_PREF_PROTOCOL = "org.helios.ot.discovery.prefprotocol";
+	public static final String DISCOVERY_PREF_PROTOCOL = DISCOVERY_PREFIX + ".prefprotocol";
 	/** The property name for the helios ot server discovery listening interface */
-	public static final String DISCOVERY_LISTEN_IFACE = "org.helios.ot.discovery.interface";
+	public static final String DISCOVERY_LISTEN_IFACE = DISCOVERY_PREFIX + ".interface";
 
 	
 	/** The default ot server discovery multicast network */
@@ -82,9 +96,32 @@ public class HeliosEndpointConfiguration {
 	public static final String DEFAULT_DISCOVERY_PREF_PROTOCOL = "TCP";
 	/** The default helios ot server discovery listening interface */
 	public static final String DEFAULT_DISCOVERY_LISTEN_IFACE = InetAddressHelper.hostName();
+	/** The default helios ot server discovery enablement */
+	public static final boolean DEFAULT_DISCOVERY_ENABLED = true;
 	
 	//=============================================
 	
+	
+	/**
+	 * Captures a snapshot of all OT connection properties which means environment variables or system properties
+	 * that start with {@link CONNECTION_PREFIX}. System properties will take presedence over environmental variables.
+	 * @return a properties instance with all the OT connection properties that were set
+	 */
+	public static Properties getAllConnectionProperties() {
+		Properties p = new Properties();
+		for(Map.Entry<String, String> entry: System.getenv().entrySet()) {
+			if(entry.getKey().startsWith(CONNECTION_PREFIX)) {
+				p.setProperty(entry.getKey(), entry.getValue());
+			}
+		}
+		for(Map.Entry<Object, Object> entry: System.getProperties().entrySet()) {
+			String key = entry.getKey().toString();
+			if(key.startsWith(CONNECTION_PREFIX)) {
+				p.setProperty(key, entry.getValue().toString());
+			}
+		}
+		return p;		
+	}
 	
 	/**
 	 * Returns the maximum amount of time in ms. before a non empty trace buffer is flushed
@@ -146,6 +183,8 @@ public class HeliosEndpointConfiguration {
 	}
 	
 	
+	
+	
 	/**
 	 * Returns the configured discovery network
 	 * @return the configured discovery network
@@ -168,6 +207,14 @@ public class HeliosEndpointConfiguration {
 	 */
 	public static int getDiscoveryTimeout() {
 		return ConfigurationHelper.getIntSystemThenEnvProperty(DISCOVERY_TIMEOUT, DEFAULT_DISCOVERY_TIMEOUT);
+	}
+	
+	/**
+	 * Returns the configured discovery enablement
+	 * @return true if discovery is enabled, false otherwise
+	 */
+	public static boolean isDiscoveryEnabled() {
+		return ConfigurationHelper.getBooleanSystemThenEnvProperty(DISCOVERY_ENABLED, DEFAULT_DISCOVERY_ENABLED);
 	}
 	
 	

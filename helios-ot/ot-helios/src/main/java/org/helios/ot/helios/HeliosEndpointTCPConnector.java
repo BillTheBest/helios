@@ -150,9 +150,9 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see org.helios.ot.helios.AbstractEndpointConnector#connect()
+	 * @see org.helios.ot.helios.AbstractEndpointConnector#doConnect()
 	 */
-	public void connect() {
+	public void doConnect() {
 		if(isConnected()) throw new IllegalStateException("This connector is already connected", new Throwable());
 		channelFuture = bootstrap.connect();
 		for(ChannelFutureListener listener: connectListeners) {
@@ -166,8 +166,7 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 		 } else {			 
 			 // no exception means a good connect
 			 socketChannel = (SocketChannel)channelFuture.getChannel();
-			 localSocketAddress = socketChannel.getLocalAddress();
-			 log.info("Connected [" + socketChannel + "]");
+			 localSocketAddress = socketChannel.getLocalAddress();			 
 			 socketChannel.getCloseFuture().addListener(new ChannelFutureListener(){
 				 @Override
 				public void operationComplete(ChannelFuture future)throws Exception {
