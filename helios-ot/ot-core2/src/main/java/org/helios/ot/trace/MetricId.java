@@ -137,7 +137,7 @@ public class MetricId implements Serializable , Externalizable {
 	public static final String TRACE_TYPE_CODE = "typecode";
 
 	/** The default OpenTrace mod {@value DEFAULT_MOD} */
-	public static final int DEFAULT_MOD = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors()*2;
+	public static final int DEFAULT_MOD = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors()/2;
 
 	
 	
