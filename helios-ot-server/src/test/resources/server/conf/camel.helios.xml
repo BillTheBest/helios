@@ -112,6 +112,7 @@
 		</camel:dataFormats>
 		
 		<route id="OTMulticastRoute" autoStartup="true" >
+			<camel:description>The main input point for incoming agent metrics</camel:description>			
 			<from uri="direct:agentin" />
 		    <camel:split id="TopicTreeRepubSplitter" >
 		    	<camel:method  id="splitter" bean="traceArraySplitter" method="split"/>
@@ -131,7 +132,8 @@
 	    <to id="LocalOTProcessor" uri="direct:agentin" />
 	  </route>
 	  
-	  <route id="NettyTCPAgentListener" autoStartup="true" >	  	
+	  <route id="NettyTCPAgentListener" autoStartup="true" >	 
+	  	<camel:description>The connection endpoint for remote Helios Agents using TCP</camel:description> 	
 	    <from uri="netty:tcp://0.0.0.0:9428?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyTCPOTConsumer" />
 	    <camel:multicast id="NettyTCPMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >	 
 		    <camel:to id="NettyTCPOTProcessor" uri="direct:agentin" />
@@ -144,6 +146,7 @@
 	  <!-- Needs enhanced camel-netty 2.9.1 with support for local channel -->
 	  <!-- 
 	  <route id="NettyHTTPAgentListener" autoStartup="true" >	  	
+	  	<camel:description>The connection endpoint for remote Helios Agents using HTTP</camel:description>
 	    <from uri="netty:local://0.0.0.0:0?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyHTTPOTConsumer" />
 	    <camel:multicast id="NettyHTTPMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >	 
 		    <camel:to id="NettyHTTPOTProcessor" uri="direct:agentin" />
@@ -154,7 +157,8 @@
 	  -->
 	  
 	  
-	  <route id="NettyUDPAgentListener" autoStartup="true" >	  	
+	  <route id="NettyUDPAgentListener" autoStartup="true" >	
+	  	<camel:description>The connection endpoint for remote Helios Agents using UDP</camel:description>  	
 	    <from uri="netty:udp://0.0.0.0:9427?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyUDPOTConsumer" />
 	    <camel:multicast id="NettyUDPMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >	 
 		    <camel:to id="NettyUDPOTProcessor" uri="direct:agentin" />

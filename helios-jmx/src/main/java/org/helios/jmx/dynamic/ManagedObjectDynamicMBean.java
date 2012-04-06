@@ -134,8 +134,8 @@ public class ManagedObjectDynamicMBean extends NotificationBroadcasterSupport im
 	protected final static  Class<?>[] NO_SIG = {};
 	/**	Empty string array */
 	protected final static  String[] NO_STR_SIG = {};
-	/** Static class Logger */
-	protected static final Logger LOG = Logger.getLogger("DefaultNotificationThreadPool");
+//	/** Static class Logger */
+//	protected static final Logger LOG = Logger.getLogger("DefaultNotificationThreadPool");
 	/** An index of the hash codes of already reflected objects */
 	protected Set<Integer> registeredObjectIndex = new HashSet<Integer>();
 	/** A flag indicating the MBeanServer registration status of this MODB */
@@ -189,11 +189,6 @@ public class ManagedObjectDynamicMBean extends NotificationBroadcasterSupport im
 					.setPrestartThreads(2)
 					.setTaskQueueSize(200)
 					.setThreadGroupName("DefaultNotificationBroadcaster")
-					.setUncaughtExceptionHandler(new UncaughtExceptionHandler(){
-						public void uncaughtException(Thread t, Throwable e) {
-							LOG.error("Unhandled Exception In Default Notification Thread Pool in thread [" + t + "]", e);
-						}
-					})
 //					.setPoolObjectName("org.helios.jmx:service=ThreadPool,type=DefaultNotificationBroadcaster")
 //					.setJmxDomains("DefaultDomain")
 					.build();

@@ -407,32 +407,39 @@ public abstract class AbstractEndpointConnector implements Runnable {
 		AbstractEndpointConnector connector = null;
 		// If the OT Server host name is specified, first do a standard connect attempt
 		if(ConfigurationHelper.isDefined(HeliosEndpointConfiguration.HOST)) {
+			if(LOG.isDebugEnabled()) LOG.debug("Connect Phase 1: OT Server Host is defined [" + ConfigurationHelper.getSystemThenEnvProperty(HeliosEndpointConfiguration.HOST, "<None>") + "]. Attempting Regular Connection....");
 			try {
 				connector = HeliosEndpointConfiguration.getProtocol().createConnector(endpoint);
 				connector.doConnect();
 				if(!connector.isConnected()) throw new Exception();
+				if(LOG.isDebugEnabled()) LOG.debug("Connect Phase 1: Succeeded");
 			} catch (Exception e) {
 				// connection failed.
 				connector = null;
 			}
 		}
 		if(connector!=null) return connector;
+		if(LOG.isDebugEnabled()) LOG.debug("Connect Phase 1: Failed");
 		// Since the HOST was not defined, or this attempt failed, we will try discovery
 		// First, backup all the connection sysprops
 		Properties beforeDiscoveryProperties = HeliosEndpointConfiguration.getAllConnectionProperties();
+		if(LOG.isDebugEnabled()) LOG.debug("Connect Phase 2: Issuing Multicast Discovery Request");
 		try {
 			try {
 				String discoveredURI = OTServerDiscovery.discover(HeliosEndpointConfiguration.getDiscoveryPreferredProtocol());
 				if(discoveredURI!=null && !discoveredURI.trim().isEmpty()) {
 					// We got a discovery response, so parse it and set the ac cording system props.
 					URI uri = new URI(discoveredURI);
+					if(LOG.isDebugEnabled()) LOG.debug("Connect Phase 2: Discovery Response Received:[" + uri + "]");
 					System.setProperty(HeliosEndpointConfiguration.PROTOCOL, uri.getScheme().toUpperCase().trim());
 					System.setProperty(HeliosEndpointConfiguration.HOST, uri.getHost().toUpperCase().trim());
 					System.setProperty(HeliosEndpointConfiguration.PORT, "" + uri.getPort());					
 					connector = HeliosEndpointConfiguration.getProtocol().createConnector(endpoint);
+					if(LOG.isDebugEnabled()) LOG.debug("Connect Phase 2: Connecting....");
 					connector.doConnect();					
 				}
 				if(!connector.isConnected()) throw new Exception();
+				if(LOG.isDebugEnabled()) LOG.debug("Connect Phase 2: Succeeded");
 			} catch (Exception e) {
 				// connection failed.
 				connector = null;
@@ -441,12 +448,19 @@ public abstract class AbstractEndpointConnector implements Runnable {
 			
 		}
 		if(connector!=null) return connector;
+		if(LOG.isDebugEnabled()) LOG.debug("Connect Phase 2: Failed");
 		// If we get here, discovery got no response or we failed to connect with the properties supplied by the discovery
 		// First reset the OT related connection system props to what they were before discovery
 		System.setProperties(beforeDiscoveryProperties);
 		// Now try and standard connect
+		if(LOG.isDebugEnabled()) {
+			String uri = new StringBuilder(HeliosEndpointConfiguration.getProtocol().name().toLowerCase())
+				.append("://").append(HeliosEndpointConfiguration.getHost())
+				.append(":").append(HeliosEndpointConfiguration.getPort()).toString();
+			LOG.debug("Connect Phase 3: Connecting to [" + uri + "] ........");
+		}
 		connector = HeliosEndpointConfiguration.getProtocol().createConnector(endpoint);
-		
+		LOG.debug("Connect Phase 3: " + (connector.isConnected() ? "Succeeded" : "Failed"));
 		return connector;
 	}
 	

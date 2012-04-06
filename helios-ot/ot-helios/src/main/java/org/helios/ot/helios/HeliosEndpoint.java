@@ -43,6 +43,7 @@ import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.tracer.TracerManager3;
 import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.helios.time.SystemClock;
+import org.helios.version.VersionHelper;
 import org.jboss.netty.channel.ChannelFutureListener;
 
 /**
@@ -111,21 +112,43 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	}
 	
 	
-	@SuppressWarnings("rawtypes")
-	public static void main(String[] args) {
+//	@SuppressWarnings("rawtypes")
+//	public static void main(String[] args) {
+//		BasicConfigurator.configure();
+//		Logger LOG = Logger.getLogger(HeliosEndpoint.class);
+//		Logger.getRootLogger().setLevel(Level.INFO);
+//		LOG.info("Test");
+//		HeliosEndpoint he = new HeliosEndpoint();
+//		he.connect();
+//		he.reflectObject(he.connector.getInstrumentation());
+//		TracerManager3.getInstance(TracerManager3.Configuration.getDefaultConfiguration().appendEndPoint(he));
+//		boolean b = he.connect();
+//		LOG.info("Connected:"+b);
+//		try { Thread.currentThread().join(); } catch (Exception e) {}
+//		LOG.info("Exiting.......");
+//		System.exit(-1);
+//	}
+	
+	public static void main(String[] args) {	
 		BasicConfigurator.configure();
-		Logger LOG = Logger.getLogger(HeliosEndpoint.class);
-		Logger.getRootLogger().setLevel(Level.INFO);
-		LOG.info("Test");
-		HeliosEndpoint he = new HeliosEndpoint();
-		he.connect();
-		he.reflectObject(he.connector.getInstrumentation());
-		TracerManager3.getInstance(TracerManager3.Configuration.getDefaultConfiguration().appendEndPoint(he));
-		boolean b = he.connect();
-		LOG.info("Connected:"+b);
-		try { Thread.currentThread().join(); } catch (Exception e) {}
-		LOG.info("Exiting.......");
-		System.exit(-1);
+		Logger.getLogger("org.helios").setLevel(Level.OFF);
+		Logger.getLogger("org.helios.jmxenabled.threads.ExecutorMBeanPublisher").setLevel(Level.OFF);
+		Logger.getLogger("DefaultNotificationThreadPool").setLevel(Level.OFF);
+		System.out.println(banner());
+		if(args.length>0) {
+			if("server".equalsIgnoreCase(args[0])) {
+				String server = OTServerDiscovery.info();
+				if(server==null || server.trim().isEmpty()) {
+					System.out.println("No Helios OT Server Found");
+				} else {
+					System.out.println(server);
+				}
+			}
+		}
+	}
+	
+	protected static String banner() {
+		return "Helios OpenTrace Agent [" + VersionHelper.getHeliosVersion(HeliosEndpoint.class) + "]";
 	}
 	
 	/**
