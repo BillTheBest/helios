@@ -231,9 +231,6 @@ public class ExecutorMBeanPublisher extends ManagedObjectDynamicMBean implements
 		if(typeName!=null) {
 			b.append(".").append(typeName);
 		}
-		log = Logger.getLogger(getClass().getName() + b.toString());
-		
-		log.info("Registered ExecutorMBean [" + name + "]");
 		return name;
 	}
 
