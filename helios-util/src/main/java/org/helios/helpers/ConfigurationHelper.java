@@ -146,13 +146,13 @@ public class ConfigurationHelper {
 		if(value==null) {
 			value=defaultValue;
 		}
-		if(LOG.isDebugEnabled()) {
-			TempLogger.getTempLogger("SystemEnvProperty", "%m").info(name + ":" + value);
-		}
+//		if(LOG.isDebugEnabled()) {
+//			TempLogger.getTempLogger("SystemEnvProperty", "%m").info(name + ":" + value);
+//		}
 		return value;
 	}	
 	
-	public static final Logger SystemEnvPropertyLogger = TempLogger.getTempLogger("SystemEnvProperty", "%m");
+	//public static final Logger SystemEnvPropertyLogger = TempLogger.getTempLogger("SystemEnvProperty", "%m");
 	
 	/**
 	 * Determines if a name has been defined in the environment or system properties.
