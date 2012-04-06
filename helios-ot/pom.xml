@@ -19,6 +19,7 @@
     <!-- <module>ot-esper</module> -->
     <!-- <module>ot-relay</module> -->
     <module>ot-helios</module>
+    <module>ot-agent</module>
   </modules>
   
 	<build>

@@ -10,7 +10,7 @@
   <groupId>org.helios.helios-ot</groupId>
   <artifactId>helios-ot-core2</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>ot-core</name>
+  <name>ot-core2</name>
   <url>http://www.heliosdev.org/projects/helios-opentrace/core</url>
   <dependencies>
 	<!--   Test Dependencies -->
@@ -39,6 +39,7 @@
       <dependency>
 		<groupId>com.thoughtworks.xstream</groupId>
 		<artifactId>xstream</artifactId>
+		<scope>compile</scope>
 	  </dependency>
 	    
 	<!-- 3rd party compile dependencies -->
@@ -46,6 +47,7 @@
 		  <groupId>javax.jms</groupId>
 		  <artifactId>jms</artifactId>
 		  <version>1.1</version>		
+		  <scope>compile</scope>
 		</dependency>
 	<!-- helios compile dependencies -->
 		<dependency>
