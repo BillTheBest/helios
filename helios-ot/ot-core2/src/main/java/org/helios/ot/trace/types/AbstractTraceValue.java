@@ -32,8 +32,8 @@ import java.io.ObjectOutput;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamOmitField;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamOmitField;
 
 /**
  * <p>Title: AbstractTraceValue</p>
@@ -46,11 +46,11 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
 //@XmlRootElement(name="value")
 public abstract class AbstractTraceValue implements ITraceValue, Externalizable {
 	/** The TraceValueType of the type of this trace value */
-	//@XStreamAlias("traceValueType")
-	@XStreamOmitField
+	////@XStreamAlias("traceValueType")
+	//@XStreamOmitField
 	protected TraceValueType traceValueType;
 	/** Constant to indicate this is not an interval trace */
-	@XStreamAlias("interval")
+	//@XStreamAlias("interval")
 	protected final boolean interval = false;
 	
 	/**

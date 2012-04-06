@@ -51,9 +51,9 @@ import org.helios.ot.type.MetricType;
 import org.helios.patterns.queues.Filterable;
 import org.helios.patterns.queues.LongBitMaskFactory.LongBitMaskSequence;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
-import com.thoughtworks.xstream.annotations.XStreamOmitField;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
+//import com.thoughtworks.xstream.annotations.XStreamOmitField;
 
 /**
  * <p>Title: MetricId</p>
@@ -64,49 +64,49 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
  * <p><code>org.helios.ot.trace.MetricId</code></p>
  */
 @XmlRootElement(name="metricId")
-@XStreamAlias("metricId")
+//@XStreamAlias("metricId")
 public class MetricId implements Serializable , Externalizable {
 	/** The metric host name */
 	@XmlElement(name="hostName")
-//	@XStreamAlias("hostName")
-//	@XStreamAsAttribute
+//	//@XStreamAlias("hostName")
+//	//@XStreamAsAttribute
 	private String hostName;
 	/** The metric agent name */
 	@XmlElement(name="agentName")
-	@XStreamAlias("agentName")	
+	//@XStreamAlias("agentName")	
 	private String agentName;
 	/** The metric point */
 	@XmlElement(name="point")
-	@XStreamAlias("point")
+	//@XStreamAlias("point")
 	protected String metricName;
 	/** The metric name space segments */
 	@XmlElement(name="namespace")
-	@XStreamAlias("namespace")
-	@XStreamAsAttribute
+	//@XStreamAlias("namespace")
+	//@XStreamAsAttribute
 	protected String[] namespace;	
 	/** The metric type */
 	@XmlElement(name="type")
-	@XStreamAlias("type")
+	//@XStreamAlias("type")
 	protected MetricType type;
 	/** The local metric serial number */
-	@XStreamOmitField
+	//@XStreamOmitField
 	protected transient int serial;
 	/** This metric's mod */
-	@XStreamOmitField
+	//@XStreamOmitField
 	protected transient int metricMod = -1;
 	/** The local accumulator mod */
-	@XStreamOmitField
+	//@XStreamOmitField
 	protected static transient int mod = -1;
 	/** The bitmask representing which tracers the metric have originated from */
-	@XStreamOmitField
+	//@XStreamOmitField
 	protected final transient AtomicLong tracerMask = new AtomicLong(0);
 	
 	/** The transient FQN */
-	@XStreamOmitField
+	//@XStreamOmitField
 	protected volatile transient String fullyQualifiedName = null;
 	
 	/** The server side designated global ID for this MetricId */
-	@XStreamOmitField
+	//@XStreamOmitField
 	protected final transient AtomicLong globalId = new AtomicLong(-1L);
 	/** The statically set and internal host name where the tracer is running */
 	protected static final String _hostName = _hostName();

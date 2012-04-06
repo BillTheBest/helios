@@ -59,9 +59,9 @@ import org.helios.ot.tracer.ITracer;
 import org.helios.ot.type.MetricType;
 import org.helios.time.SystemClock;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
-import com.thoughtworks.xstream.annotations.XStreamOmitField;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
+//import com.thoughtworks.xstream.annotations.XStreamOmitField;
 
 
 
@@ -75,7 +75,7 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
  * <p><code>org.helios.ot.trace.Trace</code></p>
  */
 @XmlRootElement(name="trace")
-@XStreamAlias("trace")
+//@XStreamAlias("trace")
 public class Trace<T extends ITraceValue> implements Externalizable, Serializable {
 	/** A regex expression that will parse the {@code toString()} of a trace instance */
 	public static final Pattern TRACE_STR_PATTERN = Pattern.compile("\\[(.*)?](.*)?:(.*)?\\((.*)\\)");
@@ -95,35 +95,35 @@ public class Trace<T extends ITraceValue> implements Externalizable, Serializabl
 	protected static transient final Logger log = Logger.getLogger(Trace.class);
 	/** The trace metric Id */
 	@XmlElement(name="metricId")
-	//@XStreamAsAttribute
+	////@XStreamAsAttribute
 	protected MetricId metricId;
 	/** The trace value */
 	//@XmlElement(name="value")
 	//@XmlTransient
-	@XStreamOmitField
-	//@XStreamAlias("value")
+	//@XStreamOmitField
+	////@XStreamAlias("value")
 	protected T traceValue;
 	/** Temporal flag */
 	@XmlElement(name="temporal")
-	@XStreamAlias("temporal")
-	//@XStreamAsAttribute
+	//@XStreamAlias("temporal")
+	////@XStreamAsAttribute
 	protected boolean temporal = false;
 	/** urgent flag */
 	@XmlElement(name="urgent")
-	@XStreamAlias("urgent")
-	//@XStreamAsAttribute
+	//@XStreamAlias("urgent")
+	////@XStreamAsAttribute
 	protected boolean urgent = false;
 	/** Phase trigger map */
 	@XmlTransient
-	@XStreamOmitField	
+	//@XStreamOmitField	
 	protected final Map<Phase, Set<IPhaseTrigger>> phaseTriggers = new EnumMap<Phase, Set<IPhaseTrigger>>(Phase.class);
 	/** Indicates if there any phase triggers at all */
 	@XmlTransient
-	@XStreamOmitField
+	//@XStreamOmitField
 	protected boolean anyPhaseTriggers = false;
 	/** The hash code of the phase trigger signature */
 	@XmlTransient
-	@XStreamOmitField
+	//@XStreamOmitField
 	protected volatile int phaseTriggerSignature = 0;
 	
 	/** 
@@ -217,8 +217,8 @@ public class Trace<T extends ITraceValue> implements Externalizable, Serializabl
 	
 	/** The effective timestamp of the metric */
 	@XmlElement(name="timeStamp")
-	@XStreamAlias("timeStamp")
-	//@XStreamAsAttribute
+	//@XStreamAlias("timeStamp")
+	////@XStreamAsAttribute
 	protected long timeStamp = -1L;
 	/** The delimeter between namespace entries */
 	public static final String DELIM = "/";

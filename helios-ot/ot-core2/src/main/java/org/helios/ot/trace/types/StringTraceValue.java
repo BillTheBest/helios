@@ -30,7 +30,7 @@ import java.io.ObjectOutput;
 
 import org.helios.helpers.ExternalizationHelper;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: StringTraceValue</p>
@@ -40,10 +40,10 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.StringTraceValue</code></p>
  */
-@XStreamAlias("StringTraceValue")
+//@XStreamAlias("StringTraceValue")
 public class StringTraceValue  extends AbstractTraceValue {
 	/** The value */
-	@XStreamAlias("value")
+	//@XStreamAlias("value")
 	protected String value = "";
 
 	/**

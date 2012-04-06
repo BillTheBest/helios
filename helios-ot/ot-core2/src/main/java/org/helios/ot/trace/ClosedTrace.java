@@ -46,8 +46,8 @@ import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.trace.types.TraceValueType;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamOmitField;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamOmitField;
 
 /**
  * <p>Title: ClosedTrace</p>
@@ -57,47 +57,47 @@ import com.thoughtworks.xstream.annotations.XStreamOmitField;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.ClosedTrace</code></p>
  */
-@XStreamAlias("closedTrace")
+//@XStreamAlias("closedTrace")
 @XmlRootElement(name="closedTrace")
 @SuppressWarnings("unchecked")
 public class ClosedTrace implements Externalizable {
 	/** The metric identifier */
-	@XStreamAlias("metricId")
+	//@XStreamAlias("metricId")
 	@XmlElement(name="metricId")
 	protected MetricId metricId;
 	/** The original trace start timestamp */
-	@XStreamAlias("startTimestamp")
+	//@XStreamAlias("startTimestamp")
 	@XmlElement(name="startTimestamp")
 	protected long startTimestamp;
 	
 	/** The type of the trace value */
-	@XStreamAlias("traceValueType")
+	//@XStreamAlias("traceValueType")
 	@XmlElement(name="traceValueType")
 	protected TraceValueType traceValueType;
 	/** Indicates if the trace is an interval trace */
-	@XStreamAlias("interval")
+	//@XStreamAlias("interval")
 	@XmlElement(name="interval")
 	protected boolean interval;
 	/** Indicates if the trace is a MinMaxAvg trace */
-	@XStreamAlias("minmaxavg")
+	//@XStreamAlias("minmaxavg")
 	@XmlElement(name="minmaxavg")
 	protected boolean minMaxAvg;
 	
 	/** The value recorded in the trace */
-	@XStreamAlias("value")
+	//@XStreamAlias("value")
 	@XmlElement(name="value")
 	protected Object value;
 	/** The trace urgent flag */
-	@XStreamAlias("urgent")
+	//@XStreamAlias("urgent")
 	@XmlElement(name="urgent")
 	protected boolean urgent;
 	/** The trace temporal flag */
-	@XStreamAlias("temporal")
+	//@XStreamAlias("temporal")
 	@XmlElement(name="temporal")
 	protected boolean temporal;
 	
 	/** The generic trace value */
-	@XStreamOmitField
+	//@XStreamOmitField
 	protected ITraceValue traceValue;
 	
 	/**

@@ -33,7 +33,7 @@ import org.helios.ot.trace.types.StringTraceValue;
 import org.helios.ot.trace.types.TraceValueType;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: StringIntervalTraceValue</p>
@@ -43,10 +43,10 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.interval.StringIntervalTraceValue</code></p>
  */
-@XStreamAlias("StringIntervalTraceValue")
+//@XStreamAlias("StringIntervalTraceValue")
 public class StringIntervalTraceValue<T extends StringTraceValue> extends AbstractIntervalTraceValue<T> {
 	/** The value of the last string traced in the interval */
-	@XStreamAlias("value")
+	//@XStreamAlias("value")
 	protected String message = null;
 	
 	/**

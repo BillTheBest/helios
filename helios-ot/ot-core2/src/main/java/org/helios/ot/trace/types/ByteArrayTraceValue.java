@@ -29,7 +29,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: ByteArrayTraceValue</p>
@@ -39,9 +39,9 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.ByteArrayTraceValue</code></p>
  */
-@XStreamAlias("ByteArrayTraceValue")
+//@XStreamAlias("ByteArrayTraceValue")
 public class ByteArrayTraceValue extends AbstractTraceValue {
-	@XStreamAlias("value")
+	//@XStreamAlias("value")
 	protected byte[] value = null;
 	/**
 	 * Creates a new ByteArrayTraceValue

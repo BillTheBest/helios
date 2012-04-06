@@ -32,8 +32,6 @@ import org.helios.ot.trace.types.IncidentTraceValue;
 import org.helios.ot.trace.types.TraceValueType;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-
 /**
  * <p>Title: IncidentIntervalTraceValue</p>
  * <p>Description: Trace value for an interval of incident traces</p> 
@@ -42,7 +40,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.interval.IncidentIntervalTraceValue</code></p>
  */
-@XStreamAlias("IncidentIntervalTraceValue")
+////@XStreamAlias("IncidentIntervalTraceValue")
 public class IncidentIntervalTraceValue<T extends IncidentTraceValue> extends AbstractNumericIntervalTraceValue<T> {
 	
 	/**

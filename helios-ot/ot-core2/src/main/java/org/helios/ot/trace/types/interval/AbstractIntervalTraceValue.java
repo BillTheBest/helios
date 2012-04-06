@@ -29,12 +29,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-import org.helios.ot.trace.types.INumericTraceValue;
 import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.trace.types.TraceValueType;
 import org.helios.ot.type.MetricType;
-
-import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: AbstractIntervalTraceValue</p>
@@ -47,10 +44,10 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 public abstract class AbstractIntervalTraceValue<T extends ITraceValue> implements IIntervalTraceValue<T>, Externalizable {
 	/** The number of traces aggregated during the interval */
-	@XStreamAlias("count")
+	////@XStreamAlias("count")
 	protected int count = 0;
 	/** The TraceValueType of the type of this trace value */
-	@XStreamAlias("valueType")
+	////@XStreamAlias("valueType")
 	protected TraceValueType traceValueType = null;
 	
 	/**

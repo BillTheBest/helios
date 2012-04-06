@@ -32,8 +32,6 @@ import org.helios.ot.trace.types.IntTraceValue;
 import org.helios.ot.trace.types.TraceValueType;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-
 /**
  * <p>Title: IntIntervalTraceValue</p>
  * <p>Description: Trace value for an interval of int traces</p> 
@@ -42,13 +40,13 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.interval.IntIntervalTraceValue</code></p>
  */
-@XStreamAlias("IntIntervalTraceValue")
+////@XStreamAlias("IntIntervalTraceValue")
 public class IntIntervalTraceValue<T extends IntTraceValue> extends AbstractNumericIntervalTraceValue<T> implements IMinMaxAvgIntervalTraceValue {
 	/** The minimum value for the interval */
-	@XStreamAlias("min")
+	////@XStreamAlias("min")
 	protected int min = 0;
 	/** The maximum value for the interval */
-	@XStreamAlias("max")
+	////@XStreamAlias("max")
 	protected int max = 0;
 	
 	/**

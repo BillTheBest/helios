@@ -32,7 +32,7 @@ import org.helios.ot.deltas.DeltaManager;
 import org.helios.ot.deltas.DeltaType;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: IntTraceValue</p>
@@ -42,10 +42,10 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.IntTraceValue</code></p>
  */
-@XStreamAlias("IntTraceValue")
+//@XStreamAlias("IntTraceValue")
 public class IntTraceValue extends AbstractNumericTraceValue {
 	/** The value */
-	@XStreamAlias("value")
+	//@XStreamAlias("value")
 	protected int value;
 
 	/**

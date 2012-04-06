@@ -33,7 +33,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.helios.ot.trace.types.interval.IMinMaxAvgIntervalTraceValue;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: ClosedMinMaxAvgTrace</p>
@@ -44,19 +44,19 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * <p><code>org.helios.ot.trace.ClosedMinMaxAvgTrace</code></p>
  */
 @SuppressWarnings("unchecked")
-@XStreamAlias("closedTrace")
+//@XStreamAlias("closedTrace")
 @XmlRootElement(name="closedTrace")
 public class ClosedMinMaxAvgTrace extends ClosedIntervalTrace {
 	/** The maximum value for the interval */
-	@XStreamAlias("max")
+	//@XStreamAlias("max")
 	@XmlElement(name="max")
 	protected long max;
 	/** The minimum value for the interval */
-	@XStreamAlias("min")
+	//@XStreamAlias("min")
 	@XmlElement(name="min")
 	protected long min;
 	/** The average value for the interval */
-	@XStreamAlias("avg")
+	//@XStreamAlias("avg")
 	@XmlElement(name="avg")
 	protected long avg;
 

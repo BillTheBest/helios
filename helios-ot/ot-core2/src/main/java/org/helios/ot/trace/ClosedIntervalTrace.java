@@ -31,7 +31,7 @@ import java.io.ObjectOutput;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: ClosedIntervalTrace</p>
@@ -42,15 +42,15 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * <p><code>org.helios.ot.trace.ClosedIntervalTrace</code></p>
  */
 @SuppressWarnings("unchecked")
-@XStreamAlias("closedTrace")
+//@XStreamAlias("closedTrace")
 @XmlRootElement(name="closedTrace")
 public class ClosedIntervalTrace extends ClosedTrace {
 	/** The hit count for this metric */
-	@XStreamAlias("count")
+	//@XStreamAlias("count")
 	@XmlElement(name="count")
 	protected int count;
 	/** The interval end timestamp */
-	@XStreamAlias("endTimestamp")
+	//@XStreamAlias("endTimestamp")
 	@XmlElement(name="endTimestamp")
 	protected long endTimestamp;
 	

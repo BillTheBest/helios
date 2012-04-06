@@ -24,7 +24,7 @@
  */
 package org.helios.ot.trace.types;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: AbstractNumericTraceValue</p>
@@ -34,7 +34,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.AbstractNumericTraceValue</code></p>
  */
-//@XStreamAlias("value")
+////@XStreamAlias("value")
 public abstract class AbstractNumericTraceValue extends AbstractTraceValue implements INumericTraceValue {
 
 

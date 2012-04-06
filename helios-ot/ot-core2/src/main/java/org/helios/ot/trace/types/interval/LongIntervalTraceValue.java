@@ -32,7 +32,7 @@ import org.helios.ot.trace.types.LongTraceValue;
 import org.helios.ot.trace.types.TraceValueType;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: LongIntervalTraceValue</p>
@@ -42,13 +42,13 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.interval.LongIntervalTraceValue</code></p>
  */
-@XStreamAlias("LongIntervalTraceValue")
+//@XStreamAlias("LongIntervalTraceValue")
 public class LongIntervalTraceValue<T extends LongTraceValue> extends AbstractNumericIntervalTraceValue<T> implements IMinMaxAvgIntervalTraceValue {
 	/** The minimum value for the interval */
-	@XStreamAlias("min")
+	//@XStreamAlias("min")
 	protected long min = 0;
 	/** The maximum value for the interval */
-	@XStreamAlias("max")
+	//@XStreamAlias("max")
 	protected long max = 0;
 	
 	/**

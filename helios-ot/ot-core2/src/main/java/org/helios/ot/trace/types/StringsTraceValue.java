@@ -24,7 +24,7 @@
  */
 package org.helios.ot.trace.types;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: StringsTraceValue</p>
@@ -34,7 +34,7 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.StringsTraceValue</code></p>
  */
-@XStreamAlias("StringsTraceValue")
+//@XStreamAlias("StringsTraceValue")
 public class StringsTraceValue extends StringTraceValue {
 
 	/**

@@ -38,7 +38,7 @@ import org.helios.ot.trace.types.StringsTraceValue;
 import org.helios.ot.trace.types.TraceValueType;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: StringsIntervalTraceValue</p>
@@ -48,10 +48,10 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.interval.StringsIntervalTraceValue</code></p>
  */
-@XStreamAlias("StringsIntervalTraceValue")
+//@XStreamAlias("StringsIntervalTraceValue")
 public class StringsIntervalTraceValue<T extends StringsTraceValue> extends AbstractIntervalTraceValue<T> {
 	/** The distinct string messages traced during the interval and a count of each */
-	@XStreamAlias("values")
+	//@XStreamAlias("values")
 	protected final TObjectIntHashMap<String> messages;
 
 	/**

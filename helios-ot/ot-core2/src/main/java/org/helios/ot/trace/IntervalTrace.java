@@ -35,8 +35,8 @@ import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.trace.types.interval.IIntervalTraceValue;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamInclude;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamInclude;
 
 
 /**
@@ -47,17 +47,17 @@ import com.thoughtworks.xstream.annotations.XStreamInclude;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.IntervalTrace</code></p>
  */
-@XStreamAlias("intervalTrace")
+//@XStreamAlias("intervalTrace")
 @XmlRootElement(name="intervalTrace")
 public class IntervalTrace<I extends IIntervalTraceValue<T>, T extends ITraceValue> extends Trace<T> {
 	/** The interval trace value */
-	@XStreamAlias("value")
+	//@XStreamAlias("value")
 	protected I intervalTraceValue = null;
 	/** The timestamp of the end of the interval */
-	@XStreamAlias("endTimeStamp")
+	//@XStreamAlias("endTimeStamp")
 	protected long endTimeStamp = -1L;
 	/** The number of intervals this object has been flushed in */
-	@XStreamAlias("flushCount")
+	//@XStreamAlias("flushCount")
 	protected long flushCount = 0;
 	
 

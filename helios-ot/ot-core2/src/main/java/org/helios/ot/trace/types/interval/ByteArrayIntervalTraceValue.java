@@ -35,8 +35,6 @@ import org.helios.ot.trace.types.ByteArrayTraceValue;
 import org.helios.ot.trace.types.TraceValueType;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
-
 /**
  * <p>Title: ByteArrayIntervalTraceValue</p>
  * <p>Description: Trace value for an interval of byte arrays. That is, this value simply maintains a list of byte arrays traced in the interval</p> 
@@ -45,10 +43,10 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.interval.ByteArrayIntervalTraceValue</code></p>
  */
-@XStreamAlias("ByteArrayIntervalTraceValue")
+////@XStreamAlias("ByteArrayIntervalTraceValue")
 public class ByteArrayIntervalTraceValue<T extends ByteArrayTraceValue> extends AbstractIntervalTraceValue<T> {
 	/** The byte arrays accumulated in this interval */
-	@XStreamAlias("values")
+	////@XStreamAlias("values")
 	protected final List<byte[]> value = new ArrayList<byte[]>();
 	/**
 	 * Creates a new ByteArrayIntervalTraceValue

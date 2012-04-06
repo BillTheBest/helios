@@ -31,7 +31,7 @@ import java.io.ObjectOutput;
 import org.helios.ot.deltas.DeltaManager;
 import org.helios.ot.type.MetricType;
 
-import com.thoughtworks.xstream.annotations.XStreamAlias;
+//import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * <p>Title: LongTraceValue</p>
@@ -41,10 +41,10 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
  * @version $LastChangedRevision$
  * <p><code>org.helios.ot.trace.types.LongTraceValue</code></p>
  */
-@XStreamAlias("LongTraceValue")
+//@XStreamAlias("LongTraceValue")
 public class LongTraceValue extends AbstractNumericTraceValue  {
 	/** The value */
-	@XStreamAlias("value")
+	//@XStreamAlias("value")
 	protected long value;
 
 	/**
