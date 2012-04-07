@@ -30,6 +30,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
@@ -40,7 +41,6 @@ import org.helios.ot.endpoint.EndpointConnectException;
 import org.helios.ot.endpoint.EndpointTraceException;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.types.ITraceValue;
-import org.helios.ot.tracer.TracerManager3;
 import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.helios.time.SystemClock;
 import org.helios.version.VersionHelper;
@@ -131,9 +131,14 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	
 	public static void main(String[] args) {	
 		BasicConfigurator.configure();
-		Logger.getLogger("org.helios").setLevel(Level.OFF);
-		Logger.getLogger("org.helios.jmxenabled.threads.ExecutorMBeanPublisher").setLevel(Level.OFF);
-		Logger.getLogger("DefaultNotificationThreadPool").setLevel(Level.OFF);
+//		Logger.getRootLogger().removeAllAppenders();
+//		ConsoleAppender appender = new ConsoleAppender();
+//		Logger.getRootLogger().addAppender(appender);
+//		Logger.getLogger("org.helios").setLevel(Level.OFF);
+//		Logger.getLogger("org.helios.jmxenabled.threads.ExecutorMBeanPublisher").setLevel(Level.OFF);
+//		Logger.getLogger("org.helios.jmxenabled.threads.ExecutorMBeanPublisher.ThreadPool.DefaultNotificationBroadcaster").addAppender(appender);
+//		Logger.getLogger("DefaultNotificationThreadPool").setLevel(Level.OFF);
+		
 		System.out.println(banner());
 		if(args.length>0) {
 			if("server".equalsIgnoreCase(args[0])) {
@@ -143,6 +148,13 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 				} else {
 					System.out.println(server);
 				}
+			} else if("connect".equalsIgnoreCase(args[0])) {
+				@SuppressWarnings("rawtypes")
+				HeliosEndpoint ep = new HeliosEndpoint();
+				ep.connect();
+				
+			} else if("beacon".equalsIgnoreCase(args[0])) {
+				Beacon.main(new String[]{});
 			}
 		}
 	}
@@ -234,6 +246,15 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	public long getExceptionCount() {
 		return exceptionCount.get();
 	}
+	
+	/**
+	 * Returns the connector for this endpoint
+	 * @return the connector
+	 */
+	public AbstractEndpointConnector getConnector() {
+		return connector;
+	}
+	
 
 	/**
 	 * Constructs a <code>String</code> with all attributes
@@ -251,10 +272,6 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	        .append("]");    
 	    return retValue.toString();
 	}
-
-
-
-
 
 
 }
