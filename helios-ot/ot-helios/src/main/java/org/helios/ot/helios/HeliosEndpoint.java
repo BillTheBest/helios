@@ -30,9 +30,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
@@ -43,6 +40,7 @@ import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.helios.time.SystemClock;
+import org.helios.time.SystemClock.ElapsedTime;
 import org.helios.version.VersionHelper;
 import org.jboss.netty.channel.ChannelFutureListener;
 
@@ -85,6 +83,10 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		host = HeliosEndpointConfiguration.getHost();
 		port = HeliosEndpointConfiguration.getPort();
 		protocol = HeliosEndpointConfiguration.getProtocol();
+	}
+	
+	public boolean ping() {
+		return connector.ping();
 	}
 	
 	
@@ -155,6 +157,29 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 				
 			} else if("beacon".equalsIgnoreCase(args[0])) {
 				Beacon.main(new String[]{});
+			} else if("ping".equalsIgnoreCase(args[0])) {
+				System.out.println("Ping....");
+				@SuppressWarnings("rawtypes")
+				HeliosEndpoint ep = new HeliosEndpoint();
+				ep.connect();
+				while(true) {
+					try {
+						long start = System.currentTimeMillis();
+						boolean b = ep.ping();
+						long et = System.currentTimeMillis()-start;
+						
+						if(b) {
+							System.out.println("Ping OK:" + et);
+						} else {
+							System.out.println("Ping Failed");
+						}
+						Thread.sleep(1000);
+					} catch (Exception e) {
+						
+					}
+							
+										
+				}
 			}
 		}
 	}

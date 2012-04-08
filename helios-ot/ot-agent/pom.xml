@@ -11,7 +11,46 @@
   <artifactId>ot-agent</artifactId>
   <version>1.0-SNAPSHOT</version>
   <name>ot-agent</name>
+  <packaging>jar</packaging>
   <url>http://www.heliosdev.org/projects/helios-opentrace/core</url>
+  
+  <build>
+  	<plugins>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>jarjar-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>jarjar</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>org.helios.helios-ot:helios-ot-helios</include>
+              </includes>
+              <rules>
+              	<!-- 
+                <rule>
+                  <pattern>org.objectweb.asm.**</pattern>
+                  <result>com.google.inject.internal.asm.@1</result>
+                </rule>
+                <rule>
+                  <pattern>net.sf.cglib.**</pattern>
+                  <result>com.google.inject.internal.cglib.@1</result>
+                </rule>
+                -->
+                <keep>
+                  <pattern>com.google.inject.**</pattern>
+                </keep>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>  
+    </plugins>
+  </build>
+  
   <dependencies>
 	<!-- helios compile dependencies -->
 	    <dependency>

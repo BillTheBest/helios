@@ -28,8 +28,11 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 
 import org.helios.helpers.JMXHelper;
+import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
+import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
+import org.helios.ot.trace.MetricId;
 import org.helios.ot.trace.Trace;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.ChannelFuture;
@@ -58,6 +61,10 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	protected SocketChannel socketChannel;	
 	/** The boss thread pool */
 	protected Executor bossExecutor;
+	/** The connection timeout in ms. */
+	protected long connectTimeout;
+	
+	
 	
 	/** This connector's protocol */
 	public static final Protocol PROTOCOL = Protocol.TCP;
@@ -113,19 +120,18 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	            		  instrumentation, 
 	                      new ObjectEncoder(),
 	                      new ObjectDecoder(),
-	                      receiveDebugListener, 
-	                      sendDebugListener,
-	                      exceptionListener
+	                      synchronousRequestHandler
 	                      );
 	          }
 		};	                     
+		connectTimeout = HeliosEndpointConfiguration.getConnectTimeout();
 		bootstrap.setPipelineFactory(channelPipelineFactory);
 		bootstrap.setOption("remoteAddress", new InetSocketAddress(endpoint.getHost(), endpoint.getPort()));
 		bootstrap.setOption("tcpNoDelay", true);
 		bootstrap.setOption("receiveBufferSize", 1048576);
 		bootstrap.setOption("sendBufferSize", 1048576);
 		bootstrap.setOption("keepAlive", true);
-		bootstrap.setOption("connectTimeoutMillis", 2000);
+		bootstrap.setOption("connectTimeoutMillis", connectTimeout);
 
 
 		/*
@@ -143,10 +149,12 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 		"connectTimeoutMillis"	setConnectTimeoutMillis(int)
 		"pipelineFactory"	setPipelineFactory(ChannelPipelineFactory)
 		 */
-		
+		this.endpoint.reflectObject(instrumentation);
 		
 		
 	}
+	
+	
 	
 	/**
 	 * {@inheritDoc}
@@ -166,7 +174,8 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 		 } else {			 
 			 // no exception means a good connect
 			 socketChannel = (SocketChannel)channelFuture.getChannel();
-			 localSocketAddress = socketChannel.getLocalAddress();			 
+			 localSocketAddress = socketChannel.getLocalAddress();		
+			 //socketChannel.write(HeliosProtocolInvocation.newInstance(ClientProtocolOperation.CONNECT, new String[]{MetricId.getHostname(), MetricId.getApplicationId()})).addListener(sendListener);
 			 socketChannel.getCloseFuture().addListener(new ChannelFutureListener(){
 				 @Override
 				public void operationComplete(ChannelFuture future)throws Exception {
@@ -186,6 +195,28 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 			 log.info("Socket Channel Connected [" + socketChannel + "]");
 		 }
 	}
+	
+	/**
+	 * Pings the server to verifiy the connection
+	 * @return true if the connection is ok, false otherwise
+	 */
+	public boolean ping() {
+		int randomSeed = random.nextInt();
+		int response = randomSeed + 1;
+		try {
+			response = (Integer)invoke(ClientProtocolOperation.PING, randomSeed).getSynchronousResponse();
+		} catch (Exception e) {
+			return false;
+		}
+		return randomSeed==response;
+	}
+	
+	protected HeliosProtocolInvocation invoke(ClientProtocolOperation op, Object payload) {
+		HeliosProtocolInvocation hpi = HeliosProtocolInvocation.newInstance(op, payload);
+		socketChannel.write(hpi).addListener(sendListener);
+		return hpi;
+	}
+
 	
 	/**
 	 * {@inheritDoc}
@@ -210,7 +241,8 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	@SuppressWarnings("rawtypes")
 	protected void flushTraceBuffer(Trace[] traces) {
 		if(traces!=null && traces.length>0) {
-			socketChannel.write(traces).addListener(sendListener);
+			//socketChannel.write(traces).addListener(sendListener);
+			socketChannel.write(HeliosProtocolInvocation.newInstance(ClientProtocolOperation.TRACE, traces)).addListener(sendListener);
 		}
 	}
 	
@@ -220,5 +252,26 @@ public class HeliosEndpointTCPConnector extends AbstractEndpointConnector {
 	 */
 	protected Protocol getProtocol() {
 		return PROTOCOL;
+	}
+
+
+
+	/**
+	 * Returns the connection timeout in ms.
+	 * @return the connection timeout in ms.
+	 */
+	@JMXAttribute(name="ConnectTimeout", description="The connection timeout in ms.", mutability=AttributeMutabilityOption.READ_WRITE)
+	public long getConnectTimeout() {
+		return connectTimeout;
+	}
+
+
+
+	/**
+	 * Sets the connection timeout in ms.
+	 * @param connectTimeout the connection timeout in ms.
+	 */
+	public void setConnectTimeout(long connectTimeout) {
+		this.connectTimeout = connectTimeout;
 	}
 }

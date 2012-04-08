@@ -40,22 +40,9 @@ public class VersionHelper {
 	 * @return the determined version
 	 */
 	public static String getHeliosVersion(Class<?> clazz) {
-		if(clazz==null) return UNKNOWN_VERSION;
-		InputStream jis = null;
-		String version = null;
-		try {
-			jis = clazz.getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF");
-			Manifest mf = new Manifest(jis);
-			version = mf.getMainAttributes().getValue(HELIOS_VERSION);
-			if(version==null || version.length()<1) {
-				version = UNKNOWN_VERSION;
-			}
-		} catch (Exception e) {
-			version = UNKNOWN_VERSION;
-		} finally {
-			try { jis.close(); } catch (Exception e) {}			
-		}
-		return version;
+		if(clazz==null) return UNKNOWN_VERSION;		
+		String version = clazz.getPackage().getImplementationVersion();
+		return version==null ? UNKNOWN_VERSION : version;
 	}
 	
 	/**

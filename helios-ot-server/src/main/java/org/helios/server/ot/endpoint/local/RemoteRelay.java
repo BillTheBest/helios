@@ -54,6 +54,7 @@ public class RemoteRelay {
 	 * Extracts the traces from the passed exchange and relays them to the configured endpoint
 	 * @param exchange The OT exchange
 	 */
+	@SuppressWarnings("unchecked")
 	public void process(Exchange exchange) {
 		Object body = exchange.getIn().getBody();
 		if(body!=null &&  body instanceof Trace[]) {

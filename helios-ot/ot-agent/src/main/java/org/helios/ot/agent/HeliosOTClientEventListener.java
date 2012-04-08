@@ -22,36 +22,16 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.server.ot.wiretaps;
-
-import org.apache.camel.Exchange;
-import org.helios.ot.trace.Trace;
-import org.helios.server.ot.listener.helios.protocol.HeliosProtocolServerInvoker;
+package org.helios.ot.agent;
 
 /**
- * <p>Title: TraceCountWireTap</p>
- * <p>Description: Trace count wire tap</p> 
+ * <p>Title: HeliosOTClientEventListener</p>
+ * <p>Description: Defines a listener that is notified of events that occur in the client instance.</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.server.ot.wiretaps.TraceCountWireTap</code></p>
+ * <p><code>org.helios.ot.agent.HeliosOTClientEventListener</code></p>
  */
 
-public class TraceCountWireTap {
-	/**
-	 * Simple wire tap endpoint for returning a trace count
-	 * @param traces An array of traces
-	 * @return the number of traces.
-	 */
-	public void wireTap(Exchange exchange) {
-		Object body = exchange.getIn().getBody();
-		if(body!=null &&  body instanceof Trace[]) {
-			int result = ((Trace[])body).length;
-			exchange.getIn().setHeader(HeliosProtocolServerInvoker.OT_AGENT_RESPONSE, result);
-			exchange.getIn().setBody(result);
-		} else {
-			exchange.getIn().setHeader(HeliosProtocolServerInvoker.OT_AGENT_RESPONSE, -1);
-			exchange.getIn().setBody(-1);
-		}
-	}
+public interface HeliosOTClientEventListener {
 
 }

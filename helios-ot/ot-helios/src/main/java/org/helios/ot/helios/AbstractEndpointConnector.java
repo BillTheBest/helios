@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -45,6 +46,7 @@ import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelDownstreamHandler;
 import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFuture;
@@ -85,6 +87,14 @@ public abstract class AbstractEndpointConnector implements Runnable {
 	protected Thread flushThread;
 	/** The flush count */
 	protected long flushCount = 0;
+	/** A random generator to use with ping ops */
+	protected Random random = new Random(System.nanoTime());
+	
+	protected final SynchronousRequestHandler synchronousRequestHandler = new SynchronousRequestHandler();
+	
+	/*
+	 * implement org.helios.ot.helios.ExceptionListener.exceptionCaught() 
+	 */
 	
 	/** The exception listener */
 	protected final ExceptionListener exceptionListener = new ExceptionListener();
@@ -96,7 +106,7 @@ public abstract class AbstractEndpointConnector implements Runnable {
 				if(f.isSuccess()) {
 					sendCounter.incrementAndGet();   
 				} else {
-					failedSendCounter.incrementAndGet();
+					failedSendCounter.incrementAndGet();					
 				}
 			}
 		}
@@ -116,6 +126,7 @@ public abstract class AbstractEndpointConnector implements Runnable {
 			if(e instanceof MessageEvent) {
 				Object obj = ((MessageEvent)e).getMessage();
 				if(log.isDebugEnabled()) log.debug("Upstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
+				//log.info("Upstream Return Value [" + obj.getClass().getName() + "]:" + obj.toString());
 			}
 			ctx.sendUpstream(e);			
 		}
@@ -143,7 +154,27 @@ public abstract class AbstractEndpointConnector implements Runnable {
 	/** A set of connect listeners that will be added when an asynch connect is initiated */
 	protected final Set<ChannelFutureListener> connectListeners = new CopyOnWriteArraySet<ChannelFutureListener>();
 	
+	
+	/**
+	 * Returns a new channel connection
+	 * @return a new channel connection
+	 */
+	public Channel getNewChannel() {
+		ChannelFuture connectFuture = channelFuture = bootstrap.connect();
+		connectFuture.awaitUninterruptibly();
+		if(connectFuture.isDone()) {
+			if(connectFuture.isCancelled()) {
+				throw new RuntimeException("The connection request was cancelled");
+			} if(!connectFuture.isSuccess()) {
+				throw new RuntimeException("The connection request failed", connectFuture.getCause());
+			}
+			return connectFuture.getChannel();
+		} else {
+			throw new RuntimeException("The connection request timed out");
+		}
+	}
 
+	
 	/**
 	 * Returns the string representation of the local socket address
 	 * @return the string representation of the local socket address
@@ -239,6 +270,8 @@ public abstract class AbstractEndpointConnector implements Runnable {
 		traceBuffer = new ArrayBlockingQueue<Trace[]>(maxFlushSize, false);
 		this.endpoint = endpoint;
 	}
+	
+	public abstract boolean ping();
 	
 	/**
 	 * Creates and starts the flush thread

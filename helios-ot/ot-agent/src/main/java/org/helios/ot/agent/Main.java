@@ -22,36 +22,30 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.server.ot.wiretaps;
+package org.helios.ot.agent;
 
-import org.apache.camel.Exchange;
-import org.helios.ot.trace.Trace;
-import org.helios.server.ot.listener.helios.protocol.HeliosProtocolServerInvoker;
+import org.helios.version.VersionHelper;
 
 /**
- * <p>Title: TraceCountWireTap</p>
- * <p>Description: Trace count wire tap</p> 
+ * <p>Title: Main</p>
+ * <p>Description: The main entry point for the Helios OpenTrace Agent</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.server.ot.wiretaps.TraceCountWireTap</code></p>
+ * <p><code>org.helios.ot.agent.Main</code></p>
  */
 
-public class TraceCountWireTap {
+public class Main {
+
 	/**
-	 * Simple wire tap endpoint for returning a trace count
-	 * @param traces An array of traces
-	 * @return the number of traces.
+	 * @param args
 	 */
-	public void wireTap(Exchange exchange) {
-		Object body = exchange.getIn().getBody();
-		if(body!=null &&  body instanceof Trace[]) {
-			int result = ((Trace[])body).length;
-			exchange.getIn().setHeader(HeliosProtocolServerInvoker.OT_AGENT_RESPONSE, result);
-			exchange.getIn().setBody(result);
-		} else {
-			exchange.getIn().setHeader(HeliosProtocolServerInvoker.OT_AGENT_RESPONSE, -1);
-			exchange.getIn().setBody(-1);
-		}
+	public static void main(String[] args) {
+		log("Helios OpenTrace Agent [" + VersionHelper.getHeliosVersion(Main.class) + "]");
+
+	}
+	
+	public static void log(Object msg) {
+		System.out.println(msg);
 	}
 
 }

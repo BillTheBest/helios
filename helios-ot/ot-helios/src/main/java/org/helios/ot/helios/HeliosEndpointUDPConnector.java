@@ -63,6 +63,9 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 	/** This connector's protocol */
 	public static final Protocol PROTOCOL = Protocol.UDP; 
 	
+	public boolean ping() {
+		throw new UnsupportedOperationException("Ping not implemented in [" + getClass().getName() + "]");
+	}
 	
 	/**
 	 * Creates a new HeliosEndpointUDPConnector
@@ -97,10 +100,8 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 	              return Channels.pipeline(
 	            		  instrumentation,
 	                      new ObjectEncoder(),
-	                      new ObjectDecoder(),
-	                      receiveDebugListener, 
-	                      sendDebugListener,
-	                      exceptionListener);
+	                      new ObjectDecoder()
+	              );
 	          }
 		};	                     
 		bootstrap.setOption("receiveBufferSizePredictorFactory", new FixedReceiveBufferSizePredictorFactory(1024));		
@@ -163,6 +164,7 @@ public class HeliosEndpointUDPConnector extends AbstractEndpointConnector {
 	protected void flushTraceBuffer(Trace[] traces) {
 		if(traces!=null && traces.length>0) {
 			for(Trace t: traces) {
+				datagramChannel.write(ClientProtocolOperation.TRACE);
 				datagramChannel.write(t).addListener(sendListener);
 			}
 		}

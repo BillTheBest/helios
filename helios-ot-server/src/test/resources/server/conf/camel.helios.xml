@@ -111,15 +111,16 @@
 			<camel:serialization id="OTStreamDataFormatJAVA" />
 		</camel:dataFormats>
 		
-		<route id="OTMulticastRoute" autoStartup="true" >
+		<route id="OTAgentRoute" autoStartup="true" >
 			<camel:description>The main input point for incoming agent metrics</camel:description>			
-			<from uri="direct:agentin" />
+			<from uri="direct:agentin" id="OTAgentEndpoint"  />
 		    <camel:split id="TopicTreeRepubSplitter" >
 		    	<camel:method  id="splitter" bean="traceArraySplitter" method="split"/>
 			    	<camel:process ref="metaCache" id="metaCacheProcessor" />		    			    			    	
 			    	<camel:bean ref="traceHandler" method="send" id="traceHandlerSend"/>
 		    </camel:split>
 		</route>
+		
 		
 		
 	  <route id="AMQAgentListener" autoStartup="true" >	  	
@@ -132,15 +133,21 @@
 	    <to id="LocalOTProcessor" uri="direct:agentin" />
 	  </route>
 	  
+	  <route id="RemoteTraceSubmissionHandler" autoStartup="true" >
+	  	<from uri="direct:start" id="RemoteTraceSubmissionHandlerStart" />
+		<camel:multicast id="RemoteTraceMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >
+			<camel:to id="RemoteOTProcessor" uri="direct:agentin" />			
+			<to id="RemoteOTRelay" uri="bean:RemoteRelay"/>			
+		</camel:multicast>	  	
+	  </route>
+	  
 	  <route id="NettyTCPAgentListener" autoStartup="true" >	 
 	  	<camel:description>The connection endpoint for remote Helios Agents using TCP</camel:description> 	
 	    <from uri="netty:tcp://0.0.0.0:9428?decoders=#object-decoder&amp;encoders=#object-encoder&amp;sync=true" id="NettyTCPOTConsumer" />
-	    <camel:multicast id="NettyTCPMulticast" parallelProcessing="true" executorServiceRef="MetricInputStreamThreadPool" >	 
-		    <camel:to id="NettyTCPOTProcessor" uri="direct:agentin" />
-		    <camel:to id="NettyTCPOTRelay" uri="bean:RemoteRelay"/>		    	    
-	    </camel:multicast>
-	    <camel:to uri="bean:TraceCountWireTap" /> 	
+	    <to uri="bean:HeliosProtocolServerInvoker" id="HeliosProtocolServerInvoker"  />
 	  </route>
+	  
+	  
 	  
 	  
 	  <!-- Needs enhanced camel-netty 2.9.1 with support for local channel -->
@@ -182,13 +189,17 @@
 	</camelContext>
 	
 	<bean id="object-decoder" class="org.jboss.netty.handler.codec.serialization.ObjectDecoder"/>
-	<bean id="object-encoder" class="org.jboss.netty.handler.codec.serialization.ObjectEncoder"/>
+	<!-- <bean id="object-encoder" class="org.jboss.netty.handler.codec.serialization.ObjectEncoder"/> -->
+	<bean id="object-encoder" class="org.helios.server.ot.listener.helios.protocol.InvocationResponseHandler"/>
+	
+	
 	
 	<bean id="HeliosDiscoveryService" class="org.helios.server.ot.net.discovery.HeliosDiscoveryService" init-method="start" destroy-method="stop">
 		<property name="network" value="224.9.3.7" />
 		<property name="port" value="1836" />
 	</bean>
 	
+	<bean id="HeliosProtocolServerInvoker" class="org.helios.server.ot.listener.helios.protocol.HeliosProtocolServerInvoker" />
 	
   	<bean name="PollingHttpSubscriptionProcessor" class="org.helios.server.ot.session.camel.routing.http.PollingHttpSubscriptionProcessor" scope="prototype" lazy-init="true">
   		<constructor-arg type="java.lang.String" ><null/></constructor-arg>

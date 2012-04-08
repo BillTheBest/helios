@@ -24,7 +24,8 @@
  */
 package org.helios.ot.helios;
 
-import java.util.HashMap;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.Properties;
 
@@ -55,6 +56,10 @@ public class HeliosEndpointConfiguration {
 	public static final String FLUSH_SIZE_MAX = CONNECTION_PREFIX + ".maxsize";
 	/** The property name for the maximum amount of time in ms. before a non empty trace buffer is flushed */
 	public static final String FLUSH_TIME_MAX = CONNECTION_PREFIX + ".maxtime";
+	/** The property name for the connect timeout in ms. */
+	public static final String CONNECT_TIMEOUT = CONNECTION_PREFIX + ".connect.timeout";
+	/** The property name for synchronous operation timeouts in ms. */
+	public static final String SYNCH_OP_TIMEOUT = CONNECTION_PREFIX + ".synchop.timeout";
 
 	
 	/** The default helios ot server host name or ip address */
@@ -65,6 +70,10 @@ public class HeliosEndpointConfiguration {
 	public static final int DEFAULT_FLUSH_SIZE_MAX = 200;
 	/** The default maximum amount of time in ms. before a non empty trace buffer is flushed */
 	public static final long DEFAULT_FLUSH_TIME_MAX = 5000;
+	/** The default connect timeout in ms. */
+	public static final long DEFAULT_CONNECT_TIMEOUT = 3000;
+	/** The default synchronous operation timeouts in ms. */
+	public static final long DEFAULT_SYNCH_OP_TIMEOUT = 3000;
 	
 	//=============================================
 	//   Discovery 
@@ -101,6 +110,16 @@ public class HeliosEndpointConfiguration {
 	
 	//=============================================
 	
+	public static void main(String[] args) {
+		try {
+			for(Field f: HeliosEndpointConfiguration.class.getDeclaredFields()) {
+				if(!Modifier.isStatic(f.getModifiers())) continue;
+				System.out.println(f.getName() + ":" + f.get(null));
+			}
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+		}
+	}
 	
 	/**
 	 * Captures a snapshot of all OT connection properties which means environment variables or system properties
@@ -130,6 +149,15 @@ public class HeliosEndpointConfiguration {
 	public static long getMaxFlushTime() {
 		return ConfigurationHelper.getLongSystemThenEnvProperty(FLUSH_TIME_MAX, DEFAULT_FLUSH_TIME_MAX);
 	}
+	
+	/**
+	 * Returns the connection timeout in ms.
+	 * @return the connection timeout in ms.
+	 */
+	public static long getConnectTimeout() {
+		return ConfigurationHelper.getLongSystemThenEnvProperty(CONNECT_TIMEOUT, DEFAULT_CONNECT_TIMEOUT);
+	}
+	
 	
 	/**
 	 * Returns the maximum size of the trace buffer before it is flushed
@@ -208,6 +236,17 @@ public class HeliosEndpointConfiguration {
 	public static int getDiscoveryTimeout() {
 		return ConfigurationHelper.getIntSystemThenEnvProperty(DISCOVERY_TIMEOUT, DEFAULT_DISCOVERY_TIMEOUT);
 	}
+	
+	/**
+	 * Returns the configured synchronous operation timeout in ms.
+	 * @return the configured synchronous operation timeout in ms.
+	 */
+	public static long getSynchOpTimeout() {
+		return ConfigurationHelper.getLongSystemThenEnvProperty(SYNCH_OP_TIMEOUT, DEFAULT_SYNCH_OP_TIMEOUT);
+	}
+	
+	
+	
 	
 	/**
 	 * Returns the configured discovery enablement
