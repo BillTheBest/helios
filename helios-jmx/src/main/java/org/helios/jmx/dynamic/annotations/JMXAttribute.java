@@ -31,16 +31,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
-import org.helios.jmx.opentypes.annotations.XCompositeAttribute;
+
 
 /**
  * <p>Title: JMXAttribute</p>
  * <p>Description: Annotation to describe the meta-data of object JMX attributes.</p> 
- * <p>Company: Helios Development Group</p>
- * @author Whitehead (whitehead.nicholas@gmail.com)
- * @version $Revision$
+ * <p>Company: Helios Development Group LLC</p>
+ * @author Whitehead (nwhitehead AT heliosdev DOT org)
+ * <p><code>org.helios.jmx.dynamic.annotations.JMXAttribute</code></p>
  */
-
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
@@ -81,6 +80,12 @@ public @interface JMXAttribute {
 	 * @return The attribute name.
 	 */
 	String name() default "";
+	
+	/**
+	 * Indicates if this attribute is a key in the MBean's ObjectName
+	 * @return true if this attribute is a key in the MBean's ObjectName, false otherwise
+	 */
+	boolean key() default false;
 	
 	/**
 	 * If introscopectName is true, the name of the attribute specified in the <code>@name</code> annotation will be interpreted as a method 
