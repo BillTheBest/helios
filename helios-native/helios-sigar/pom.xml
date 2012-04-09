@@ -22,14 +22,14 @@
                 <configuration>
                     <archive>
 			<manifest>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries> 
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                             <mainClass>org.helios.nativex.sigar.HeliosSigar</mainClass>
 			</manifest>
 			<manifestEntries>
-				<helios-version>${version}</helios-version>
-			</manifestEntries>												
-                        
+				<helios-version>${project.version}</helios-version>
+			</manifestEntries>
+
                     </archive>
                 </configuration>
                 <executions>
@@ -43,13 +43,13 @@
                             <stripVersion>true</stripVersion>
                             <descriptors>
                                 <descriptor>src/main/assembly/launcher.xml</descriptor>
-                            </descriptors>                            
+                            </descriptors>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
-    </build>		
+    </build>
 
 
   <dependencies>

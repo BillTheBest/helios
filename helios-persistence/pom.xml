@@ -15,7 +15,7 @@
   <modules>
     <module>persistence-core</module>
   </modules>
-  
+
 	<build>
 		<plugins>
 			<plugin>
@@ -40,14 +40,14 @@
 			</plugin>
 		</plugins>
 	</build>
-  
+
 
 	<dependencyManagement>
   <dependencies>
 	<!--   Test Dependencies -->
 	    <dependency>
 	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>	
+	      <artifactId>junit</artifactId>
 	      <version>${junit.version}</version>
 	      <scope>test</scope>
 	    </dependency>
@@ -56,8 +56,8 @@
 		  <artifactId>h2</artifactId>
 		  <version>${h2.version}</version>
 		  <scope>test</scope>
-		</dependency>	    
-	    
+		</dependency>
+
 	<!-- 3rd party compile dependencies -->
 		<dependency>
 		  <groupId>trove</groupId>
@@ -79,10 +79,10 @@
 		<dependency>
 			<groupId>org.helios.helios-ot</groupId>
 			<artifactId>helios-ot-core2</artifactId>
-			<version>${project.version}</version>
+			<version>${helios.version}</version>
 		</dependency>
-		
-		
+
+
   </dependencies>
 
 	</dependencyManagement>

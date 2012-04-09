@@ -11,7 +11,7 @@
   <artifactId>helios-native-jmx</artifactId>
   <version>1.0-SNAPSHOT</version>
   <name>helios-native-jmx</name>
-  
+
   <url>http://www.heliosdev.org/projects/helios-native/helios-native-jmx</url>
 
     <build>
@@ -22,19 +22,19 @@
                 <configuration>
                     <archive>
 			<manifest>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries> 
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                             <mainClass>org.helios.nativex.jmx.NativeJMXAgent</mainClass>
 			</manifest>
 			<manifestEntries>
-				<helios-version>${version}</helios-version>
+				<helios-version>${project.version}</helios-version>
  				<Premain-Class>org.helios.nativex.agent.NativeAgent</Premain-Class>
             	<Agent-Class>org.helios.nativex.agent.NativeAgent</Agent-Class>
             	<Can-Redefine-Classes>true</Can-Redefine-Classes>
-            	<Can-Retransform-Classes>true</Can-Retransform-Classes>				
+            	<Can-Retransform-Classes>true</Can-Retransform-Classes>
             	<Can-Set-Native-Method-Prefix>true</Can-Set-Native-Method-Prefix>
-			</manifestEntries>												
-                        
+			</manifestEntries>
+
                     </archive>
                 </configuration>
                 <executions>
@@ -48,7 +48,7 @@
                             <stripVersion>true</stripVersion>
                             <descriptors>
                                 <descriptor>src/main/assembly/launcher.xml</descriptor>
-                            </descriptors>                            
+                            </descriptors>
                         </configuration>
                     </execution>
                 </executions>
@@ -83,9 +83,9 @@
 		            </configuration>
 		          </execution>
 		        </executions>
-		      </plugin>            
+		      </plugin>
         </plugins>
-    </build>		
+    </build>
 
 
   <dependencies>
@@ -107,11 +107,11 @@
 		  <version>${helios.version}</version>
 		  <scope>runtime</scope>
 		</dependency>
-		
+
 <!--
 		<dependency>
 		  <groupId>org.glassfish.external</groupId>
-		  <artifactId>jmxremote_optional-repackaged</artifactId>			
+		  <artifactId>jmxremote_optional-repackaged</artifactId>
 		  <version>${jmxremote-optional.version}</version>
 		</dependency>
 -->
@@ -127,7 +127,7 @@
 			<scope>provided</scope>
 	      </dependency>
 
-	      
-		
+
+
   </dependencies>
 </project>
