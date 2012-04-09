@@ -19,7 +19,8 @@
 	      <artifactId>junit</artifactId>	
 	      <scope>test</scope>
 	    </dependency>
-	    
+	  
+	  <!--   
 	    <dependency>
 	      <groupId>org.apache.activemq</groupId>
 	      <artifactId>activemq-core</artifactId>
@@ -36,19 +37,15 @@
           </exclusions>		  	      
 	    </dependency>
 	    
+	  
       <dependency>
 		<groupId>com.thoughtworks.xstream</groupId>
 		<artifactId>xstream</artifactId>
 		<scope>compile</scope>
 	  </dependency>
+	  -->
 	    
 	<!-- 3rd party compile dependencies -->
-		<dependency>
-		  <groupId>javax.jms</groupId>
-		  <artifactId>jms</artifactId>
-		  <version>1.1</version>		
-		  <scope>test</scope>
-		</dependency>
 	<!-- helios compile dependencies -->
 		<dependency>
 			<groupId>org.helios</groupId>
