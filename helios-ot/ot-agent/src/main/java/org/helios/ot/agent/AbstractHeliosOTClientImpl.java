@@ -24,15 +24,28 @@
  */
 package org.helios.ot.agent;
 
+import java.io.Serializable;
 import java.net.URI;
+import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
+import javax.management.Notification;
+
+import org.helios.helpers.ConfigurationHelper;
+import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
+import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.JMXNotification;
 import org.helios.jmx.dynamic.annotations.JMXNotificationType;
 import org.helios.jmx.dynamic.annotations.JMXNotifications;
+import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.helios.ot.helios.ClientProtocolOperation;
+import org.helios.ot.helios.HeliosProtocolInvocation;
+import org.helios.ot.trace.Trace;
 
 /**
  * <p>Title: AbstractHeliosOTClientImpl</p>
@@ -43,15 +56,16 @@ import org.helios.jmx.dynamic.annotations.JMXNotifications;
  */
 @JMXManagedObject(annotated=true, declared=false)
 @JMXNotifications(notifications={
-        @JMXNotification(description="Notification indicating exception during collect callback for any collector", types={
-                @JMXNotificationType(type="org.helios.collectors.exception.notification")
+        @JMXNotification(description="Client connected notification", types={
+                @JMXNotificationType(type=HeliosOTClient.NOTIFICATION_CONNECT)
         }),
-        @JMXNotification(description="Notification indicating change in CollectorState", types={
-                @JMXNotificationType(type="org.helios.collectors.AbstractCollector.CollectorState")
-        })       
+        @JMXNotification(description="Client disconnected notification", types={
+                @JMXNotificationType(type=HeliosOTClient.NOTIFICATION_DISCONNECT)
+        })
 })
-
-public abstract class AbstractHeliosOTClientImpl implements HeliosOTClient {
+public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBean implements HeliosOTClient {
+	/**  */
+	private static final long serialVersionUID = 1739421438427185681L;
 	/** Connectivity flag */
 	protected final AtomicBoolean connected = new AtomicBoolean(false);
 	/** Registered client listeners */
@@ -62,6 +76,28 @@ public abstract class AbstractHeliosOTClientImpl implements HeliosOTClient {
 	protected long connectTimeout = -1L;
 	/** The operation timeout */
 	protected long operationTimeout = -1L;
+	/** A random generator to use with ping ops */
+	protected Random random = new Random(System.nanoTime());
+	/** The failed remote op counter */
+	protected final AtomicLong failedOpCounter = new AtomicLong(0);
+	/** The succeeded remote op counter */
+	protected final AtomicLong opCounter = new AtomicLong(0);
+	/** This client's session ID */
+	protected String sessionId = null;
+	/** The parsed URI specified configuration parameters */
+	protected final Properties uriParameters = new Properties();
+
+	/** The configuration name for the connect timeout */
+	public static final String CONFIG_CONNECT_TIMEOUT = "connectTimeoutMillis";
+	/** The configuration name for the operation timeout */
+	public static final String CONFIG_OP_TIMEOUT = "operationTimeoutMillis";
+
+	/**
+	 * Creates a new AbstractHeliosOTClientImpl
+	 */
+	protected AbstractHeliosOTClientImpl() {
+		
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -84,7 +120,11 @@ public abstract class AbstractHeliosOTClientImpl implements HeliosOTClient {
 			}
 		}
 		if(!asynch) {
-			connect();
+			try {
+				doConnect();
+			} catch (Exception e) {
+				throw new RuntimeException("Synchrnonous connection to [" + uri + "] failed", e);
+			}
 		}
 	}
 	
@@ -101,15 +141,73 @@ public abstract class AbstractHeliosOTClientImpl implements HeliosOTClient {
 	 */
 	@Override
 	public void disconnect() {
-		// TODO Auto-generated method stub
-
+		doDisconnect();
 	}
+	
+	/**
+	 * Concrete impl. disconnect.
+	 */
+	protected abstract void doDisconnect();
+	
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.ot.agent.HeliosOTClient#ping()
+	 */
+	@Override
+	public boolean ping() {
+		return doPing();
+	}
+	
+	/**
+	 * The concrete client ping implementation
+	 */
+	protected abstract boolean doPing();
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.ot.agent.HeliosOTClient#echo(java.io.Serializable)
+	 */
+	@Override
+	public <T extends Serializable> T echo(T payload) {	
+		return doEcho(payload);
+	}
+	
+	/**
+	 * The concrete client echo implementation
+	 * @param payload The echo payload
+	 * @return the echoed value from the server
+	 */
+	protected abstract <T extends Serializable> T doEcho(T payload);
+	
+
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.ot.agent.HeliosOTClient#submitTraces(org.helios.ot.trace.Trace[])
+	 */
+	@Override
+	public void submitTraces(@SuppressWarnings("rawtypes") Trace[] traces) {
+		if(traces!=null && traces.length>0) {
+			doSubmitTraces(traces);
+		}
+		
+	}
+	
+	/**
+	 * The concrete client submit trace implementation
+	 * @param traces The array of traces to submit
+	 */
+	protected abstract void doSubmitTraces(@SuppressWarnings("rawtypes") Trace[] traces);
+	
+	
+
 
 	/**
 	 * {@inheritDoc}
 	 * @see org.helios.ot.agent.HeliosOTClient#isConnected()
 	 */
 	@Override
+	@JMXAttribute(name="Connected", description="Indicates if the client is connected", mutability=AttributeMutabilityOption.READ_ONLY)
 	public boolean isConnected() {		
 		return connected.get();
 	}
@@ -119,10 +217,46 @@ public abstract class AbstractHeliosOTClientImpl implements HeliosOTClient {
 	 * @see org.helios.ot.agent.HeliosOTClient#getConnectionURI()
 	 */
 	@Override
+	@JMXAttribute(name="ConnectionURI", description="The connection URI", mutability=AttributeMutabilityOption.READ_ONLY)
 	public URI getConnectionURI() {
 		return uri;
 	}
+	
+	
+	/**
+	 * Sets the URI to use to establish a connection to the Helios OT Server
+	 * @param uri the URI to use to establish a connection to the Helios OT Server
+	 */
+	protected void configureClient(URI uri) {
+		if(uri==null) throw new IllegalArgumentException("The passed uri was null", new Throwable());
+		this.uri = uri;
+		String paramString = this.uri.getQuery();
+		if(paramString!=null && !paramString.isEmpty()) {
+			for(String paramPair: paramString.split("&")) {
+				String[] splitPair = paramPair.split("=");
+				uriParameters.setProperty(splitPair[0], splitPair[1]);
+			}
+		}
+		connectTimeout = Configuration.getLongConfigurationOption(CONFIG_CONNECT_TIMEOUT, Configuration.CONNECT_TIMEOUT,  Configuration.DEFAULT_CONNECT_TIMEOUT, uriParameters);
+		operationTimeout = Configuration.getLongConfigurationOption(CONFIG_OP_TIMEOUT, Configuration.SYNCH_OP_TIMEOUT,  Configuration.DEFAULT_SYNCH_OP_TIMEOUT, uriParameters);
+		doConfigureClient(this.uri);		
+	}
+	
+	/**
+	 * Executes client specific processing of the URI
+	 * @param uri the URI to use to establish a connection to the Helios OT Server
+	 */
+	protected abstract void doConfigureClient(URI uri);
 
+	/**
+	 * Returns this client's session ID
+	 * @return this client's session ID
+	 */
+	@JMXAttribute(name="SessionId", description="The client session ID", mutability=AttributeMutabilityOption.READ_ONLY)
+	public String getSessionId() {
+		return sessionId;
+	}
+	
 
 	/**
 	 * {@inheritDoc}
@@ -150,6 +284,7 @@ public abstract class AbstractHeliosOTClientImpl implements HeliosOTClient {
 	 * {@inheritDoc}
 	 * @see org.helios.ot.agent.HeliosOTClient#getConnectTimeout()
 	 */
+	@JMXAttribute(name="ConnectTimeout", description="The connection timeout in ms.", mutability=AttributeMutabilityOption.READ_WRITE)
 	public long getConnectTimeout() {
 		return connectTimeout;
 	}
@@ -164,6 +299,7 @@ public abstract class AbstractHeliosOTClientImpl implements HeliosOTClient {
 	 * {@inheritDoc}
 	 * @see org.helios.ot.agent.HeliosOTClient#getOperationTimeout()
 	 */
+	@JMXAttribute(name="OperationTimeout", description="The operation timeout in ms.", mutability=AttributeMutabilityOption.READ_WRITE)	
 	public long getOperationTimeout() {
 		return operationTimeout;
 	}
@@ -182,7 +318,8 @@ public abstract class AbstractHeliosOTClientImpl implements HeliosOTClient {
 	protected void fireOnConnect() {
 		for(HeliosOTClientEventListener listener: listeners) {
 			listener.onConnect(this);
-		}
+		}	 
+		sendNotification(new Notification(HeliosOTClient.NOTIFICATION_CONNECT, getObjectName(), nextNotificationSequence(), System.currentTimeMillis(), "Client Connected [" + this.toString() + "]"));
 	}
 	
 	/**
@@ -192,8 +329,10 @@ public abstract class AbstractHeliosOTClientImpl implements HeliosOTClient {
 	protected void fireOnDisconnect(Throwable cause) {
 		for(HeliosOTClientEventListener listener: listeners) {
 			listener.onDisconnect(this, cause);
-		}
+		} 
+		sendNotification(new Notification(HeliosOTClient.NOTIFICATION_DISCONNECT, getObjectName(), nextNotificationSequence(), System.currentTimeMillis(), "Client Disconnected [" + this.toString() + "]"));		
 	}
+
 	
 
 }

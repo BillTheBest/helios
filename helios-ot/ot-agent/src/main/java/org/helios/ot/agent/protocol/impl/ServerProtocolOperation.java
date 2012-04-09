@@ -22,38 +22,19 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.ot.helios;
-
-import java.util.Map;
+package org.helios.ot.agent.protocol.impl;
 
 
 /**
- * <p>Title: ClientProtocolOperation</p>
- * <p>Description: Enumerates the client side operations recognized by the Helios Agent Protocol</p> 
+ * <p>Title: ServerProtocolOperation</p>
+ * <p>Description: Enumerates the server side operations recognized by the Helios Agent Protocol</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.ot.helios.ClientProtocolOperation</code></p>
+ * <p><code>org.helios.ot.helios.ServerProtocolOperation</code></p>
  */
 
-public enum ClientProtocolOperation implements IProtocolOperation {
-	PING(false),
-	ECHO(false),
-	CONNECT,
-	TRACE;
-	
-	private static final Map<Integer, ClientProtocolOperation> ORDINAL2ENUM = new EnumOrdinalMapper().getOrdinalToEnumMap(ClientProtocolOperation.class);
-
-	private ClientProtocolOperation(boolean async) {
-		this.async = async;
-	}
-	
-	private ClientProtocolOperation() {
-		this(true);
-	}
-	
-	private final boolean async;
-	
-	
+public enum ServerProtocolOperation implements IProtocolOperation {
+	CONFIRM_TRACE;
 	
 	/**
 	 * {@inheritDoc}
@@ -63,24 +44,5 @@ public enum ClientProtocolOperation implements IProtocolOperation {
 	public int getOperationCode() {
 		return this.ordinal();
 	}
-	
-	public static ClientProtocolOperation getOp(int ordinal) {
-		ClientProtocolOperation cpo = ORDINAL2ENUM.get(ordinal);
-		if(cpo==null) throw new IllegalArgumentException("The ordinal [" + ordinal + "] is not valid for Enum ClientProtocolOperation", new Throwable());
-		return cpo;
-	}
-	
-	public static boolean isOp(int ordinal) {
-		return ORDINAL2ENUM.containsKey(ordinal);
-	}
 
-	/**
-	 * Indicates if this op is asynchronous
-	 * @return if this op is asynchronous
-	 */
-	public boolean isAsync() {
-		return async;
-	}
-	
-	
 }

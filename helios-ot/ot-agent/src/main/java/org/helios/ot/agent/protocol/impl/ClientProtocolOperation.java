@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.ot.helios;
+package org.helios.ot.agent.protocol.impl;
 
 import java.util.Map;
 
@@ -37,7 +37,6 @@ import java.util.Map;
 
 public enum ClientProtocolOperation implements IProtocolOperation {
 	PING(false),
-	ECHO(false),
 	CONNECT,
 	TRACE;
 	

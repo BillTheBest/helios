@@ -38,10 +38,16 @@ import org.helios.ot.trace.Trace;
  */
 
 public interface HeliosOTClient {
+	
+	/** The JMX notification type for a client connected event */
+	public static final String NOTIFICATION_CONNECT = "org.helios.ot.agent.connected";
+	/** The JMX notification type for a client disconnected event */
+	public static final String NOTIFICATION_DISCONNECT = "org.helios.ot.agent.disconnected";
+	
 	/**
 	 * Validates connectivity with the HOT server
 	 */
-	public void ping();
+	public boolean ping();
 	/**
 	 * Sends a payload to the HOT server, requesting that the server echo it back
 	 * @param payload The payload to echo
@@ -78,12 +84,18 @@ public interface HeliosOTClient {
 	 * @return the connection URI or null if the client is not connected
 	 */
 	public URI getConnectionURI();
+	
+	/**
+	 * Returns the name of the remoting protocol implemented by this client
+	 * @return the name of the remoting protocol implemented by this client
+	 */
+	public String getProtocol();
+	
 	/**
 	 * Submits an array of collected traces to the OT server
 	 * @param traces An array of traces
-	 * @return The number of traces confirmed by the server
 	 */
-	public int submitTraces(@SuppressWarnings("rawtypes") Trace[] traces);
+	public void submitTraces(@SuppressWarnings("rawtypes") Trace[] traces);
 	/**
 	 * Registers a client event listener
 	 * @param listener The listener to register

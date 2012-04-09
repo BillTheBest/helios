@@ -51,11 +51,17 @@
 		            <artifactId>maven-assembly-plugin</artifactId>
 		            
 		            <configuration>
-		            	<finalName>helios-ot-agent</finalName>	               
-		              <descriptorRefs>
-		                    <descriptorRef>jar-with-dependencies</descriptorRef>
-		              </descriptorRefs>
-					    <archive>			    	
+		            	<!-- 
+			             <descriptors>
+	            			<descriptor>src/main/assembly/agent-jar.xml</descriptor>
+	          			 </descriptors>
+	          			  -->
+		            	 <finalName>helios-ot-agent</finalName>	               
+			              <descriptorRefs>
+			                    <descriptorRef>jar-with-dependencies</descriptorRef>
+			                    
+			              </descriptorRefs>
+					    <archive>					    	
 					        <manifest>					        
 					            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 					            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
