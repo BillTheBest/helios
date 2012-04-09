@@ -49,9 +49,21 @@ public interface HeliosOTClient {
 	 */
 	public <T extends Serializable> T echo(T payload);
 	/**
-	 * Connects the client to the HOT server
+	 * Synchronously connects the client to the HOT server.
+	 * When this call returns (and no exception is thrown) the client is assumed to be connected.
 	 */
 	public void connect();
+	/**
+	 * Issues a connect command directing the client to connect to the HOT server.
+	 * If the call is syncrhonous, When this call returns (and no exception is thrown) the client is assumed to be connected.
+	 * Otherwise, the client is assumed disconnected until a connect event is emitted.
+	 * The passed listeners will be fully registered (i.e. beyond the connection event) and will be called on a connect event 
+	 * on synch or asynch connections. If the client is already connected when this operation is called, the listeners will still be called.
+	 * @param asynch If true, the connect is performed asynchronously, otherwise, it is executed synchronously.
+	 * @param listeners An optional array of listeners to register
+	 */
+	public void connect(boolean asynch, HeliosOTClientEventListener...listeners);
+	
 	/**
 	 * Disconnects from the HOT server
 	 */
@@ -67,10 +79,41 @@ public interface HeliosOTClient {
 	 */
 	public URI getConnectionURI();
 	/**
-	 * @param traces
-	 * @return
+	 * Submits an array of collected traces to the OT server
+	 * @param traces An array of traces
+	 * @return The number of traces confirmed by the server
 	 */
 	public int submitTraces(@SuppressWarnings("rawtypes") Trace[] traces);
+	/**
+	 * Registers a client event listener
+	 * @param listener The listener to register
+	 */
 	public void addListener(HeliosOTClientEventListener listener);
+	/**
+	 * unregisters a client event listener
+	 * @param listener The listener to unregister
+	 */
 	public void removeListener(HeliosOTClientEventListener listener);
+	
+	/**
+	 * Returns the connection timeout in ms.
+	 * @return the connection timeout
+	 */
+	public long getConnectTimeout();
+	/**
+	 * Sets the connection timeout in ms.
+	 * @param timeout the connection timeout
+	 */
+	public void setConnectTimeout(long timeout);
+	/**
+	 * Returns the operation timeout in ms.
+	 * @return the operation timeout
+	 */
+	public long getOperationTimeout();
+	/**
+	 * Sets the the operation timeout in ms
+	 * @param timeout the operation timeout
+	 */
+	public void setOperationTimeout(long timeout);
+	
 }

@@ -33,5 +33,16 @@ package org.helios.ot.agent;
  */
 
 public interface HeliosOTClientEventListener {
-
+	/**
+	 * Event callback when the client connects
+	 * @param client The client that connected
+	 */
+	public void onConnect(HeliosOTClient client);
+	/**
+	 * Event callback when the client disconnects
+	 * @param client The client that disconnected
+	 * @param cause The cause of an unintended disconnect. Null if disconnect was requested.
+	 */
+	public void onDisconnect(HeliosOTClient client, Throwable cause);
+	
 }
