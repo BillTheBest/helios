@@ -59,5 +59,22 @@
 	      <version>1.0-SNAPSHOT</version>
 	      <scope>runtime</scope>
 	    </dependency>
+	    <dependency>
+	      <groupId>org.helios</groupId>
+	      <artifactId>helios-util</artifactId>
+	      <version>1.0-SNAPSHOT</version>
+	    </dependency>
+	    <dependency>
+	      <groupId>org.helios</groupId>
+	      <artifactId>helios-jmx</artifactId>
+	      <version>1.0-SNAPSHOT</version>
+	    </dependency>
+	    <dependency>
+	      	<groupId>org.helios.helios-ot</groupId>
+  			<artifactId>helios-ot-core2</artifactId>
+  			<version>1.0-SNAPSHOT</version>
+  		</dependency>
+	    
+	    
   </dependencies>
 </project>
