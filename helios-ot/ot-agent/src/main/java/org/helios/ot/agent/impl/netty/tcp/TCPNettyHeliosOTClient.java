@@ -24,15 +24,14 @@
  */
 package org.helios.ot.agent.impl.netty.tcp;
 
-import java.io.Serializable;
 import java.util.concurrent.Executor;
 
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.ot.agent.impl.netty.AbstractNettyHeliosOTClient;
-import org.helios.ot.helios.ClientProtocolOperation;
-import org.helios.ot.helios.HeliosProtocolInvocation;
+import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
+import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
 import org.helios.ot.trace.Trace;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.socket.SocketChannel;

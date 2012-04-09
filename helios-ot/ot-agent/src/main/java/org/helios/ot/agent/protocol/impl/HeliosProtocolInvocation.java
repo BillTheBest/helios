@@ -32,8 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
-import org.helios.ot.helios.HeliosEndpointConfiguration;
+import org.helios.ot.agent.Configuration;
 
 
 /**
@@ -214,7 +213,7 @@ public class HeliosProtocolInvocation implements Serializable {
 	 * @throws TimeoutException
 	 */
 	public Object getSynchronousResponse() throws InterruptedException, TimeoutException {
-		return getSynchronousResponse(HeliosEndpointConfiguration.getSynchOpTimeout(), TimeUnit.MILLISECONDS);
+		return getSynchronousResponse(Configuration.getSynchOpTimeout(), TimeUnit.MILLISECONDS);
 	}
 	
 	/**

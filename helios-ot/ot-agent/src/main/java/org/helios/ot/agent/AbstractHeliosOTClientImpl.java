@@ -43,8 +43,6 @@ import org.helios.jmx.dynamic.annotations.JMXNotification;
 import org.helios.jmx.dynamic.annotations.JMXNotificationType;
 import org.helios.jmx.dynamic.annotations.JMXNotifications;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
-import org.helios.ot.helios.ClientProtocolOperation;
-import org.helios.ot.helios.HeliosProtocolInvocation;
 import org.helios.ot.trace.Trace;
 
 /**

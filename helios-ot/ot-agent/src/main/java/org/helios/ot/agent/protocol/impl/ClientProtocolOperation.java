@@ -37,6 +37,7 @@ import java.util.Map;
 
 public enum ClientProtocolOperation implements IProtocolOperation {
 	PING(false),
+	ECHO(false),
 	CONNECT,
 	TRACE;
 	
