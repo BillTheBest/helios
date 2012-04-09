@@ -29,6 +29,7 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -171,6 +172,32 @@ public class JMXHelper {
 			return null;
 		}
 		throw new RuntimeException("No MBeanServer located for domain [" + domain + "]");
+	}
+	
+	public static Map<String, String> introspectObjectNameKeys(Object mbean) {
+		Map<String, String> map = new HashMap<String, String>();
+		Class<? extends Annotation> jmxAttrAnnClazz = null;
+		try {
+			jmxAttrAnnClazz = (Class<? extends Annotation>) Class.forName("org.helios.jmx.dynamic.annotations.JMXAttribute");			
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to load the JMXAttribute annotation class", e);
+		}
+		Class<?> targetClazz = mbean.getClass();
+		try {
+			for(PropertyDescriptor pd: Introspector.getBeanInfo(targetClazz).getPropertyDescriptors()) {
+				Method method = pd.getReadMethod();
+				Annotation jmxAnn = method.getAnnotation(jmxAttrAnnClazz);
+				Boolean key = (Boolean)PrivateAccessor.invoke(jmxAnn, "key", new Object[]{}, new Class[]{});
+				if(key) {
+					String name = (String)PrivateAccessor.invoke(jmxAnn, "name", new Object[]{}, new Class[]{});
+					String value = pd.getValue(pd.getName()).toString();
+					map.put(name, value);
+				}
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to introspect class [" + targetClazz + "]", e);
+		}
+		return map;
 	}
 	
 	/**
