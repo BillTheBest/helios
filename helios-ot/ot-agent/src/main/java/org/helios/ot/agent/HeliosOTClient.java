@@ -82,6 +82,12 @@ public interface HeliosOTClient {
 	 * Disconnects from the HOT server
 	 */
 	public void disconnect();
+	
+	/**
+	 * Disconnects and deallocates all resources associated with this client.
+	 */
+	public void purge();
+	
 	/**
 	 * Determines if the client is connected to the HOT server
 	 * @return true if the client is connected, false otherwise

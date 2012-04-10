@@ -257,6 +257,14 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	
 	/**
 	 * {@inheritDoc}
+	 * @see org.helios.ot.agent.AbstractHeliosOTClientImpl#doPurge()
+	 */
+	protected void doPurge() {
+		
+	}
+	
+	/**
+	 * {@inheritDoc}
 	 * @see org.helios.ot.agent.AbstractHeliosOTClientImpl#doDisconnect()
 	 */
 	@Override

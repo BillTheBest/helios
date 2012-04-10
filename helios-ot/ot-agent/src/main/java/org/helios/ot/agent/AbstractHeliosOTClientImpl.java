@@ -140,6 +140,7 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	 * @see org.helios.ot.agent.HeliosOTClient#disconnect()
 	 */
 	@Override
+	@JMXOperation(name="disconnect", description="Disconnects the client to the configured server")
 	public void disconnect() {
 		doDisconnect();
 	}
@@ -149,6 +150,19 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	 */
 	protected abstract void doDisconnect();
 	
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.ot.agent.HeliosOTClient#purge()
+	 */
+	public void purge() {
+		doPurge();
+	}
+	
+	/**
+	 * Disconnects and deallocates all resources associated with this client.
+	 */
+	protected abstract void doPurge();
 	
 	/**
 	 * {@inheritDoc}
