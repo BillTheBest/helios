@@ -54,6 +54,14 @@ public interface HeliosOTClient {
 	 * @return The value echoed from the server
 	 */
 	public <T extends Serializable> T echo(T payload);
+	
+	/**
+	 * Sets the URI to use to establish a connection to the Helios OT Server
+	 * @param uri the URI to use to establish a connection to the Helios OT Server
+	 */
+	public void configureClient(URI uri);
+	
+	
 	/**
 	 * Synchronously connects the client to the HOT server.
 	 * When this call returns (and no exception is thrown) the client is assumed to be connected.

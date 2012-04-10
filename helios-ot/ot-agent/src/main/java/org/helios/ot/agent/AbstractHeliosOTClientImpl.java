@@ -35,13 +35,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.Notification;
 
-import org.helios.helpers.ConfigurationHelper;
+import org.helios.helpers.StringHelper;
 import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.JMXNotification;
 import org.helios.jmx.dynamic.annotations.JMXNotificationType;
 import org.helios.jmx.dynamic.annotations.JMXNotifications;
+import org.helios.jmx.dynamic.annotations.JMXOperation;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.ot.trace.Trace;
 
@@ -102,8 +103,9 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	 * @see org.helios.ot.agent.HeliosOTClient#connect()
 	 */
 	@Override
+	@JMXOperation(name="connect", description="Connects the client to the configured server")
 	public void connect() {
-		
+		doConnect();
 
 	}
 	
@@ -131,7 +133,7 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	 * When called, if no exception is thrown, the client is assumed to be connected
 	 * @throws Exception
 	 */
-	protected abstract void doConnect() throws Exception;
+	protected abstract void doConnect();
 
 	/**
 	 * {@inheritDoc}
@@ -225,7 +227,7 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	 * Sets the URI to use to establish a connection to the Helios OT Server
 	 * @param uri the URI to use to establish a connection to the Helios OT Server
 	 */
-	protected void configureClient(URI uri) {
+	public void configureClient(URI uri) {
 		if(uri==null) throw new IllegalArgumentException("The passed uri was null", new Throwable());
 		this.uri = uri;
 		String paramString = this.uri.getQuery();
@@ -319,6 +321,19 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 		}	 
 		sendNotification(new Notification(HeliosOTClient.NOTIFICATION_CONNECT, getObjectName(), nextNotificationSequence(), System.currentTimeMillis(), "Client Connected [" + this.toString() + "]"));
 	}
+	
+	/**
+	 * Emits a client connected event to all registered listeners
+	 */
+	protected void fireOnConnectFailure(Throwable cause) {
+		for(HeliosOTClientEventListener listener: listeners) {
+			listener.onConnectFailure(this, cause);
+		}	 
+		Notification notif = new Notification(HeliosOTClient.NOTIFICATION_CONNECT, getObjectName(), nextNotificationSequence(), System.currentTimeMillis(), "Client Connection Failure [" + this.toString() + "]");
+		notif.setUserData(StringHelper.formatStackTrace(cause));
+		sendNotification(notif);
+	}
+	
 	
 	/**
 	 * Emits a client disconnected event to all registered listeners

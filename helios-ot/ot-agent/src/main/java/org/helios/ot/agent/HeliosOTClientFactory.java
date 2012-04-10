@@ -27,6 +27,8 @@ package org.helios.ot.agent;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.helios.helpers.ConfigurationHelper;
+
 /**
  * <p>Title: HeliosOTClientFactory</p>
  * <p>Description: A factory for Helios OT Clients</p> 
@@ -51,6 +53,7 @@ public class HeliosOTClientFactory {
 		return newInstance(uri);
 	}
 	
+	
 	/**
 	 * Returns a HeliosOTClient instance that will connect to the Helios OT Server using the passed URI 
 	 * @param connectionUri The Helios OT Server connection URI
@@ -63,7 +66,9 @@ public class HeliosOTClientFactory {
 		if(providerSet==null) {
 			providerSet = new HeliosOTClientProviderSet();
 		}
-		return null;
+		HeliosOTClientProvider clientProvider = providerSet.getProvider(connectionUri.getScheme());
+		HeliosOTClient client = clientProvider.newInstance(connectionUri);
+		return client;
 	}
 
 	/**
@@ -96,10 +101,23 @@ public class HeliosOTClientFactory {
 	
 	public static void main(String[] args) {
 		log("Loader Test");
-		HeliosOTClientProvider provider = reloadServiceProvider().getProvider("tcp");
-		log("Provider:" + provider.getClass().getName());
-		provider = reloadServiceProvider().getProvider("foo");
-		log("Provider:" + provider.getClass().getName());
+		try {
+			URI connectionUri = new URI("");
+			String protocol = connectionUri.getScheme();
+			if(protocol==null) {
+				protocol = ConfigurationHelper.getSystemThenEnvProperty(Configuration.PROTOCOL, "tcp").trim().toLowerCase();
+			}
+			HeliosOTClientProvider provider = reloadServiceProvider().getProvider(protocol);
+			log("Provider:" + provider.getClass().getName());
+			
+			HeliosOTClient client = provider.newInstance(connectionUri);
+			log("Client:" + client);
+			Thread.currentThread().join();
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+		}
+//		provider = reloadServiceProvider().getProvider("foo");
+//		log("Provider:" + provider.getClass().getName());
 		
 	}
 	

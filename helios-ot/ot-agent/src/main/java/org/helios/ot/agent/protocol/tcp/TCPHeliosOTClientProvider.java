@@ -24,9 +24,10 @@
  */
 package org.helios.ot.agent.protocol.tcp;
 
-import java.util.Properties;
+import java.net.URI;
 
 import org.helios.ot.agent.HeliosOTClient;
+import org.helios.ot.agent.impl.netty.tcp.TCPNettyHeliosOTClient;
 import org.helios.ot.agent.protocol.AbstractHeliosOTClientProvider;
 
 /**
@@ -43,9 +44,10 @@ public class TCPHeliosOTClientProvider extends AbstractHeliosOTClientProvider {
 	 * @see org.helios.ot.agent.HeliosOTClientProvider#newInstance(java.util.Properties)
 	 */
 	@Override
-	public HeliosOTClient newInstance(Properties clientProperties) {
-		// TODO Auto-generated method stub
-		return null;
+	public HeliosOTClient newInstance(URI connectionUri) {
+		TCPNettyHeliosOTClient client = new TCPNettyHeliosOTClient();
+		client.configureClient(connectionUri);
+		return client;
 	}
 	
 

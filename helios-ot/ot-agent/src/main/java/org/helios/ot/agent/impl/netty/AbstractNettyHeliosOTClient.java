@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
 
+import org.helios.helpers.ConfigurationHelper;
 import org.helios.helpers.JMXHelper;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
@@ -43,6 +44,7 @@ import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -68,13 +70,18 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	
 	/** The pipeline factory */
 	protected ChannelPipelineFactory channelPipelineFactory;
+	/** The channel factory */
+	protected ChannelFactory channelFactory;
+	
 	/** The connection's channel future */
 	protected ChannelFuture channelFuture;
 	/** The client bootstrap */
 	protected ClientBootstrap bootstrap;
+	
 	/** The client bootstrap options */
 	protected final Map<String, Object> bootstrapOptions = new HashMap<String, Object>();
-	
+	/** The remote socket address */
+	protected InetSocketAddress remoteSocketAddress = null;
 	/** The local bind address */
 	protected InetSocketAddress localSocketAddress = null;
 	/** The synchronous request handler */
@@ -170,7 +177,14 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	 */
 	protected void doConfigureClient(URI uri) {		
 		host = uri.getHost();
+		if(host==null) {
+			host = Configuration.getHost();
+		}
 		port = uri.getPort();
+		if(port==-1) {
+			port = ConfigurationHelper.getIntSystemThenEnvProperty(Configuration.PORT, getDefaultTargetPort());
+		}
+		remoteSocketAddress = new InetSocketAddress(host, port);
 		bootstrapOptions.put(CONFIG_KEEPALIVE, Configuration.getBooleanConfigurationOption(CONFIG_KEEPALIVE, Configuration.CONFIG_KEEPALIVE,  DEFAULT_KEEPALIVE, uriParameters));
 		bootstrapOptions.put(CONFIG_NODELAY, Configuration.getBooleanConfigurationOption(CONFIG_NODELAY, Configuration.CONFIG_NODELAY,  DEFAULT_NODELAY, uriParameters));
 		bootstrapOptions.put(CONFIG_REUSEADDRESS, Configuration.getBooleanConfigurationOption(CONFIG_REUSEADDRESS, Configuration.CONFIG_REUSEADDRESS,  DEFAULT_REUSEADDRESS, uriParameters));
@@ -178,8 +192,33 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 		bootstrapOptions.put(CONFIG_TRAFFIC_CLASS, Configuration.getIntConfigurationOption(CONFIG_TRAFFIC_CLASS, Configuration.CONFIG_TRAFFIC_CLASS,  DEFAULT_TRAFFIC_CLASS, uriParameters));
 		bootstrapOptions.put(CONFIG_RECEIVE_BUFFER, Configuration.getLongConfigurationOption(CONFIG_RECEIVE_BUFFER, Configuration.CONFIG_RECEIVE_BUFFER,  DEFAULT_RECEIVE_BUFFER, uriParameters));
 		bootstrapOptions.put(CONFIG_SEND_BUFFER, Configuration.getLongConfigurationOption(CONFIG_SEND_BUFFER, Configuration.CONFIG_SEND_BUFFER,  DEFAULT_SEND_BUFFER, uriParameters));
-		
+		initChannelFactory();
+		reflectObject(this);
+		reflectObject(this.instrumentation);
+		//=================================
+		//    Push this up to the top abstract with abstracts getting the right details from the impls.
+		//=================================
+		objectName = JMXHelper.objectName(new StringBuilder("org.helios.agent:service=HeliosOTClient,host=").append(host).append(",port=").append(port).append(",protocol=").append(getProtocol()));
+		JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(this, objectName);
+		//=================================
 	}
+	
+//	public Hashtable<String, String> objectNameKeys() {
+//		Hashtable<String, String> keys = new Hashtable<String, String>();
+//		
+//		return keys;
+//	}
+	
+	/**
+	 * Initializes the pipeline and channel factory
+	 */
+	protected abstract void initChannelFactory();
+	
+	/**
+	 * Returns the 
+	 * @return
+	 */
+	protected abstract ChannelFactory getChannelFactory();
 	
 	/**
 	 * Returns the default netty listening port
@@ -199,9 +238,21 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	 * @see org.helios.ot.agent.AbstractHeliosOTClientImpl#doConnect()
 	 */
 	@Override
-	protected void doConnect() throws Exception {
-	
-
+	protected void doConnect()  {
+		if(isConnected()) {
+			// callback on listeners
+			fireOnConnect();
+			return;
+		}
+		bootstrap.connect(remoteSocketAddress).addListener(new ChannelFutureListener(){
+			public void operationComplete(ChannelFuture f) throws Exception {
+				if(f.isCancelled() || !f.isSuccess()) {
+					fireOnConnectFailure(f.getCause());
+				} else {
+					fireOnConnect();
+				}
+			}
+		});
 	}
 	
 	/**
@@ -210,7 +261,36 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	 */
 	@Override
 	protected void doDisconnect() {
-	
+		/*
+		channelFuture.awaitUninterruptibly();
+		 if (channelFuture.isCancelled()) {
+			 throw new RuntimeException("Connection request cancelled");
+		 } else if (!channelFuture.isSuccess()) {
+			 throw new RuntimeException(channelFuture.getCause().getMessage());		     
+		 } else {			 
+			 // no exception means a good connect
+			 socketChannel = (SocketChannel)channelFuture.getChannel();
+			 localSocketAddress = socketChannel.getLocalAddress();		
+			 //socketChannel.write(HeliosProtocolInvocation.newInstance(ClientProtocolOperation.CONNECT, new String[]{MetricId.getHostname(), MetricId.getApplicationId()})).addListener(sendListener);
+			 socketChannel.getCloseFuture().addListener(new ChannelFutureListener(){
+				 @Override
+				public void operationComplete(ChannelFuture future)throws Exception {
+					 log.warn("\n\tHELIOS ENDPOINT DISCONNECTED:" + future + "\n\t Cancelled:" + future.isCancelled() + "\n\t Success:" + future.isSuccess() + "\n\t Done:" + future.isDone());
+					 if(!future.isDone()) {
+						 log.warn("Waiting for future to complete...");
+						 future.awaitUninterruptibly(10000);
+					 }
+					 
+					 Throwable t = future.getCause();
+					 if(t!=null) {
+						 t.printStackTrace(System.err);
+					 } 
+				}
+			 });
+			 setConnected();
+			 log.info("Socket Channel Connected [" + socketChannel + "]");
+		 }
+		*/
 		
 	}	
 	
@@ -298,6 +378,22 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	@JMXAttribute(name="TargetPort", description="The listening port on the target host", mutability=AttributeMutabilityOption.READ_ONLY)
 	public int getTargetPort() {
 		return port;
+	}
+
+	/**
+	 * Constructs a <code>String</code> with all attributes
+	 * in name = value format.
+	 *
+	 * @return a <code>String</code> representation 
+	 * of this object.
+	 */
+	public String toString() {	    
+	    StringBuilder retValue = new StringBuilder(getClass().getSimpleName()).append(" [")
+	        .append("URI:").append(uri)
+	        .append(" Connected:").append(connected.get())
+	        .append(" LocalSocketAddress:").append(this.localSocketAddress)
+	        .append("]");    
+	    return retValue.toString();
 	}
 	
 

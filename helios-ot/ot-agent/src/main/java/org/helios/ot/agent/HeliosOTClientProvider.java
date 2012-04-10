@@ -24,7 +24,7 @@
  */
 package org.helios.ot.agent;
 
-import java.util.Properties;
+import java.net.URI;
 
 /**
  * <p>Title: HeliosOTClientProvider</p>
@@ -36,10 +36,10 @@ import java.util.Properties;
 public interface HeliosOTClientProvider {
 	/**
 	 * Returns a HeliosOTClient configured by the passed properties
-	 * @param clientProperties THe configuration properties
+	 * @param connectionUri The connection URI providing the client configuration
 	 * @return a HeliosOTClient
 	 */
-	public HeliosOTClient newInstance(Properties clientProperties);
+	public HeliosOTClient newInstance(URI connectionUri);
 	
 	/**
 	 * Returns the name of the protocol supported by this provider

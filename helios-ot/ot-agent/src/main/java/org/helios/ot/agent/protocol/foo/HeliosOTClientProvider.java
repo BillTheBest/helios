@@ -24,7 +24,7 @@
  */
 package org.helios.ot.agent.protocol.foo;
 
-import java.util.Properties;
+import java.net.URI;
 
 import org.helios.ot.agent.HeliosOTClient;
 import org.helios.ot.agent.protocol.AbstractHeliosOTClientProvider;
@@ -49,7 +49,7 @@ public class HeliosOTClientProvider extends AbstractHeliosOTClientProvider {
 	 * @see org.helios.ot.agent.HeliosOTClientProvider#newInstance(java.util.Properties)
 	 */
 	@Override
-	public HeliosOTClient newInstance(Properties clientProperties) {
+	public HeliosOTClient newInstance(URI connectionUri) {
 		return null;
 	}
 

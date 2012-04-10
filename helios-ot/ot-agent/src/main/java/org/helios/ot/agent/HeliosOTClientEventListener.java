@@ -39,6 +39,13 @@ public interface HeliosOTClientEventListener {
 	 */
 	public void onConnect(HeliosOTClient client);
 	/**
+	 * Event callback when the client fails to connect
+	 * @param client The client that connected
+	 * @param cause The associated cause of the connection failure
+	 */
+	public void onConnectFailure(HeliosOTClient client, Throwable cause);
+	
+	/**
 	 * Event callback when the client disconnects
 	 * @param client The client that disconnected
 	 * @param cause The cause of an unintended disconnect. Null if disconnect was requested.
