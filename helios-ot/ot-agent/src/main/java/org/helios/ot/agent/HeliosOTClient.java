@@ -71,12 +71,13 @@ public interface HeliosOTClient {
 	 * Issues a connect command directing the client to connect to the HOT server.
 	 * If the call is syncrhonous, When this call returns (and no exception is thrown) the client is assumed to be connected.
 	 * Otherwise, the client is assumed disconnected until a connect event is emitted.
-	 * The passed listeners will be fully registered (i.e. beyond the connection event) and will be called on a connect event 
-	 * on synch or asynch connections. If the client is already connected when this operation is called, the listeners will still be called.
+	 * The passed listeners are only called back on for the connection event.and will be called on a connect event (or connect fail).
+	 * For permanently registered listeners, use {@link HeliosOTClient#addListener(HeliosOTClientEventListener)}.
+	 * If the client is already connected when this operation is called, the passed listeners will still be called, but permanently registered listeners will not.
 	 * @param asynch If true, the connect is performed asynchronously, otherwise, it is executed synchronously.
-	 * @param listeners An optional array of listeners to register
+	 * @param connectListeners An optional array of connection listeners to register
 	 */
-	public void connect(boolean asynch, HeliosOTClientEventListener...listeners);
+	public void connect(boolean asynch, HeliosOTClientEventListener...connectListeners);
 	
 	/**
 	 * Disconnects from the HOT server

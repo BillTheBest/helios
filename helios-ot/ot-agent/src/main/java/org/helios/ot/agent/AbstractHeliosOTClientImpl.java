@@ -62,7 +62,7 @@ import org.helios.ot.trace.Trace;
                 @JMXNotificationType(type=HeliosOTClient.NOTIFICATION_DISCONNECT)
         })
 })
-public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBean implements HeliosOTClient {
+public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBean implements HeliosOTClient, HeliosOTClientEventListener {
 	/**  */
 	private static final long serialVersionUID = 1739421438427185681L;
 	/** Connectivity flag */
@@ -113,27 +113,46 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	 * {@inheritDoc}
 	 * @see org.helios.ot.agent.HeliosOTClient#connect(boolean, org.helios.ot.agent.HeliosOTClientEventListener[])
 	 */
-	public void connect(boolean asynch, HeliosOTClientEventListener...listeners) {
-		if(listeners!=null && listeners.length>0) {
-			for(HeliosOTClientEventListener listener: listeners) {
-				addListener(listener);
-			}
-		}
+	public void connect(boolean asynch, final HeliosOTClientEventListener...listeners) {
 		if(!asynch) {
-			try {
-				doConnect();
-			} catch (Exception e) {
-				throw new RuntimeException("Synchrnonous connection to [" + uri + "] failed", e);
-			}
+			doConnect(listeners);
+		} else {
+			
 		}
 	}
 	
 	/**
-	 * Concrete impl. connect.
-	 * When called, if no exception is thrown, the client is assumed to be connected
-	 * @throws Exception
+	 * Event callback when the client connects
+	 * @param client The client that connected
 	 */
-	protected abstract void doConnect();
+	public void onConnect(HeliosOTClient client) {
+		
+	}
+	/**
+	 * Event callback when the client fails to connect
+	 * @param client The client that connected
+	 * @param cause The associated cause of the connection failure
+	 */
+	public void onConnectFailure(HeliosOTClient client, Throwable cause) {
+		
+	}
+	
+	/**
+	 * Event callback when the client disconnects
+	 * @param client The client that disconnected
+	 * @param cause The cause of an unintended disconnect. Null if disconnect was requested.
+	 */
+	public void onDisconnect(HeliosOTClient client, Throwable cause) {
+		
+	}
+	
+	
+	/**
+	 * Concrete impl. connect.
+	 * When called, if no exception is thrown, the client is assumed to be connected	 * 
+	 * @param listeners The connection event only listeners
+	 */
+	protected abstract void doConnect(final HeliosOTClientEventListener...listeners);
 
 	/**
 	 * {@inheritDoc}

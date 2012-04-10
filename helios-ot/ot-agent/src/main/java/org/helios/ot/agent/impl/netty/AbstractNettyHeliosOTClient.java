@@ -40,6 +40,8 @@ import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.helios.ot.agent.AbstractHeliosOTClientImpl;
 import org.helios.ot.agent.Configuration;
+import org.helios.ot.agent.HeliosOTClient;
+import org.helios.ot.agent.HeliosOTClientEventListener;
 import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -234,14 +236,36 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 
 
 	/**
+	 * <p>Implements the abstract connection procedure for Netty protocol implementations.
+	 * <p>If the connection is already connected, the connection callback should be called on the temporary listeners only.
+	 * See {@link HeliosOTClient#connect(boolean, org.helios.ot.agent.HeliosOTClientEventListener...)}.
+	 * <p>If the connection is <b>not</b> already connected, the {@link AbstractNettyHeliosOTClient#bootstrap} connect is called.
+	 * A {@link ChannelFutureListener} is registered to detect the operation completion and the the procedure therein is as follows:<ol>
+	 * 
+	 * <li>If the operation is <i>cancelled</i> or <i>not successful</i>, 
+	 * a {@link org.helios.ot.agent.HeliosOTClientEventListener#onConnectFailure(HeliosOTClient, Throwable) 
+	 * is fired against all listeners and no further action is taken.</li>
+	 * 
+	 * <li>If the operation is successful:<ol>
+	 * 		<li>Initialize the impl's Channel (e.g. the SocketChannel for TCP). Delegate down using {@link AbstractNettyHeliosOTClient#onImplConnect(ChannelFuture)}.</li>
+	 * 		<li>Initialize this class's ChannelFuture using {@link org.jboss.netty.channel.Channel#getCloseFuture()} which serves as the singular disconnect listener.</li>
+	 * 		<li>Initialize the local and remote socket references (useful meta-data exposed in JMX) </li>
+	 * 		<li>Set the connected flag to true</li>
+	 * 		<li>Fire {@link org.helios.ot.agent.AbstractHeliosOTClientImpl#fireOnConnect()}</li>
+	 * </li>
+	 * </ol>
 	 * {@inheritDoc}
 	 * @see org.helios.ot.agent.AbstractHeliosOTClientImpl#doConnect()
 	 */
 	@Override
-	protected void doConnect()  {
+	protected void doConnect(final HeliosOTClientEventListener...listeners)  {
 		if(isConnected()) {
-			// callback on listeners
-			fireOnConnect();
+			// callback on temp listeners only
+			if(listeners!=null && listeners.length>0) {
+				for(HeliosOTClientEventListener listener: listeners) {
+					listener.onConnect(this);
+				}
+			}
 			return;
 		}
 		bootstrap.connect(remoteSocketAddress).addListener(new ChannelFutureListener(){
@@ -249,11 +273,46 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 				if(f.isCancelled() || !f.isSuccess()) {
 					fireOnConnectFailure(f.getCause());
 				} else {
+					connected.set(true);
+					channelFuture = f;
+					
 					fireOnConnect();
 				}
 			}
 		});
 	}
+	
+	/**
+	 * Event passed down from the Abstract client managing the connect process to the impl that has no idea what's going on.
+	 * @param cf The connection event channel future
+	 */
+	protected abstract void onImplConnect(ChannelFuture cf);
+	
+//	/**
+//	 * Event callback when the client connects
+//	 * @param client The client that connected
+//	 */
+//	public void onConnect(HeliosOTClient client) {
+//		super.onConnect(client);
+//	}
+//	/**
+//	 * Event callback when the client fails to connect
+//	 * @param client The client that connected
+//	 * @param cause The associated cause of the connection failure
+//	 */
+//	public void onConnectFailure(HeliosOTClient client, Throwable cause) {
+//		
+//	}
+//	
+//	/**
+//	 * Event callback when the client disconnects
+//	 * @param client The client that disconnected
+//	 * @param cause The cause of an unintended disconnect. Null if disconnect was requested.
+//	 */
+//	public void onDisconnect(HeliosOTClient client, Throwable cause) {
+//		
+//	}
+	
 	
 	/**
 	 * {@inheritDoc}

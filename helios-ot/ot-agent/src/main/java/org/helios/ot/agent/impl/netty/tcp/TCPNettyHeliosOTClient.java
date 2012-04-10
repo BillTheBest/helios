@@ -38,6 +38,7 @@ import org.helios.ot.trace.Trace;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
@@ -71,6 +72,14 @@ public class TCPNettyHeliosOTClient extends AbstractNettyHeliosOTClient {
 	 */
 	public TCPNettyHeliosOTClient() {
 
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.ot.agent.impl.netty.AbstractNettyHeliosOTClient#onImplConnect(org.jboss.netty.channel.ChannelFuture)
+	 */
+	protected void onImplConnect(ChannelFuture cf) {
+		socketChannel = (SocketChannel) cf.getChannel();
 	}
 	
 	/**
@@ -112,7 +121,16 @@ public class TCPNettyHeliosOTClient extends AbstractNettyHeliosOTClient {
 	          }
 		};	                     
 		bootstrap.setPipelineFactory(channelPipelineFactory);
+		
 	}	
+	
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.ot.agent.impl.netty.AbstractNettyHeliosOTClient#doConnect()
+	 */
+	protected void doConnect() {
+		
+	}
 	
 	/**
 	 * {@inheritDoc}
