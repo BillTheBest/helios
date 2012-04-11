@@ -13,7 +13,7 @@
      <constructor-arg type="java.util.Properties">
          <props>
              <prop key="java.naming.factory.initial">org.jnp.interfaces.NamingContextFactory</prop>
-             <prop key="java.naming.provider.url">par1stress1:1099</prop>
+             <prop key="java.naming.provider.url">localhost:1099</prop>
              <prop key="jndi.name">jmx/invoker/RMIAdaptor</prop>
          </props>
      </constructor-arg>
