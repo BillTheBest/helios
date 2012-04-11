@@ -8,27 +8,27 @@
    					       http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
 					       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd"
        default-init-method="start" default-destroy-method="destroy">
-    
+
     <bean id="JNDI_Connector" class="org.helios.collectors.jmx.JNDIMBeanServerConnectionFactory" destroy-method="stop" >
      <constructor-arg type="java.util.Properties">
          <props>
              <prop key="java.naming.factory.initial">org.jnp.interfaces.NamingContextFactory</prop>
-             <prop key="java.naming.provider.url">127.0.0.1:1099</prop> 
+             <prop key="java.naming.provider.url">par1stress1:1099</prop>
              <prop key="jndi.name">jmx/invoker/RMIAdaptor</prop>
          </props>
      </constructor-arg>
      <property name="serverIdentifierClassName" value="JBossMBeanServerIdentifier" />
     </bean>
-   	
-    <bean id="JBoss_Collector" class="org.helios.collectors.jmx.JMXCollector" 
-    	depends-on="TracerFactory"
-        c:_0-ref="JNDI_Connector" 
+
+    <bean id="JBoss_Collector" class="org.helios.collectors.jmx.JMXCollector"
+    	depends-on="TracerManager3"
+        c:_0-ref="JNDI_Connector"
         p:objectName="org.helios.collectors:type=JMXCollector,name=JBossLaptop"
-        p:tracerFactory-ref="TracerFactory"
+        p:tracerFactory-ref="TracerManager3"
         p:tracingNameSpace="JMX,JBoss"
         p:logErrors="true"
         p:logCollectionResult="false"
-        p:virtualHostLocator="jboss.system:type=ServerInfo[HostName]"        
+        p:virtualHostLocator="jboss.system:type=ServerInfo[HostName]"
         p:virtualAgentLocator="jboss.system:type=ServerConfig[ServerName]" >
         <property name="jmxObjects">
             <list>
@@ -37,18 +37,18 @@
                 <ref bean="DataSources" />
                 <ref bean="TransactionManagerActivity" />
                 <ref bean="ThreadNMemoryActivity" />
-                ref bean="EJBPoolActivity"  
+                ref bean="EJBPoolActivity"
                 <ref bean="TomcatClusterActivity" />-->
-                <!-- Only for JBoss 6.x  <ref bean="ThreadActivity" />--> 
+                <!-- Only for JBoss 6.x  <ref bean="ThreadActivity" />-->
             </list>
         </property>
-    </bean>   
-        
-	<!--  JMXServiceURL connection  
-    <bean id="JMXServiceURL_Connector" class="org.helios.collectors.jmx.JMXServiceURLConnectionFactory" 
+    </bean>
+
+	<!--  JMXServiceURL connection
+    <bean id="JMXServiceURL_Connector" class="org.helios.collectors.jmx.JMXServiceURLConnectionFactory"
     		c:_0="service:jmx:rmi:///jndi/rmi://127.0.0.1:1090/jmxrmi"
     		p:serverIdentifierClassName="JBossMBeanServerIdentifier"
-			destroy-method="stop" />	 
+			destroy-method="stop" />
 	 -->
 
 </beans>
