@@ -41,7 +41,6 @@ import org.helios.ot.helios.ClientProtocolOperation;
 import org.helios.ot.helios.HeliosProtocolInvocation;
 import org.helios.ot.helios.HeliosProtocolResponse;
 import org.helios.ot.trace.Trace;
-import org.jboss.netty.channel.ChannelDownstreamHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
 
 /**
