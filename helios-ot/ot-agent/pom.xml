@@ -16,6 +16,7 @@
   
   <build>
   	<plugins>
+  	  <!--  
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>jarjar-maven-plugin</artifactId>
@@ -30,7 +31,7 @@
                 <include>org.helios.helios-ot:helios-ot-helios</include>
               </includes>
               <rules>
-              	<!-- 
+             
                 <rule>
                   <pattern>org.objectweb.asm.**</pattern>
                   <result>com.google.inject.internal.asm.@1</result>
@@ -39,7 +40,7 @@
                   <pattern>net.sf.cglib.**</pattern>
                   <result>com.google.inject.internal.cglib.@1</result>
                 </rule>
-                -->
+            
                 <keep>
                   <pattern>com.google.inject.**</pattern>
                 </keep>
@@ -47,7 +48,8 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>  
+      </plugin>
+      -->  
     </plugins>
   </build>
   
