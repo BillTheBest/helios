@@ -140,7 +140,7 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	protected boolean processTracesImpl(TraceCollection<T> traceCollection) throws EndpointConnectException, EndpointTraceException {
 		SystemClock.startTimer();
 		if(isConnected()) {
-			//connector.write(traceCollection);
+			otAgent.submitTraces(traceCollection.getTraces().toArray(new Trace[0]));
 			lastElapsed = SystemClock.endTimer().toString();
 			return true;
 		} 
