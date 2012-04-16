@@ -41,27 +41,54 @@ public class HeliosProtocolResponse implements Serializable {
 	protected long requestSerial = -1;
 	/** The response value */
 	protected Object payload = null;
+	/** The operation indicator code */
+	protected final int opCode;
+	
 	
 	/**
 	 * Creates a new HeliosProtocolResponse
+	 * @param opCode The operation code of the invocationthat this is the response for
 	 * @param requestSerial The request ID of the request that this object is in response to
 	 * @param payload The response value
 	 * @return the new HeliosProtocolResponse
 	 */
-	public static HeliosProtocolResponse newInstance(long requestSerial, Object payload) {
-		return new HeliosProtocolResponse(requestSerial, payload);
+	public static HeliosProtocolResponse newInstance(int opCode, long requestSerial, Object payload) {
+		return new HeliosProtocolResponse(opCode, requestSerial, payload);
 	}
+	
+	/**
+	 * Creates a new HeliosProtocolResponse
+	 * @param opCode The operation code of the invocationthat this is the response for
+	 * @param requestSerial The request ID of the request that this object is in response to
+	 * @param payload The response value
+	 * @return the new HeliosProtocolResponse
+	 */
+	public static HeliosProtocolResponse newInstance(ClientProtocolOperation opCode, long requestSerial, Object payload) {
+		return new HeliosProtocolResponse(opCode.getOperationCode(), requestSerial, payload);
+	}
+	
 	
 	
 	/**
 	 * Creates a new HeliosProtocolResponse
+	 * @param opCode The operation code of the invocationthat this is the response for
 	 * @param requestSerial The request ID of the request that this object is in response to
 	 * @param payload The response value
 	 */
-	public HeliosProtocolResponse(long requestSerial, Object payload) {
+	public HeliosProtocolResponse(int opCode, long requestSerial, Object payload) {
 		this.requestSerial = requestSerial;
 		this.payload = payload;
+		this.opCode = opCode;
 	}
+	
+	/**
+	 * Returns the operation indicator code
+	 * @return the operation indicator code
+	 */
+	public int getOp() {
+		return opCode;
+	}
+	
 
 	/**
 	 * Returns the requestID
@@ -77,6 +104,23 @@ public class HeliosProtocolResponse implements Serializable {
 	 */
 	public Object getPayload() {
 		return payload;
+	}
+
+
+	/**
+	 * Constructs a <code>String</code> with all attributes
+	 * in name = value format.
+	 *
+	 * @return a <code>String</code> representation 
+	 * of this object.
+	 */
+	public String toString() {
+	    final String TAB = "\n\t";
+	    StringBuilder retValue = new StringBuilder("HeliosProtocolResponse [")
+	        .append(TAB).append("requestSerial:").append(this.requestSerial)
+	        .append(TAB).append("payload:").append(this.payload)
+	        .append("\n]");    
+	    return retValue.toString();
 	}
 	
 	

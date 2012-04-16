@@ -289,7 +289,7 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 		 */
 		@Override
 		public long getDelay(TimeUnit unit) {
-			return unit.convert(System.currentTimeMillis()-timestamp, TimeUnit.MILLISECONDS);
+			return unit.convert((timestamp-System.currentTimeMillis()), TimeUnit.MILLISECONDS);
 		}
 
 

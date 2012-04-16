@@ -32,12 +32,8 @@ import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.helios.ot.agent.impl.netty.AbstractNettyHeliosOTClient;
-import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
-import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
-import org.helios.ot.trace.Trace;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -46,6 +42,8 @@ import org.jboss.netty.channel.socket.SocketChannel;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
 import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
+import org.jboss.netty.handler.logging.LoggingHandler;
+import org.jboss.netty.logging.InternalLogLevel;
 
 /**
  * <p>Title: TCPNettyHeliosOTClient</p>
@@ -64,6 +62,7 @@ public class TCPNettyHeliosOTClient extends AbstractNettyHeliosOTClient {
 	protected SocketChannel socketChannel;	
 	/** The boss thread pool */
 	protected Executor bossExecutor;
+	
 
 	/** The default listening port */
 	public static final int DEFAULT_LISTENING_PORT = 9428;
@@ -80,7 +79,16 @@ public class TCPNettyHeliosOTClient extends AbstractNettyHeliosOTClient {
 	 */
 	protected void onImplConnect(ChannelFuture cf) {
 		socketChannel = (SocketChannel) cf.getChannel();
+		
 	}
+	
+	/**
+	 * Passed by the abstract to the concrete impls so they can clean up
+	 */
+	protected void onImplDisconnect() {
+		socketChannel = null;
+	}
+
 	
 	/**
 	 * {@inheritDoc}
@@ -116,21 +124,14 @@ public class TCPNettyHeliosOTClient extends AbstractNettyHeliosOTClient {
 	            		  instrumentation, 
 	                      new ObjectEncoder(),
 	                      new ObjectDecoder(),
-	                      synchronousRequestHandler
+	                      //new LoggingHandler(InternalLogLevel.INFO),   // implement JMX enable/disable 
+	                      protocolHandler
 	                      );
 	          }
 		};	                     
 		bootstrap.setPipelineFactory(channelPipelineFactory);
 		
 	}	
-	
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.ot.agent.impl.netty.AbstractNettyHeliosOTClient#doConnect()
-	 */
-	protected void doConnect() {
-		
-	}
 	
 	/**
 	 * {@inheritDoc}
@@ -158,22 +159,9 @@ public class TCPNettyHeliosOTClient extends AbstractNettyHeliosOTClient {
 	}
 
 
-	/**
-	 * {@inheritDoc}
-	 * @see org.helios.ot.agent.AbstractHeliosOTClientImpl#doSubmitTraces(org.helios.ot.trace.Trace[])
-	 */
-	@Override
-	protected void doSubmitTraces(Trace[] traces) {
-		socketChannel.write(HeliosProtocolInvocation.newInstance(ClientProtocolOperation.TRACE, traces)).addListener(sendListener);
-	}
 
 
 
-	@Override
-	protected ChannelFactory getChannelFactory() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 
 }

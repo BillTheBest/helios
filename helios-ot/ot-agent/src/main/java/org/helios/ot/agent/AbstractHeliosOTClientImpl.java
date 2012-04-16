@@ -30,11 +30,14 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.Notification;
 
+import org.apache.log4j.Logger;
 import org.helios.helpers.StringHelper;
 import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
@@ -44,6 +47,9 @@ import org.helios.jmx.dynamic.annotations.JMXNotificationType;
 import org.helios.jmx.dynamic.annotations.JMXNotifications;
 import org.helios.jmx.dynamic.annotations.JMXOperation;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
+import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
+import org.helios.ot.trace.MetricId;
 import org.helios.ot.trace.Trace;
 
 /**
@@ -65,12 +71,14 @@ import org.helios.ot.trace.Trace;
 public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBean implements HeliosOTClient, HeliosOTClientEventListener {
 	/**  */
 	private static final long serialVersionUID = 1739421438427185681L;
+	/** Instance logger */
+	protected final Logger log = Logger.getLogger(getClass());
 	/** Connectivity flag */
 	protected final AtomicBoolean connected = new AtomicBoolean(false);
 	/** Registered client listeners */
 	protected final Set<HeliosOTClientEventListener> listeners = new CopyOnWriteArraySet<HeliosOTClientEventListener>();
 	/** The connection endpoint URI */
-	protected URI uri = null;
+	protected URI uri = null; 
 	/** The connection timeout */
 	protected long connectTimeout = -1L;
 	/** The operation timeout */
@@ -83,8 +91,12 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	protected final AtomicLong opCounter = new AtomicLong(0);
 	/** This client's session ID */
 	protected String sessionId = null;
+	/** The connect timeout latch */
+	protected CountDownLatch connectLatch = null;
 	/** The parsed URI specified configuration parameters */
 	protected final Properties uriParameters = new Properties();
+	/** Flag to indicate if a disconnect was deliberate or not. Deliberate disconnects set the flag to true. */
+	protected final AtomicBoolean deliberateDisconnect = new AtomicBoolean(false);
 
 	/** The configuration name for the connect timeout */
 	public static final String CONFIG_CONNECT_TIMEOUT = "connectTimeoutMillis";
@@ -105,6 +117,7 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	@Override
 	@JMXOperation(name="connect", description="Connects the client to the configured server")
 	public void connect() {
+		deliberateDisconnect.set(false);
 		doConnect();
 
 	}
@@ -114,10 +127,21 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	 * @see org.helios.ot.agent.HeliosOTClient#connect(boolean, org.helios.ot.agent.HeliosOTClientEventListener[])
 	 */
 	public void connect(boolean asynch, final HeliosOTClientEventListener...listeners) {
+		deliberateDisconnect.set(false);
 		if(!asynch) {
+			// Since we're not connect asynch, we have to wait for the connect latch to drop
+			connectLatch = new CountDownLatch(1);
 			doConnect(listeners);
+			try {
+				if(!connectLatch.await(connectTimeout, TimeUnit.MILLISECONDS)) {
+					throw new Exception("Timeout elapsed without a connection");
+				}
+			} catch (Exception e) {
+				throw new RuntimeException("Connection for client [" + this + "] Timed out waiting for connection after [" + connectTimeout + "] ms.", e);
+			}
 		} else {
-			
+			// Asynch connect, so we don't care. If it fails, an asynch handler will take care of it.
+			doConnect(listeners);
 		}
 	}
 	
@@ -146,6 +170,39 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 		
 	}
 	
+	/**
+	 * @param op
+	 * @param payload
+	 * @return
+	 */
+	protected HeliosProtocolInvocation invoke(ClientProtocolOperation op, Object payload) {			
+		return doInvoke(op, payload);
+	}	
+	
+	/**
+	 * @param op
+	 * @param payload
+	 * @return
+	 */
+	protected abstract HeliosProtocolInvocation doInvoke(ClientProtocolOperation op, Object payload);
+
+	
+	/**
+	 * Post connect handshake delivers the server assigned session ID and completes the connect cycle
+	 * @param sessionId the server assigned session ID
+	 */
+	public void postConnectHandshake(String sessionId) {
+		try {
+			this.sessionId = sessionId;
+			log.info("Connected to [" + uri + "] with session [" + sessionId + "]");
+			if(connectLatch!=null) connectLatch.countDown();			
+		} catch (Exception e) {
+			//System.err.println("Failed to complete post connect handshake:" + e);
+			doDisconnect();
+			throw new RuntimeException("Failed to complete post connect handshake" , e);
+			
+		}
+	}
 	
 	/**
 	 * Concrete impl. connect.
@@ -161,6 +218,12 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	@Override
 	@JMXOperation(name="disconnect", description="Disconnects the client to the configured server")
 	public void disconnect() {
+		// ====================
+		//  Need to clean up connected resources
+		// ====================
+		connected.set(false);
+		deliberateDisconnect.set(true);
+		sessionId = null;
 		doDisconnect();
 	}
 	

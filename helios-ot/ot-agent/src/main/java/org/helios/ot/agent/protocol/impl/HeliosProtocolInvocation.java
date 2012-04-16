@@ -28,6 +28,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -60,14 +62,20 @@ public class HeliosProtocolInvocation implements Serializable {
 	/** The synch op response */
 	protected transient Object synchOpResponse = null;
 	
-	/** The synch ops reference map provided by the synch handler so the reference can be cleared */
-	protected transient Map<Long, HeliosProtocolInvocation> synchOps = null;
+	protected transient long startTimeNanos = -1;
+	protected transient long elapsedTimeNanos = -1;
+	
 	
 	/** The header name where the op code is stored */
 	public static final String HPI_HEADER = HeliosProtocolInvocation.class.getSimpleName();
 	/** The request serial number factory */
 	private static final AtomicLong requestSerial = new AtomicLong(0L);
-	
+
+	/** The header name for an optional ms timeout override on an invocation */
+	public static final String TIMEOUT_HEADER = "invocation.timeout";
+	/** The header name to indicate payload gzip compression */
+	public static final String COMPRESSION_HEADER = "invocation.payload.compression";
+
 	
 	/**
 	 * Creates a new HeliosProtocolInvocation
@@ -107,6 +115,9 @@ public class HeliosProtocolInvocation implements Serializable {
 		this.opCode = op;
 		this.payload = payload;
 		this.requestId = requestId;
+		if(!ClientProtocolOperation.getOp(opCode).isAsync()) {
+			synchOpLatch = new CountDownLatch(1);
+		}
 	}
 	
 	/**
@@ -185,36 +196,21 @@ public class HeliosProtocolInvocation implements Serializable {
 	
 	/**
 	 * Waits on the response to a synchronous operation
-	 * @param timeout The time to wait for the response
-	 * @param unit The timeout unit
 	 * @return the operation response 
 	 * @throws InterruptedException
-	 * @throws TimeoutException
 	 */
-	public Object getSynchronousResponse(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
-		try {
-			synchOpLatch = new CountDownLatch(1);
-			if(!synchOpLatch.await(timeout, unit)) {
-				throw new TimeoutException("The syncrhronous operation [" + ClientProtocolOperation.getOp(opCode) + "] timed out after [" + timeout + "] " + unit.name().toLowerCase() + "s");
-			} else {
-				return synchOpResponse;
-			}
-		} finally {
-			if(synchOps!=null) {
-				synchOps.remove(requestId);
-			}
+	public Object getSynchronousResponse() throws InterruptedException {		
+		if(synchOpLatch==null) throw new IllegalStateException("No Synchronous Operation Latch was registered", new Throwable());
+		synchOpLatch.await();
+		if(synchOpResponse!=null && synchOpResponse instanceof Throwable) {
+			throw new RuntimeException((Throwable)synchOpResponse);
 		}
+		return synchOpResponse;
 	}
 	
-	/**
-	 * Waits on the response to a synchronous operation
-	 * @return the operation response 
-	 * @throws InterruptedException
-	 * @throws TimeoutException
-	 */
-	public Object getSynchronousResponse() throws InterruptedException, TimeoutException {
-		return getSynchronousResponse(Configuration.getSynchOpTimeout(), TimeUnit.MILLISECONDS);
-	}
+	
+	
+
 	
 	/**
 	 * Callback point for the synch request handler to set the return value
@@ -224,18 +220,7 @@ public class HeliosProtocolInvocation implements Serializable {
 		this.synchOpResponse = result;
 		if(synchOpLatch!=null) {
 			synchOpLatch.countDown();
-		}
-		synchOps.remove(requestId);
-	}
-	
-	/**
-	 * Sets the synch ops reference map provided by the synch handler so the reference can be cleared
-	 * @param synchOps the synchOps map to set
-	 * @return this invocation
-	 */
-	public HeliosProtocolInvocation setSynchOps(Map<Long, HeliosProtocolInvocation> synchOps) {
-		this.synchOps = synchOps;
-		return this;
+		}		
 	}
 	
 
@@ -257,11 +242,41 @@ public class HeliosProtocolInvocation implements Serializable {
 	public String toString() {
 	    final String TAB = "\n\t";
 	    StringBuilder retValue = new StringBuilder("HeliosProtocolInvocation [")
-	        .append(TAB).append("opCode:").append(this.opCode)	        
+	        .append(TAB).append("opCode:").append(ClientProtocolOperation.getOp(opCode))	        
 	        .append(TAB).append("requestId:").append(this.requestId)
 	        .append(TAB).append("waiting:").append(synchOpLatch==null ? false : synchOpLatch.getCount()>0)
 	        .append("\n]");    
 	    return retValue.toString();
+	}
+
+	/**
+	 * Returns the start time in ns.
+	 * @return the startTimeNanos
+	 */
+	public long getStartTimeNanos() {
+		return startTimeNanos;
+	}
+
+	/**
+	 * Opens the start time
+	 */
+	public void setStartTimeNanos() {
+		this.startTimeNanos = System.nanoTime();
+	}
+
+	/**
+	 * Returns the synch invocation elapsed time in ns.
+	 * @return the elapsedTimeNanos
+	 */
+	public long getElapsedTimeNanos() {
+		return elapsedTimeNanos;
+	}
+
+	/**
+	 * Closes the elapsed time
+	 */
+	public void setElapsedTimeNanos() {
+		this.elapsedTimeNanos = System.nanoTime() - startTimeNanos;
 	}
 
 	

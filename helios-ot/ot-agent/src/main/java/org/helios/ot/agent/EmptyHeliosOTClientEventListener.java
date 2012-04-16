@@ -33,6 +33,29 @@ package org.helios.ot.agent;
  */
 
 public class EmptyHeliosOTClientEventListener implements HeliosOTClientEventListener {
+	/** Delegate listeners */
+	protected final HeliosOTClientEventListener[] delegatedListeners;
+	/** Indicates if delegate listeners have been assigned */
+	protected final boolean delegates;
+	
+	/** An empty array of listeners */
+	public static final EmptyHeliosOTClientEventListener[] EMPTY_ARRAY = new EmptyHeliosOTClientEventListener[0];
+	
+	/**
+	 * Creates a new EmptyHeliosOTClientEventListener
+	 * @param delegatedListeners An optional array of additional listeners that will have events delegated to 
+	 */
+	public EmptyHeliosOTClientEventListener(HeliosOTClientEventListener...delegatedListeners) {
+		this.delegatedListeners = (delegatedListeners==null || delegatedListeners.length<1) ? EMPTY_ARRAY : delegatedListeners;
+		delegates = this.delegatedListeners.length>0;
+	}
+	
+	/**
+	 * Creates a new EmptyHeliosOTClientEventListener
+	 */
+	public EmptyHeliosOTClientEventListener() {
+		this(EMPTY_ARRAY);
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -40,7 +63,11 @@ public class EmptyHeliosOTClientEventListener implements HeliosOTClientEventList
 	 */
 	@Override
 	public void onConnect(HeliosOTClient client) {
-		
+		if(delegates) {
+			for(HeliosOTClientEventListener listener: delegatedListeners) {
+				listener.onConnect(client);
+			}
+		}
 	}
 
 	/**
@@ -49,6 +76,11 @@ public class EmptyHeliosOTClientEventListener implements HeliosOTClientEventList
 	 */
 	@Override
 	public void onConnectFailure(HeliosOTClient client, Throwable cause) {
+		if(delegates) {
+			for(HeliosOTClientEventListener listener: delegatedListeners) {
+				listener.onConnectFailure(client, cause);
+			}
+		}
 		
 	}
 
@@ -58,7 +90,11 @@ public class EmptyHeliosOTClientEventListener implements HeliosOTClientEventList
 	 */
 	@Override
 	public void onDisconnect(HeliosOTClient client, Throwable cause) {
-		
+		if(delegates) {
+			for(HeliosOTClientEventListener listener: delegatedListeners) {
+				listener.onDisconnect(client, cause);
+			}
+		}		
 	}
 
 }

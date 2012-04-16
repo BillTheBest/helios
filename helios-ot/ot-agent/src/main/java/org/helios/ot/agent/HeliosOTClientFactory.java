@@ -27,7 +27,9 @@ package org.helios.ot.agent;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.apache.log4j.BasicConfigurator;
 import org.helios.helpers.ConfigurationHelper;
+import org.helios.time.SystemClock;
 
 /**
  * <p>Title: HeliosOTClientFactory</p>
@@ -100,6 +102,7 @@ public class HeliosOTClientFactory {
 	}
 	
 	public static void main(String[] args) {
+		BasicConfigurator.configure();
 		log("Loader Test");
 		try {
 			URI connectionUri = new URI("");
@@ -111,15 +114,61 @@ public class HeliosOTClientFactory {
 			log("Provider:" + provider.getClass().getName());
 			
 			HeliosOTClient client = provider.newInstance(connectionUri);
+			
+			HeliosOTClientEventListener listener = new EmptyHeliosOTClientEventListener(){
+				public void onConnect(HeliosOTClient client) {
+					log("Client Connected: " + client);
+				}
+				public void onConnectFailure(HeliosOTClient client, Throwable cause) {
+					log("Client Connection Failure: " + cause);
+					if(cause!=null) {
+						cause.printStackTrace(System.err);
+					}
+				}
+				public void onDisconnect(HeliosOTClient client, Throwable cause) {
+					log("Client Disconnected. Expected ?: " + (cause==null));
+					if(cause!=null) {
+						cause.printStackTrace(System.err);
+					}
+					
+				}				
+			};
+			client.addListener(listener);
+			client.setConnectTimeout(120000);
+			client.setOperationTimeout(120000);
+			client.connect(false);
 			log("Client:" + client);
-			Thread.currentThread().join();
+			log("Pinging......");
+			int pingCount = 10000;
+			long totalElapsed = 0L;
+			for(int i = 0; i < pingCount; i++) {
+				if(!client.ping()) {
+					throw new RuntimeException("Ping timed out");
+				}
+			}
+			for(int i = 0; i < pingCount; i++) {
+				SystemClock.startTimer();
+				if(!client.ping()) {
+					throw new RuntimeException("Ping timed out");
+				}
+				totalElapsed += SystemClock.endTimer().elapsedMs;
+				//log("\tPing Elapsed:" + SystemClock.endTimer());
+			}
+			log("Average Ping Time:" + avg(pingCount, totalElapsed) + " ms.");
+			//Thread.currentThread().join(5000);			
+			client.disconnect();
+			Thread.currentThread().join(3000);
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 		}
-//		provider = reloadServiceProvider().getProvider("foo");
-//		log("Provider:" + provider.getClass().getName());
-		
 	}
+	
+	public static long avg(double total, double count) {
+		if(total<1 || count<1) return 0;
+		double d = total/count;
+		return (long)d;
+	}
+	
 	
 	public static void log(Object msg) {
 		System.out.println(msg);
