@@ -35,6 +35,7 @@ import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelState;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 
@@ -87,8 +88,15 @@ public class HeliosProtocolHandler extends SimpleChannelHandler {
 		}
 	}
 	
-	
-	
+	/**
+	 * {@inheritDoc}
+	 * @see org.jboss.netty.channel.SimpleChannelHandler#exceptionCaught(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ExceptionEvent)
+	 */
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)throws Exception {
+		// TODO Auto-generated method stub
+		super.exceptionCaught(ctx, e);
+	}	
 	
 	/**
 	 * Processes all messages sent from the server and dispatches to applicable registered listeners
