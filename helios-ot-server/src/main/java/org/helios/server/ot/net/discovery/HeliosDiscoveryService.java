@@ -232,12 +232,15 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 					try {
 						ina = InetAddress.getByName(uri.getHost());
 					} catch (Exception e) {
-						ina = originatingAddress;
+						ina = null;
 					}
 					socket = new DatagramSocket();
 					byte[] bytes = message.getBytes();
-					DatagramPacket dp = new DatagramPacket(bytes, bytes.length, ina, uri.getPort());
-					socket.send(dp);
+					
+					socket.send(new DatagramPacket(bytes, bytes.length, ina, uri.getPort()));
+					if(ina!=null) {
+						socket.send(new DatagramPacket(bytes, bytes.length, originatingAddress, uri.getPort()));
+					}
 					if(log.isDebugEnabled()) log.debug("Sent Repsonse to [" + uri + "] with [" + bytes.length + "] bytes");
 				} finally {
 					try { socket.close(); } catch (Exception e) {}
