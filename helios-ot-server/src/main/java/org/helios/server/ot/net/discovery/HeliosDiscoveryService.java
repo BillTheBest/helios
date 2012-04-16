@@ -202,7 +202,7 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 						String[] frags = request.split("\\|");
 						if(frags.length>0 && commands.containsKey(frags[0].trim().toUpperCase()))  {
 							String response = commands.get(frags[0].trim().toUpperCase()).execute(frags, applicationContext);
-							sendResponse(frags, response);							
+							sendResponse(frags, response, packet.getAddress());							
 						} else {
 							log.warn("Discovery Request[" + request + "] could not be interpreted");
 						}						
@@ -220,14 +220,20 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 	 * Sends a response back to the caller
 	 * @param commandFragments The parsed command received from the caller
 	 * @param message The response message
+	 * @param originatingAddress The originating address of the UDP inquiry 
 	 */
-	protected void sendResponse(String[] commandFragments, String message) {
+	protected void sendResponse(String[] commandFragments, String message, InetAddress originatingAddress) {
 		try {
 			URI uri = new URI(commandFragments[1]);
 			if(uri.getScheme().trim().toLowerCase().equals("udp")) {
 				DatagramSocket socket = null;
 				try {
-					InetAddress ina = InetAddress.getByName(uri.getHost());
+					InetAddress ina = null;
+					try {
+						ina = InetAddress.getByName(uri.getHost());
+					} catch (Exception e) {
+						ina = originatingAddress;
+					}
 					socket = new DatagramSocket();
 					byte[] bytes = message.getBytes();
 					DatagramPacket dp = new DatagramPacket(bytes, bytes.length, ina, uri.getPort());
