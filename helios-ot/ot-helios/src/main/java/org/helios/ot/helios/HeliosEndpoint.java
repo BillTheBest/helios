@@ -25,14 +25,13 @@
 package org.helios.ot.helios;
 
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.BasicConfigurator;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.helios.ot.agent.HeliosOTClient;
+import org.helios.ot.agent.HeliosOTClientFactory;
 import org.helios.ot.endpoint.AbstractEndpoint;
 import org.helios.ot.endpoint.EndpointConnectException;
 import org.helios.ot.endpoint.EndpointTraceException;
@@ -40,9 +39,7 @@ import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.tracer.disruptor.TraceCollection;
 import org.helios.time.SystemClock;
-import org.helios.time.SystemClock.ElapsedTime;
 import org.helios.version.VersionHelper;
-import org.jboss.netty.channel.ChannelFutureListener;
 
 /**
  * <p>Title: HeliosEndpoint</p>
@@ -53,20 +50,11 @@ import org.jboss.netty.channel.ChannelFutureListener;
  */
 @JMXManagedObject (declared=false, annotated=true)
 public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends AbstractEndpoint<T> implements UncaughtExceptionHandler {
-	/** The helios OT server host name or ip address */
-	protected String host;
-	/** The helios OT server listening port */
-	protected int port;
-	/** The helios OT server comm protocol */
-	protected Protocol protocol;
-	/** The helios OT connector of the configured protocol */
-	protected AbstractEndpointConnector connector;
+	/** The helios OT agent */
+	protected HeliosOTClient otAgent = null;
 	
 	/** The count of exceptions */
 	protected final AtomicLong exceptionCount = new AtomicLong(0);
-	
-	/** A set of connect listeners that will be added when an asynch connect is initiated */
-	protected final Set<ChannelFutureListener> connectListeners = new CopyOnWriteArraySet<ChannelFutureListener>();
 	
 	
 	/**  */
@@ -80,14 +68,8 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	 */
 	public HeliosEndpoint() {
 		// Read the basic config
-		host = HeliosEndpointConfiguration.getHost();
-		port = HeliosEndpointConfiguration.getPort();
-		protocol = HeliosEndpointConfiguration.getProtocol();
 	}
 	
-	public boolean ping() {
-		return connector.ping();
-	}
 	
 	
 	/**
@@ -97,8 +79,8 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	@Override
 	protected void connectImpl() throws EndpointConnectException {
 		try {
-			connector = AbstractEndpointConnector.connect(this);
-			reflectObject(connector);
+			otAgent = HeliosOTClientFactory.newInstance();
+			otAgent.connect(false);
 		} catch (Exception e) {
 			throw new EndpointConnectException("HeliosEndpoint failed to connect:" + e);			
 		}
@@ -110,79 +92,12 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	 */
 	@Override
 	protected void disconnectImpl() {
-		connector.disconnect();
+		otAgent.disconnect();
+		otAgent = null;
 	}
 	
 	
-//	@SuppressWarnings("rawtypes")
-//	public static void main(String[] args) {
-//		BasicConfigurator.configure();
-//		Logger LOG = Logger.getLogger(HeliosEndpoint.class);
-//		Logger.getRootLogger().setLevel(Level.INFO);
-//		LOG.info("Test");
-//		HeliosEndpoint he = new HeliosEndpoint();
-//		he.connect();
-//		he.reflectObject(he.connector.getInstrumentation());
-//		TracerManager3.getInstance(TracerManager3.Configuration.getDefaultConfiguration().appendEndPoint(he));
-//		boolean b = he.connect();
-//		LOG.info("Connected:"+b);
-//		try { Thread.currentThread().join(); } catch (Exception e) {}
-//		LOG.info("Exiting.......");
-//		System.exit(-1);
-//	}
-	
-	public static void main(String[] args) {	
-		BasicConfigurator.configure();
-//		Logger.getRootLogger().removeAllAppenders();
-//		ConsoleAppender appender = new ConsoleAppender();
-//		Logger.getRootLogger().addAppender(appender);
-//		Logger.getLogger("org.helios").setLevel(Level.OFF);
-//		Logger.getLogger("org.helios.jmxenabled.threads.ExecutorMBeanPublisher").setLevel(Level.OFF);
-//		Logger.getLogger("org.helios.jmxenabled.threads.ExecutorMBeanPublisher.ThreadPool.DefaultNotificationBroadcaster").addAppender(appender);
-//		Logger.getLogger("DefaultNotificationThreadPool").setLevel(Level.OFF);
 		
-		System.out.println(banner());
-		if(args.length>0) {
-			if("server".equalsIgnoreCase(args[0])) {
-				String server = OTServerDiscovery.info();
-				if(server==null || server.trim().isEmpty()) {
-					System.out.println("No Helios OT Server Found");
-				} else {
-					System.out.println(server);
-				}
-			} else if("connect".equalsIgnoreCase(args[0])) {
-				@SuppressWarnings("rawtypes")
-				HeliosEndpoint ep = new HeliosEndpoint();
-				ep.connect();
-				
-			} else if("beacon".equalsIgnoreCase(args[0])) {
-				Beacon.main(new String[]{});
-			} else if("ping".equalsIgnoreCase(args[0])) {
-				System.out.println("Ping....");
-				@SuppressWarnings("rawtypes")
-				HeliosEndpoint ep = new HeliosEndpoint();
-				ep.connect();
-				while(true) {
-					try {
-						long start = System.currentTimeMillis();
-						boolean b = ep.ping();
-						long et = System.currentTimeMillis()-start;
-						
-						if(b) {
-							System.out.println("Ping OK:" + et);
-						} else {
-							System.out.println("Ping Failed");
-						}
-						Thread.sleep(1000);
-					} catch (Exception e) {
-						
-					}
-							
-										
-				}
-			}
-		}
-	}
 	
 	protected static String banner() {
 		return "Helios OpenTrace Agent [" + VersionHelper.getHeliosVersion(HeliosEndpoint.class) + "]";
@@ -225,7 +140,7 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	protected boolean processTracesImpl(TraceCollection<T> traceCollection) throws EndpointConnectException, EndpointTraceException {
 		SystemClock.startTimer();
 		if(isConnected()) {
-			connector.write(traceCollection);
+			//connector.write(traceCollection);
 			lastElapsed = SystemClock.endTimer().toString();
 			return true;
 		} 
@@ -242,7 +157,7 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	 */
 	@JMXAttribute(name="Host", description="The helios OT server host name or ip address", mutability=AttributeMutabilityOption.READ_ONLY)
 	public String getHost() {
-		return host;
+		return "";
 	}
 
 	/**
@@ -251,7 +166,7 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	 */
 	@JMXAttribute(name="Port", description="The helios OT server listening port", mutability=AttributeMutabilityOption.READ_ONLY)
 	public int getPort() {
-		return port;
+		return -1;
 	}
 
 	/**
@@ -260,7 +175,7 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 	 */
 	@JMXAttribute(name="Protocol", description="The helios OT server comm protocol", mutability=AttributeMutabilityOption.READ_ONLY)
 	public String getProtocol() {
-		return protocol.name();
+		return "";
 	}
 
 	/**
@@ -272,31 +187,8 @@ public class HeliosEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		return exceptionCount.get();
 	}
 	
-	/**
-	 * Returns the connector for this endpoint
-	 * @return the connector
-	 */
-	public AbstractEndpointConnector getConnector() {
-		return connector;
-	}
 	
 
-	/**
-	 * Constructs a <code>String</code> with all attributes
-	 * in name = value format.
-	 *
-	 * @return a <code>String</code> representation 
-	 * of this object.
-	 */
-	public String toString() {
-	    StringBuilder retValue = new StringBuilder("HeliosEndpoint [")
-	        .append("host:").append(this.host)
-	        .append(" port:").append(this.port)
-	        .append(" protocol:").append(this.protocol)
-	        .append(" connected:").append(isConnected.get())
-	        .append("]");    
-	    return retValue.toString();
-	}
 
 
 }

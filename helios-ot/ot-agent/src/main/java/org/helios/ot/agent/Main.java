@@ -24,6 +24,7 @@
  */
 package org.helios.ot.agent;
 
+
 import org.helios.version.VersionHelper;
 
 /**
@@ -41,6 +42,49 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		log("Helios OpenTrace Agent [" + VersionHelper.getHeliosVersion(Main.class) + "]");
+//		System.out.println(banner());
+//		if(args.length>0) {
+//			if("server".equalsIgnoreCase(args[0])) {
+//				String server = OTServerDiscovery.info();
+//				if(server==null || server.trim().isEmpty()) {
+//					System.out.println("No Helios OT Server Found");
+//				} else {
+//					System.out.println(server);
+//				}
+//			} else if("connect".equalsIgnoreCase(args[0])) {
+//				@SuppressWarnings("rawtypes")
+//				HeliosEndpoint ep = new HeliosEndpoint();
+//				ep.connect();
+//				
+//			} else if("beacon".equalsIgnoreCase(args[0])) {
+//				Beacon.main(new String[]{});
+//			} else if("ping".equalsIgnoreCase(args[0])) {
+//				System.out.println("Ping....");
+//				@SuppressWarnings("rawtypes")
+//				HeliosEndpoint ep = new HeliosEndpoint();
+//				ep.connect();
+//				while(true) {
+//					try {
+//						long start = System.currentTimeMillis();
+//						boolean b = ep.ping();
+//						long et = System.currentTimeMillis()-start;
+//						
+//						if(b) {
+//							System.out.println("Ping OK:" + et);
+//						} else {
+//							System.out.println("Ping Failed");
+//						}
+//						Thread.sleep(1000);
+//					} catch (Exception e) {
+//						
+//					}
+//							
+//										
+//				}
+//			}
+//		}
+//	}
+		
 
 	}
 	
