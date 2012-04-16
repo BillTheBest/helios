@@ -50,6 +50,16 @@ public class HeliosOTClientFactory {
 	 */
 	public static HeliosOTClient newInstance() {
 		URI uri = null;
+		String uriString = OTServerDiscovery.discover();
+		if(uriString!=null) {
+			try {
+				uri = new URI(uriString);
+			} catch (Exception e) {
+				try { uri = new URI(""); } catch (Exception ex) {
+					throw new RuntimeException("Blank URI Failed. Should not happen !!", ex);
+				}
+			}
+		}
 		// perform discovery here
 		// if fails, build URI from defaults in Configuration
 		return newInstance(uri);
@@ -105,7 +115,7 @@ public class HeliosOTClientFactory {
 		BasicConfigurator.configure();
 		log("Loader Test");
 		try {
-			URI connectionUri = new URI("");
+			URI connectionUri = new URI("tcp://helioshq:9428");
 			String protocol = connectionUri.getScheme();
 			if(protocol==null) {
 				protocol = ConfigurationHelper.getSystemThenEnvProperty(Configuration.PROTOCOL, "tcp").trim().toLowerCase();
