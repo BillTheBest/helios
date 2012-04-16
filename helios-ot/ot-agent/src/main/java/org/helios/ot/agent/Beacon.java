@@ -28,6 +28,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.helios.helpers.Banner;
+import org.helios.ot.agent.endpoint.HeliosEndpointLite;
 import org.helios.ot.trace.MetricId;
 import org.helios.ot.tracer.TracerManager3;
 import org.helios.ot.tracer.TracerManager3.Configuration;
@@ -53,7 +54,8 @@ public class Beacon {
 		LOG.info("Helios OT Agent Beacon v." + VersionHelper.getHeliosVersion(Beacon.class));
 		HeliosOTClient otClient = HeliosOTClientFactory.newInstance();
 		otClient.connect(false);
-		//TracerManager3.getInstance(Configuration.getDefaultConfiguration().appendEndPoint(he));
+		
+		TracerManager3.getInstance(Configuration.getDefaultConfiguration().appendEndPoint(new HeliosEndpointLite(otClient)));
 		
 		LOG.info(Banner.banner("*", 2, 10, "Helios OT Agent Beacon Started.", "Agent Name:" + MetricId.getApplicationId()));
 		
