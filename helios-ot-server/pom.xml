@@ -97,10 +97,6 @@
 	      <artifactId>disruptor</artifactId>
 	   </dependency>
 
-	<dependency>
-	  <groupId>com.ibm.icu</groupId>
-	  <artifactId>icu4j</artifactId>
-	</dependency>
 
 
 
@@ -404,8 +400,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.helios.helios-ot</groupId>
-			<artifactId>helios-ot-helios</artifactId>
+			  <groupId>org.helios.helios-ot</groupId>
+			  <artifactId>ot-agent</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
 

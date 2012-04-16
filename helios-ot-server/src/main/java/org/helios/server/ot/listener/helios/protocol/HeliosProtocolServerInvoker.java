@@ -24,6 +24,7 @@
  */
 package org.helios.server.ot.listener.helios.protocol;
 
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,11 +38,21 @@ import org.apache.camel.ProducerTemplate;
 import org.apache.camel.StartupListener;
 import org.apache.camel.component.netty.NettyConstants;
 import org.apache.log4j.Logger;
-import org.helios.ot.helios.ClientProtocolOperation;
-import org.helios.ot.helios.HeliosProtocolInvocation;
-import org.helios.ot.helios.HeliosProtocolResponse;
+import org.helios.helpers.JMXHelper;
+import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
+import org.helios.jmx.dynamic.annotations.JMXAttribute;
+import org.helios.jmx.dynamic.annotations.JMXManagedObject;
+import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
+import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
+import org.helios.ot.agent.protocol.impl.HeliosProtocolResponse;
 import org.helios.ot.trace.Trace;
+import org.helios.server.ot.listener.helios.protocol.jmx.ChannelGroupJMXWrapper;
+import org.helios.server.ot.listener.helios.protocol.jmx.ChannelMXBean;
+import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.group.ChannelGroup;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
 
 /**
  * <p>Title: HeliosProtocolServerInvoker</p>
@@ -50,16 +61,23 @@ import org.jboss.netty.channel.ChannelHandlerContext;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>org.helios.server.ot.listener.helios.protocol.HeliosProtocolServerInvoker</code></p>
  */
-
-public class HeliosProtocolServerInvoker implements Processor, StartupListener, CamelContextAware {
+@JMXManagedObject(annotated=true, declared=true)
+public class HeliosProtocolServerInvoker extends ManagedObjectDynamicMBean implements Processor, StartupListener, CamelContextAware {
 	/** A cache of endpoints */
 	protected final Map<String, Endpoint> endpoints = new ConcurrentHashMap<String, Endpoint>();
 	/** The camel context */
 	protected CamelContext camelContext;
+	/** Instance logger */
 	protected Logger log = Logger.getLogger(getClass());
+	/** The camel exchange producer template */
 	protected ProducerTemplate producer = null;
-	
+	/** The camel endpoint for sending trace submissions */
 	protected Endpoint otAgentEndpoint = null;
+	/** The channel group to manage channel connections for all connected remote agents */
+	protected final ChannelGroup channelGroup = new DefaultChannelGroup(getClass().getSimpleName());
+	
+	/** An MXBean wrapper for the channel group */
+	protected final ChannelGroupJMXWrapper channelGroupMx = new ChannelGroupJMXWrapper(channelGroup);
 	
 	/** The ID of the endpoint that all OT agent traces are forwarded to  */
 	public static final String OT_AGENT_ENDPOINT = "OTAgentEndpoint";
@@ -76,29 +94,60 @@ public class HeliosProtocolServerInvoker implements Processor, StartupListener, 
 	public void process(Exchange exchange) throws Exception {
 		Message msg = exchange.getIn();
 		HeliosProtocolInvocation hpi = msg.getBody(HeliosProtocolInvocation.class);
+		
 		msg.setHeader(HeliosProtocolInvocation.HPI_HEADER, hpi.getOp());
 		msg.setBody(hpi.getPayload());
-		long requestId = hpi.getRequestId();
-		//((ChannelHandlerContext)exchange.getIn().getHeader(NettyConstants.NETTY_CHANNEL_HANDLER_CONTEXT)).setAttachment(requestId);
-		exchange.getOut().setHeader("requestId", requestId);
+		final SocketAddress remoteAddress = exchange.getIn().getHeader(NettyConstants.NETTY_REMOTE_ADDRESS, SocketAddress.class);
+		final long requestId = hpi.getRequestId();
+		final ChannelHandlerContext channelHandlerContext = exchange.getIn().getHeader(NettyConstants.NETTY_CHANNEL_HANDLER_CONTEXT, ChannelHandlerContext.class);
 		// These ops we fast forward.
-		if(hpi.getOp()==ClientProtocolOperation.PING.ordinal()) {			
-			exchange.getOut().setBody(HeliosProtocolResponse.newInstance(requestId, hpi.getPayload()));			
+		if(hpi.getOp()==ClientProtocolOperation.PING.ordinal()) {
+			if(log.isDebugEnabled()) log.debug("Processing PING from [" + remoteAddress + "]");
+			exchange.getOut().setBody(HeliosProtocolResponse.newInstance(ClientProtocolOperation.PING, requestId, hpi.getPayload()));			
 		} else if(hpi.getOp()==ClientProtocolOperation.TRACE.ordinal()) {
 			//producer.send(otAgentEndpoint, exchange);
+			if(log.isDebugEnabled()) log.debug("Processing TRACE from [" + remoteAddress + "]");
 			producer.asyncSend(otAgentEndpoint, exchange.copy());		
 			int traceCount = ((Trace[])hpi.getPayload()).length;
 			exchange.getOut().setBody(traceCount);
-		} else if(hpi.getOp()==ClientProtocolOperation.CONNECT.ordinal()) {
+		} else if(hpi.getOp()==ClientProtocolOperation.CONNECT.ordinal()) {			
+			if(log.isDebugEnabled()) log.debug("Processing CONNECT from [" + remoteAddress + "]");
+			Channel channel = channelHandlerContext.getChannel();
+			final int channelId = channel.getId();
+			if(channelGroup.find(channelId)==null) {
+				// This is a new channel
+				channelGroup.add(channel);
+			} else {
+				// This channel has already registered. Just return the session ID.
+			}
+			
+			
+			
 			String[] agentId = (String[])hpi.getPayload();
 			StringBuilder b = new StringBuilder("\n\tAgent Connection:");
 			b.append("\n\t\tHost:").append(agentId[0]);
 			b.append("\n\t\tAgent:").append(agentId[1]);
-			b.append("\n\t\tRemote Address:").append(exchange.getIn().getHeader(NettyConstants.NETTY_REMOTE_ADDRESS));
-			b.append("\n\t\tChannel:").append(exchange.getIn().getHeader(NettyConstants.NETTY_CHANNEL_HANDLER_CONTEXT, ChannelHandlerContext.class).getChannel());
+			b.append("\n\t\tRemote Address:").append(remoteAddress);
+			b.append("\n\t\tChannel:").append(channel);
+			b.append("\n\t\tChannel ID:").append(channel.getId());
+			b.append("\n\t\tChannelHandlerCtx:").append(channelHandlerContext.getName());
+			b.append("\n\t\tInitiating Route:").append(exchange.getFromRouteId());
+			b.append("\n\t\tInitiating Endpoint Key:").append(exchange.getFromEndpoint().getEndpointKey());
+			b.append("\n\t\tInitiating Endpoint URI:").append(exchange.getFromEndpoint().getEndpointUri());
+
+			
 			log.info(b);
-			exchange.getOut().setBody(true);
+			exchange.getOut().setBody(HeliosProtocolResponse.newInstance(ClientProtocolOperation.CONNECT, requestId, (exchange.getFromRouteId() + ":" + channelId)));
 		}
+	}
+	
+	/**
+	 * Returns the JMX represented channel group
+	 * @return the channel group
+	 */
+	@JMXAttribute(name="ChannelGroup", description="The Netty Channel Group", mutability=AttributeMutabilityOption.READ_ONLY)
+	public ChannelMXBean[] getChannels() {
+		return this.channelGroupMx.getChannels();
 	}
 
 
@@ -118,6 +167,8 @@ public class HeliosProtocolServerInvoker implements Processor, StartupListener, 
 		} catch (Exception e) {
 			throw new Exception("Failed to acquire the OT_AGENT_ENDPOINT. Expected to be in Route [" + OT_AGENT_ROUTE + "]", e);
 		}
+		reflectObject(this);
+		JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(this, JMXHelper.objectName("org.helios.netty:service=NettyServer"));
 	}
 
 

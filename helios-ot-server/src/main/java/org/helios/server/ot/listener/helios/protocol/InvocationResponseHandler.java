@@ -24,7 +24,7 @@
  */
 package org.helios.server.ot.listener.helios.protocol;
 
-import org.helios.ot.helios.HeliosProtocolResponse;
+import org.helios.ot.agent.protocol.impl.HeliosProtocolResponse;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
@@ -45,7 +45,7 @@ public class InvocationResponseHandler extends ObjectEncoder {
 		if(requestId==null) {
 			return super.encode(ctx, channel, msg);
 		} else {		
-			return super.encode(ctx, channel, HeliosProtocolResponse.newInstance(requestId.longValue(), msg));
+			return super.encode(ctx, channel, HeliosProtocolResponse.newInstance(-1, requestId.longValue(), msg));
 		}
 	}
 
