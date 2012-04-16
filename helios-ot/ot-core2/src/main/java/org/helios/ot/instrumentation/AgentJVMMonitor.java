@@ -210,11 +210,12 @@ public class AgentJVMMonitor {
 			bufferPoolObjectNames = Collections.emptySet();
 		}
 		long flushPeriod = ConfigurationHelper.getLongSystemThenEnvProperty(IntervalAccumulator.FLUSH_PERIOD_PROP, IntervalAccumulator.DEFAULT_FLUSH_PERIOD);
-		boolean disabled = ConfigurationHelper.getBooleanSystemThenEnvProperty(DISABLE_AGENT_JVM_MONITOR, false);
-		if(!disabled) {
+		//the following check is moved to TraceManager3
+		//boolean disabled = ConfigurationHelper.getBooleanSystemThenEnvProperty(DISABLE_AGENT_JVM_MONITOR, false);
+		//if(!disabled) {
 			timer.schedule(timerTask, flushPeriod, flushPeriod);
 			log.info("Started AgentJVMMonitor");
-		}
+		//}
 	}
 	
 	protected boolean constantsTraced = false;

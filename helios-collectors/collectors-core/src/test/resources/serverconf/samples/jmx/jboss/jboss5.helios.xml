@@ -4,15 +4,15 @@
    xmlns:jee="http://www.springframework.org/schema/jee"
    xmlns:p="http://www.springframework.org/schema/p"
    xmlns:c="http://www.springframework.org/schema/c"
-   xsi:schemaLocation="http://www.springframework.org/schema/beans 
+   xsi:schemaLocation="http://www.springframework.org/schema/beans
    					   http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
    					   http://www.springframework.org/schema/jee
 					   http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
 					   http://www.springframework.org/schema/util
 					   http://www.springframework.org/schema/util/spring-util-3.1.xsd"
     default-init-method="start" default-destroy-method="destroy">
-    
-    
+
+
     <!--  **** JBoss 5.x  -->
     <bean name="QueueActivity" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss.messaging.destination:service=Queue,*"/>
@@ -30,12 +30,12 @@
                 <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
                     p:targetAttributeName="ConsumerCount"
                     p:segmentPrefixElements="JMS,Queue"
-                    p:segment="{TARGET-PROPERTY:name}" />                    
+                    p:segment="{TARGET-PROPERTY:name}" />
             </list>
         </property>
-    </bean>      
-    
-    <!--  ****  JBoss 5.x   --> 
+    </bean>
+
+    <!--  ****  JBoss 5.x   -->
     <bean name="TopicActivity" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss.messaging.destination:service=Topic,*"/>
         <property name="targetAttributeTraces">
@@ -56,8 +56,8 @@
                     p:segment="{TARGET-PROPERTY:name}" />
             </list>
         </property>
-    </bean>	
-    
+    </bean>
+
     <!--  ****  JBoss 5.x  - doesn't work on 6.x which gives these stats through jboss.jta:name=TransactionStatistics,* MBean -->
     <bean name="TransactionManagerActivity" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss:service=TransactionManager"/>
@@ -74,8 +74,8 @@
             </list>
         </property>
     </bean>
-    
-    <!-- ******  JBoss 4.x, 5.x   --> 
+
+    <!-- ******  JBoss 4.x, 5.x   -->
     <bean name="ThreadNMemoryActivity" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss.system:type=ServerInfo"/>
         <property name="targetAttributeTraces">
@@ -85,7 +85,7 @@
                     p:segmentPrefixElements="Threads" />
                 <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
                     p:targetAttributeName="ActiveThreadGroupCount"
-                    p:segmentPrefixElements="Threads" />                        
+                    p:segmentPrefixElements="Threads" />
                 <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
                     p:targetAttributeName="MaxMemory"
                     p:segmentPrefixElements="Memory" />
@@ -94,11 +94,11 @@
                     p:segmentPrefixElements="Memory" />
                 <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
                     p:targetAttributeName="FreeMemory"
-                    p:segmentPrefixElements="Memory" />   
+                    p:segmentPrefixElements="Memory" />
             </list>
         </property>
-    </bean>    
-       
+    </bean>
+
     <!--  JBoss 5.x  -->
     <bean name="TomcatClusterActivity" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss:service=HAPartition,*"/>
@@ -107,7 +107,7 @@
                 <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
                     p:targetAttributeName="CurrentView"
                     p:metricName="Members"
-                    p:segmentPrefixElements="Cluster,Partition,{TARGET-PROPERTY:partition}" >                    
+                    p:segmentPrefixElements="Cluster,Partition,{TARGET-PROPERTY:partition}" >
                     <property name="objectFormatters">
 						<list>
 							<ref bean="CollectionSizer"/>
@@ -116,10 +116,43 @@
 				</bean>
             </list>
         </property>
-    </bean>     
-    
-    
-    
-    
-    
-</beans>    
+    </bean>
+
+        <!--  JBoss 4.x, 5.x and 6.x  -->
+	    <bean id="DataSources" class="org.helios.collectors.jmx.JMXObject">
+	        <property name="targetObjectName" value="jboss.jca:service=ManagedConnectionPool,*"/>
+	        <property name="targetAttributeTraces">
+	            <list>
+	                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+	                    p:targetAttributeName="ConnectionCount"
+	                    p:segmentPrefixElements="DataSources"
+	                    p:segment="{TARGET-PROPERTY:name}"
+	                    p:metricName="Active Connection" />
+	                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+	                    p:targetAttributeName="InUseConnectionCount"
+	                    p:segmentPrefixElements="DataSources"
+	                    p:segment="{TARGET-PROPERTY:name}"
+	                    p:metricName="In-use Connection"
+	                    p:traceType="INT_AVG"  />
+	                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+	                    p:targetAttributeName="ConnectionCreatedCount"
+	                    p:segmentPrefixElements="DataSources"
+	                    p:segment="{TARGET-PROPERTY:name}"
+	                    p:metricName="Total Created" />
+	                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+	                    p:targetAttributeName="ConnectionDestroyedCount"
+	                    p:segmentPrefixElements="DataSources"
+	                    p:segment="{TARGET-PROPERTY:name}"
+	                    p:metricName="Total Destroyed" />
+	                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
+	                    p:targetAttributeName="MaxSize"
+	                    p:segmentPrefixElements="DataSources"
+	                    p:segment="{TARGET-PROPERTY:name}"
+	                    p:metricName="Maximum Available" />
+	            </list>
+	        </property>
+    </bean>
+
+
+
+</beans>

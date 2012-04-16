@@ -50,6 +50,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.helios.helpers.Banner;
+import org.helios.helpers.ConfigurationHelper;
 import org.helios.helpers.JMXHelper;
 import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
@@ -306,12 +307,15 @@ public class TracerManager3 extends ManagedObjectDynamicMBean implements Runnabl
 		}
 //		registerDisruptorMBean();
 		LOG.info(Banner.banner("TracerManager Started"));		
-		instance.state.setStarted();	
-		executor.execute(new Runnable(){
-			public void run() {
-				AgentJVMMonitor.getInstance();
-			}
-		});
+		instance.state.setStarted();
+		boolean disabled = ConfigurationHelper.getBooleanSystemThenEnvProperty(AgentJVMMonitor.DISABLE_AGENT_JVM_MONITOR, false);
+		if(!disabled){
+			executor.execute(new Runnable(){
+				public void run() {
+					AgentJVMMonitor.getInstance();
+				}
+			});
+		}
 	}
 	
 	/**

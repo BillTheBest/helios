@@ -121,7 +121,7 @@
    
 
    <category name="org.helios.collectors.jmx" additivity="false">
-      <priority value="DEBUG"/>
+      <priority value="INFO"/>
       <appender-ref ref="CONSOLE"/>
    </category>
 
