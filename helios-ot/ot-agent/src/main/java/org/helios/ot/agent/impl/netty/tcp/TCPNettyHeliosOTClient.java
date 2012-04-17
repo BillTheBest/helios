@@ -123,8 +123,7 @@ public class TCPNettyHeliosOTClient extends AbstractNettyHeliosOTClient {
 	              return Channels.pipeline(
 	            		  instrumentation, 
 	                      new ObjectEncoder(),
-	                      new ObjectDecoder(),
-	                      //new LoggingHandler(InternalLogLevel.INFO),   // implement JMX enable/disable 
+	                      new ObjectDecoder(),	                      
 	                      protocolHandler
 	                      );
 	          }

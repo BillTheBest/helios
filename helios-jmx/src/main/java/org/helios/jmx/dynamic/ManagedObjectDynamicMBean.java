@@ -33,6 +33,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -797,13 +798,13 @@ public class ManagedObjectDynamicMBean extends NotificationBroadcasterSupport im
 					Method meth = getMethod(object.getClass(), name);			
 					if(meth==null) return ""; //throw new Exception("Could Not Located Method [" + name + "].");
 					meth.setAccessible(true);
-					retValue = meth.invoke(object, NO_ARGS);			
+					retValue = meth.invoke(Modifier.isStatic(meth.getModifiers()) ? null : object, NO_ARGS);			
 					return retValue==null ? meth.getName() : retValue;
 				} else if("F".equalsIgnoreCase(type)) {
 					Field f = getField(object.getClass(), name);
 					if(f==null) return "";//throw new Exception("Could Not Located Field [" + name + "].");
 					f.setAccessible(true);
-					retValue = f.get(object); 
+					retValue = f.get(Modifier.isStatic(f.getModifiers()) ? null : object); 
 					return retValue==null ? f.getName() : retValue;
 				} else {
 					throw new Exception("The token type [" + type + "] is invalid"); 
@@ -894,7 +895,7 @@ public class ManagedObjectDynamicMBean extends NotificationBroadcasterSupport im
 				//=====================
 				// jmxField attributes
 				//=====================
-				String description = jmxField.description();
+				String description = format(jmxField.description(), object); 
 				String name = jmxField.name();
 				String jmxDomain = jmxField.jmxDomain();
 				String objectNameStr = jmxField.objectName();
@@ -1163,10 +1164,10 @@ public class ManagedObjectDynamicMBean extends NotificationBroadcasterSupport im
 				try {
 					operDesc = clazz.getMethod(jmxOper.description(), NO_SIG).invoke(object, NO_ARGS).toString();
 				} catch (Exception e) {
-					operDesc = jmxOper.description();
+					operDesc = format(jmxOper.description(), object);
 				}
 			} else {
-				operDesc = jmxOper.description();
+				operDesc = format(jmxOper.description(), object);
 			}
 			
 			pInfos = generateParamInfo(m);

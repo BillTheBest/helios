@@ -47,6 +47,7 @@ import org.helios.jmx.dynamic.annotations.JMXNotificationType;
 import org.helios.jmx.dynamic.annotations.JMXNotifications;
 import org.helios.jmx.dynamic.annotations.JMXOperation;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.helios.ot.agent.jmx.NettyLoggerController;
 import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
 import org.helios.ot.trace.MetricId;
@@ -73,6 +74,8 @@ public abstract class AbstractHeliosOTClientImpl extends ManagedObjectDynamicMBe
 	private static final long serialVersionUID = 1739421438427185681L;
 	/** Instance logger */
 	protected final Logger log = Logger.getLogger(getClass());
+	/** Logger controller */
+	protected final NettyLoggerController logController = new NettyLoggerController(log);
 	/** Connectivity flag */
 	protected final AtomicBoolean connected = new AtomicBoolean(false);
 	/** Registered client listeners */

@@ -43,6 +43,7 @@ import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.helios.jmxenabled.logging.LoggerControl;
 import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolResponse;
@@ -69,6 +70,8 @@ public class HeliosProtocolServerInvoker extends ManagedObjectDynamicMBean imple
 	protected CamelContext camelContext;
 	/** Instance logger */
 	protected Logger log = Logger.getLogger(getClass());
+	/** Logger control */
+	protected final LoggerControl loggerControl = new LoggerControl(log);
 	/** The camel exchange producer template */
 	protected ProducerTemplate producer = null;
 	/** The camel endpoint for sending trace submissions */
@@ -168,6 +171,7 @@ public class HeliosProtocolServerInvoker extends ManagedObjectDynamicMBean imple
 			throw new Exception("Failed to acquire the OT_AGENT_ENDPOINT. Expected to be in Route [" + OT_AGENT_ROUTE + "]", e);
 		}
 		reflectObject(this);
+		reflectObject(loggerControl);
 		JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(this, JMXHelper.objectName("org.helios.netty:service=NettyServer"));
 	}
 

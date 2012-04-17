@@ -27,15 +27,17 @@ package org.helios.ot.agent.impl.netty;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeoutException;
 
 import org.helios.helpers.ConfigurationHelper;
 import org.helios.helpers.JMXHelper;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
+import org.helios.jmx.dynamic.annotations.JMXOperation;
+import org.helios.jmx.dynamic.annotations.JMXParameter;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.helios.ot.agent.AbstractHeliosOTClientImpl;
@@ -47,6 +49,7 @@ import org.helios.ot.agent.impl.netty.handler.listeners.ConnectionOpenedEventLis
 import org.helios.ot.agent.impl.netty.handler.listeners.ConnectionResponseListener;
 import org.helios.ot.agent.impl.netty.handler.listeners.InvocationDispatchListener;
 import org.helios.ot.agent.impl.netty.handler.listeners.SynchronousInvocationListener;
+import org.helios.ot.agent.jmx.WrappedLoggingHandler;
 import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
 import org.helios.ot.trace.Trace;
@@ -55,7 +58,10 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandler;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.logging.InternalLogLevel;
 
 /**
  * <p>Title: AbstractNettyHeliosOTClient</p>
@@ -85,6 +91,8 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	protected ChannelFuture channelFuture;
 	/** This client's channel */
 	protected Channel channel;
+	/** This client's channel pipeline */
+	protected ChannelPipeline pipeline = null;
 	
 	/** The client bootstrap */
 	protected ClientBootstrap bootstrap;
@@ -106,6 +114,8 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	protected InetSocketAddress localSocketAddress = null;
 	/** The synchronous request handler */
 	protected SynchronousInvocationListener synchronousInvocationListener;
+	/** The logging channel handler for enabling debug of the events occuring in the pipeline */
+	protected WrappedLoggingHandler loggingHandler; 
 	/** The instrumentation */
 	protected final ConnectorChannelInstrumentation instrumentation = new ConnectorChannelInstrumentation();
 	/** The channel close listener */
@@ -174,6 +184,8 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	/** The default send buffer size */
 	public static final int DEFAULT_SEND_BUFFER = 1048576;
 	
+	/** The name of the logging handler */
+	public static final String LOGGING_HANDLER_NAME = "loggingHandler";
 	
 	/**
 	 * Creates a new AbstractNettyHeliosOTClient
@@ -192,7 +204,7 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 							.setMaxThreads(100)
 							.setJmxDomains(JMXHelper.getRuntimeHeliosMBeanServer().getDefaultDomain())
 							// org.helios.endpoints:type=HeliosEndpoint,name=HeliosEndpoint
-							//.setPoolObjectName(new StringBuilder("org.helios.endpoints:name=").append(getClass().getSimpleName()).append(",service=ThreadPool,type=Worker,protocol=").append(getProtocol().name()))
+							.setPoolObjectName(new StringBuilder("org.helios.agent:service=HeliosOTClient,threadPool=Worker"))
 							.setPrestartThreads(1)
 							.setTaskQueueSize(1000)
 							.setTerminationTime(5000)
@@ -201,7 +213,7 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 							.build();		
 				}
 			}
-		}
+		}		
 	}
 	
 	/**
@@ -238,10 +250,12 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 		initChannelFactory();
 		reflectObject(this);
 		reflectObject(this.instrumentation);
+		reflectObject(this.logController);
 		//=================================
 		//    Push this up to the top abstract with abstracts getting the right details from the impls.
 		//=================================
 		objectName = JMXHelper.objectName(new StringBuilder("org.helios.agent:service=HeliosOTClient,host=").append(host).append(",port=").append(port).append(",protocol=").append(getProtocol()));
+		loggingHandler = new WrappedLoggingHandler(objectName, workerExecutor, getClass().getName(), false);
 		JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(this, objectName);
 		//=================================
 	}
@@ -317,6 +331,8 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 					
 				} else {
 					channel = f.getChannel();
+					pipeline = channel.getPipeline();
+					logController.setPipeline(pipeline);
 					localSocketAddress = (InetSocketAddress) channel.getLocalAddress();
 					remoteSocketAddress = (InetSocketAddress) channel.getRemoteAddress();
 					onImplConnect(f);					
@@ -336,7 +352,115 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 		});
 	}
 	
-
+	/**
+	 * Returns a string value map representation of the client's channel pipeline
+	 * @return a string value map representation of the client's channel pipeline
+	 */
+	@JMXAttribute(name="ChannelPipeline", description="A string value map representation of the client's channel pipeline", mutability=AttributeMutabilityOption.READ_ONLY)
+	public Map<String, String> getChannelPipeline() {
+		if(pipeline==null) return Collections.emptyMap();
+		Map<String, ChannelHandler> pipelineMap = pipeline.toMap();
+		Map<String, String> map = new HashMap<String, String>(pipelineMap.size());
+		for(Map.Entry<String, ChannelHandler> entry: pipelineMap.entrySet()) {
+			map.put(entry.getKey(), entry.getValue().getClass().getName());
+		}
+		return Collections.unmodifiableMap(map);
+	}
+	
+	/**
+	 * Indicates if the logging handler is enabled anywhere in the pipeline
+	 * @return true if the logging handler is enabled anywhere in the pipeline, false otherwise
+	 */
+	@JMXAttribute(name="LoggingHandlerEnabled", description="Indicates if the logging handler is enabled anywhere in the pipeline", mutability=AttributeMutabilityOption.READ_WRITE)
+	public boolean getLoggingHandlerEnabled() {
+		for(ChannelHandler handler: pipeline.toMap().values()) {
+			if(handler==loggingHandler) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * Sets the enabled state of the logging handler.
+	 * When disabled, simply removes the logging handler from the pipeline.
+	 * When enabled, adds the logging handler to the front of the pipeline  
+	 * @param enable true to enable, false to disable
+	 */
+	public void setLoggingHandlerEnabled(boolean enable) {
+		boolean isEnabled = getLoggingHandlerEnabled();
+		if(enable==isEnabled) return;
+		if(enable) {
+			pipeline.addFirst(LOGGING_HANDLER_NAME, loggingHandler);
+		} else {
+			pipeline.remove(loggingHandler);
+		}
+	}
+	
+	
+	/**
+	 * Adds the logging handler before the named handler in the pipeline, removing it first if it already enabled.
+	 * @param handlerName The name of the handler to add the logging handler before
+	 */
+	@JMXOperation(name="enableLoggingHandlerBefore", description="Adds the logging handler before the named handler in the pipeline, removing it first if it already enabled.")
+	public void enableLoggingHandlerBefore(@JMXParameter(name="handlerName", description="The name of the handler to add the logging handler before") String handlerName) {
+		if(handlerName==null) throw new IllegalArgumentException("The passed handler name was null", new Throwable());
+		try {
+			if(!pipeline.toMap().containsKey(handlerName)) throw new IllegalArgumentException("The passed handler name [" + handlerName + "] is not registered in the pipeline", new Throwable());
+			setLoggingHandlerEnabled(false);
+			pipeline.addBefore(handlerName, LOGGING_HANDLER_NAME, loggingHandler);
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Adds the logging handler after the named handler in the pipeline, removing it first if it already enabled.
+	 * @param handlerName The name of the handler to add the logging handler after
+	 */
+	@JMXOperation(name="enableLoggingHandlerAfter", description="Adds the logging handler after the named handler in the pipeline, removing it first if it already enabled.")
+	public void enableLoggingHandlerAfter(@JMXParameter(name="handlerName", description="The name of the handler to add the logging handler after") String handlerName) {
+		if(handlerName==null) throw new IllegalArgumentException("The passed handler name was null", new Throwable());
+		if(!pipeline.toMap().containsKey(handlerName)) throw new IllegalArgumentException("The passed handler name [" + handlerName + "] is not registered in the pipeline", new Throwable());
+		setLoggingHandlerEnabled(false);
+		pipeline.addAfter(handlerName, LOGGING_HANDLER_NAME, loggingHandler);
+	}
+	
+	/**
+	 * Returns the internal logging level of the logging handler
+	 * @return the internal logging level of the logging handler
+	 */
+	@JMXAttribute(name="LoggingHandlerLevel", description="The internal logging level of the logging handler" , mutability=AttributeMutabilityOption.READ_WRITE)
+	public String getLoggingHandlerLevel() {
+		return loggingHandler.getLogLevel();
+	}
+	
+	/**
+	 * Sets the logging level of the logging handler
+	 * @param level The name of the level to set
+	 */
+	public void setLoggingHandlerLevel(String level) {
+		loggingHandler.setLogLevel(level);
+	}
+	
+	/**
+	 * Indicates if the logging handler has JMX notifications enabled
+	 * @return true if the logging handler has JMX notifications enabled, false otherwise
+	 */
+	@JMXAttribute(name="JmxLoggingEnabled", description="Indicates if the logging handler has JMX notifications enabled" , mutability=AttributeMutabilityOption.READ_WRITE)
+	public boolean getJmxLoggingEnabled() {
+		return loggingHandler.isJmxEnabled();
+	}
+	
+	/**
+	 * Sets the enabled state of the logging handler's JMX notifications
+	 * @param enabled true to enable, false to disable
+	 */
+	public void setJmxLoggingEnabled(boolean enabled) {
+		loggingHandler.setJmxEnabled(enabled);
+	}
 	
 	/**
 	 * Event passed down from the Abstract client managing the connect process to the impl that has no idea what's going on.

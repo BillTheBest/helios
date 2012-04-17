@@ -70,6 +70,7 @@
 				        gbindings.put(beanName.replaceAll("\\.", "_"), bean);
 				    }
 				}				
+				gbindings.put("JMXHelper", org.helios.helpers.JMXHelper.class);
 				//TracerManager3.getInstance().getTracer().traceSticky(AppCtx.getBeanDefinitionNames().length, "Bean Count", "Helios", "Spring Container");
 			]]></value>
 		</property>

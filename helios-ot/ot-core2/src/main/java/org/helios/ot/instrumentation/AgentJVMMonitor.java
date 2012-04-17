@@ -24,6 +24,9 @@
  */
 package org.helios.ot.instrumentation;
 
+import gnu.trove.map.hash.TObjectIntHashMap;
+import gnu.trove.procedure.TObjectIntProcedure;
+
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -33,8 +36,8 @@ import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,7 +46,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.TimeUnit;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -126,6 +128,9 @@ public class AgentJVMMonitor {
 	
 	/** The threading metrics name space  */
 	public static final String THREAD_ROOT = ROOT + Trace.DELIM + "Threads";
+	/** The thread states name space  */
+	public static final String THREAD_STATE = THREAD_ROOT + Trace.DELIM + "ThreadStates";
+	
 	/** The classloading metrics name space  */
 	public static final String CLASSLOAD_ROOT = ROOT + Trace.DELIM + "Classes";
 	/** The JVM compiler metrics name space  */
@@ -296,6 +301,17 @@ public class AgentJVMMonitor {
 		itracer.traceSticky(peakThreadCount, "Peak Thread Count", THREAD_ROOT);
 		itracer.traceSticky(deadlockedThreads, "Deadlocked Thread Count", THREAD_ROOT);
 		itracer.traceSticky(monitorDeadlockedThreads, "Monitor Deadlocked Thread Count", THREAD_ROOT);
+		TObjectIntHashMap<String> threadStateMap = new TObjectIntHashMap<String>(Thread.State.values().length);
+		for(ThreadInfo ti: threadMXBean.getThreadInfo(threadMXBean.getAllThreadIds())) {
+			threadStateMap.adjustOrPutValue(ti.getThreadState().name(), 1, 1);
+		}
+		threadStateMap.forEachEntry(new TObjectIntProcedure<String>() {
+			public boolean execute(String threadState, int count) {
+				itracer.traceSticky(count, threadState, THREAD_STATE);
+				return true;
+			}
+			
+		});
 	}
 	
 	/**
