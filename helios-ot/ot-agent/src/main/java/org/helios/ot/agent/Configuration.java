@@ -60,6 +60,8 @@ public class Configuration {
 	/** The property name for synchronous operation timeouts in ms. */
 	public static final String SYNCH_OP_TIMEOUT = CONNECTION_PREFIX + "operationTimeoutMillis";
 	
+	
+	
 
 	/** System props and environment config name for tcp no delay option */
 	public static final String CONFIG_NODELAY = CONNECTION_PREFIX + "tcpNoDelay";
@@ -100,6 +102,8 @@ public class Configuration {
 	public static final String DISCOVERY_NETWORK = DISCOVERY_PREFIX + ".network";
 	/** The property name for the helios ot discovery enablement */
 	public static final String DISCOVERY_ENABLED = DISCOVERY_PREFIX + ".enabled";
+	/** The property name for the maximum number of discovery attempts in one connect round */
+	public static final String DISCOVERY_MAX_ATTEMPTS = DISCOVERY_PREFIX + ".maxattempts";
 	
 	/** The property name for the helios ot server discovery multicast port */
 	public static final String DISCOVERY_PORT = DISCOVERY_PREFIX + ".port";
@@ -123,6 +127,8 @@ public class Configuration {
 	public static final String DEFAULT_DISCOVERY_LISTEN_IFACE = InetAddressHelper.hostName();
 	/** The default helios ot server discovery enablement */
 	public static final boolean DEFAULT_DISCOVERY_ENABLED = true;
+	/** The default maximum number of discovery attempts per connect round */
+	public static final int DEFAULT_DISCOVERY_MAX_ATTEMPTS = 3;
 	
 	//=============================================
 	
@@ -302,6 +308,14 @@ public class Configuration {
 	public static int getDiscoveryPort() {
 		return ConfigurationHelper.getIntSystemThenEnvProperty(DISCOVERY_PORT, DEFAULT_DISCOVERY_PORT);
 	}
+	
+	/**
+	 * Returns the maximum number of discovery attempts per connect round
+	 * @return the maximum number of discovery attempts per connect round
+	 */
+	public static int getDiscoveryMaxAttempts() {
+		return ConfigurationHelper.getIntSystemThenEnvProperty(DISCOVERY_MAX_ATTEMPTS, DEFAULT_DISCOVERY_MAX_ATTEMPTS);
+	}	
 	
 	/**
 	 * Returns the configured discovery timeout in ms.

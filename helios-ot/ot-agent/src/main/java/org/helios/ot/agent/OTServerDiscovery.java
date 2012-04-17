@@ -40,12 +40,26 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.helios.helpers.InetAddressHelper;
 
 /**
  * <p>Title: OTServerDiscovery</p>
  * <p>Description: Multicast discovery agent for Helios OT Endpoint</p> 
  * <p>Company: Helios Development Group LLC</p>
- * <p>An InfoDump response in (<b><code>TXT</code></b> format looks something like this:<pre>
+ * <p>Discovery Process:<ol>
+ * <li>Starts a UDP listener on <b><code>0.0.0.0:0</code></b>, so we're listening on all interfaces.</li>
+ * <li>Once the listener is started, we capture the designated ephemeral port</li>
+ * <li>Iterates all network interfaces supporting multicast, and all addresses for each interface.</li>
+ * <li>For each, binds to the configured or default multicast network (discovery address, discovery port) and 
+ * transmits a discovery request consisting of the port the discovery listener is listening on and the preferred protocol
+ * that the client would like to establish a connection to the server with.</li>
+ * <li>The OT Server discovery service will [hopefully] receive one of these discovery requests and will return a connection URI back to the client
+ * (which will be the preferred requested if available).</li>
+ * <li>The return is sent to the address where the packet was received from and the listening port specified in the received request.
+ * Currently, discovery clients can only listen on UDP, so only UDP response transmits are implemented in the discovery service.</li>
+ * <li>Steps #3 and #4 will be repeated the configured or default number of times, waiting the configured or default period of time for a response between each attempt.</li>
+ * </ol></p>
+ * <p>An InfoDump response in (<b><code>TXT</code></b>) format looks something like this:<pre>
 ************************
 Helios Open Trace Server
 ************************
@@ -146,14 +160,20 @@ public class OTServerDiscovery  {
 	 * @return the OT Server Discovery Service supplied response or null if there was no response.
 	 */
 	protected static String rt(String command) {
+		// the designated amount of time to wait for a response after each iteration
+		final int dsTimeout = Configuration.getDiscoveryTimeout();
+		// the maximum number of attempts to execute discovery before it is abandoned
+		final int dsMaxAttempts = Configuration.getDiscoveryMaxAttempts();
+		// When a discovery request succeeds, the connection URI will be writen here.
+		final AtomicReference<String> responseRef = new AtomicReference<String>(); 
 		final CountDownLatch latch = new CountDownLatch(1);
 		final CountDownLatch listeningLatch = new CountDownLatch(1);
 		MulticastSocket ms =  null;
-		final AtomicReference<String> responseRef = new AtomicReference<String>(); 
+		
+		// Start
 		try {
-			InetSocketAddress insock = new InetSocketAddress(Configuration.getDiscoveryListenAddress(), 0); 
+			InetSocketAddress insock = new InetSocketAddress("0.0.0.0", 0); 
 			final DatagramSocket ds = new DatagramSocket(insock);
-			final int dsTimeout = Configuration.getDiscoveryTimeout();
 			ds.setSoTimeout(dsTimeout);
 			final byte[] buffer = new byte[1000];
 			final DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
@@ -211,7 +231,9 @@ public class OTServerDiscovery  {
 					}
 				}
 			}					
-			String fc = String.format(command, Configuration.getDiscoveryListenAddress(), ds.getLocalPort());
+			//String fc = String.format(command, Configuration.getDiscoveryListenAddress(), ds.getLocalPort());
+			//String fc = String.format(command, InetAddressHelper.hostName(), ds.getLocalPort());
+			String fc = String.format(command, InetAddress.getByName(InetAddressHelper.hostName()).getHostAddress(), ds.getLocalPort());
 			log.info("Discovery Request [" + fc + "]");
 			byte[] buff = fc.getBytes();	
 			t.start();
