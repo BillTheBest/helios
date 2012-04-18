@@ -110,12 +110,12 @@
 				  <artifactId>collectors-jmx-proxies</artifactId>
 				<version>${helios.version}</version>
 			</dependency-->
-			<dependency>
+			<!--dependency>
 				<groupId>org.helios.helios-persistence</groupId>
 					<artifactId>helios-persistence-core</artifactId>
 					<version>${helios.version}</version>
 					<scope>test</scope>
-			</dependency>
+			</dependency-->
 			<dependency>
 					<groupId>org.helios</groupId>
 					<artifactId>helios-util</artifactId>
