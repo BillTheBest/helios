@@ -48,26 +48,6 @@
 				<artifactId>json</artifactId>
 				<version>${json.version}</version>
 			</dependency-->
-			<dependency>
-			  <groupId>commons-pool</groupId>
-			  <artifactId>commons-pool</artifactId>
-			  <version>${commons.pool.version}</version>
-			</dependency>
-			<dependency>
-			  <groupId>commons-httpclient</groupId>
-			  <artifactId>commons-httpclient</artifactId>
-			  <version>${httpclient.version}</version>
-			</dependency>
-			<dependency>
-			  <groupId>org.apache.commons</groupId>
-			  <artifactId>not-yet-commons-ssl</artifactId>
-			  <version>${httpclient-ssl.version}</version>
-			</dependency>
-			<dependency>
-			  <groupId>joesnmp</groupId>
-			  <artifactId>joesnmp</artifactId>
-			  <version>${joesnmp.version}</version>
-			</dependency>
 			<!--dependency>
 			  <groupId>jboss</groupId>
 			  <artifactId>jbossall-client</artifactId>
