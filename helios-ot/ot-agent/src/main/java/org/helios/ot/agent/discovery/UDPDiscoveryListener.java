@@ -101,7 +101,7 @@ public class UDPDiscoveryListener implements Runnable {
 	 * @throws Exception
 	 */
 	public int start() throws Exception {
-		log.info("Starting Discovery Listener");
+		if(log.isDebugEnabled()) log.debug("Starting Discovery Listener");
 		run = true;
 		insock = new InetSocketAddress("0.0.0.0", 0);
 		datsock = new DatagramSocket(insock);
@@ -115,9 +115,10 @@ public class UDPDiscoveryListener implements Runnable {
 	 * Stops the discovery listener
 	 */
 	public void stop() {
+		run = false;
 		try { listenerThread.interrupt(); } catch (Exception e) {};
 		try { datsock.close(); } catch (Exception e) {};
-		log.info("Stopped Discovery Listener");
+		if(log.isDebugEnabled()) log.debug("Stopped Discovery Listener");
 	}
 	
 	/*

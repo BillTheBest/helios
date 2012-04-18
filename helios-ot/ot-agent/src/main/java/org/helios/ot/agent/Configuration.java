@@ -45,6 +45,7 @@ public class Configuration {
 	/** The property name prefix for all connection properties */
 	public static final String CONNECTION_PREFIX = "org.helios.connection";	
 	
+	public static final String PREF_IP4 = "java.net.preferIPv4Stack";
 	
 	/** The property name for the helios ot server host name or ip address */
 	public static final String HOST = CONNECTION_PREFIX + ".host";

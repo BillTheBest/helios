@@ -29,6 +29,7 @@ import java.net.URISyntaxException;
 
 import org.apache.log4j.BasicConfigurator;
 import org.helios.helpers.ConfigurationHelper;
+import org.helios.ot.agent.discovery.OTServerDiscovery;
 import org.helios.time.SystemClock;
 
 /**

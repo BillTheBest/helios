@@ -22,7 +22,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
  *
  */
-package org.helios.ot.agent;
+package org.helios.ot.agent.discovery;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -30,7 +30,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
-import java.net.SocketAddress;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Map;
@@ -45,7 +44,8 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.helios.helpers.InetAddressHelper;
-import org.helios.ot.agent.discovery.UDPDiscoveryListener;
+import org.helios.ot.agent.Configuration;
+import org.helios.time.SystemClock;
 
 /**
  * <p>Title: OTServerDiscovery</p>
@@ -114,7 +114,7 @@ JMX Connector URLs
 &lt;/HeliosOpenTraceServer&gt;
  * </pre></p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>org.helios.ot.helios.OTServerDiscovery</code></p>
+ * <p><code>org.helios.ot.agent.discovery.OTServerDiscovery</code></p>
  */
 public class OTServerDiscovery  {
 	/** Static class logger */
@@ -124,14 +124,53 @@ public class OTServerDiscovery  {
 	/** A NetworkInterface that was discovered to work with multicast after the original join failed */
 	protected static NetworkInterface goodNic = null;
 	
+	/** A map of known NICs that are up and support multicast */
+	protected final static Map<String, NetworkInterface> knownNics = InetAddressHelper.getUpMCNICMap();
+	/** An array of established multicast sockets */
+	protected static volatile MulticastSocket[] multicastSockets = null; 
+	
+	/** A thread local containing the CountDownLatch that a thread will wait on */
+	protected static final ThreadLocal<CountDownLatch> threadLatch = new ThreadLocal<CountDownLatch>();
+	/**
+	 * Refreshes the map of known NICs that are up and support multicast
+	 */
+	public static void refreshNics() {
+		knownNics.clear();
+		knownNics.putAll(InetAddressHelper.getUpMCNICMap());
+	}
+	
+	/**
+	 * Kills the multicast socket cache
+	 */
+	public synchronized static void resetMulticastSockets() {
+		if(multicastSockets!=null) {
+			for(MulticastSocket msock: multicastSockets) {
+				try { msock.close(); } catch (Exception e) {}
+			}						
+		}
+		multicastSockets = null;
+	}
+	
 	/**
 	 * Issues an InfoDump command over the multicast network and prints the response.
 	 * @param format The format of the output (<b><code>TXT</code></b> or <b><code>XML</code></b>)
 	 * @return The info dump output which may be null if the request times out.
 	 */
 	public static String info(String format) {
+		threadLatch.set(new CountDownLatch(1));
 		return rt("INFO|udp://%s:%s" + (format==null ? "" : "|" + format));
 	}
+	
+	/**
+	 * Issues a ping against the multicast network
+	 * @param the name of the NIC that sent the request
+	 * @return the name of the NIC that sent the request
+	 */
+	public static String ping(String nic) {
+		threadLatch.set(new CountDownLatch(1));
+		return rt("PING|udp://%s:%s|" + (nic==null ? "null" : nic));
+	}
+	
 	
 	/**
 	 * Issues an InfoDump command over the multicast network and prints the response in <b><code>TXT</code></b> format.
@@ -147,6 +186,7 @@ public class OTServerDiscovery  {
 	 * @return the URI of the endpoint to connect to which will be of the preferred protocol if available and may be null of no server answered.
 	 */
 	public static String discover(String protocol) {
+		threadLatch.set(new CountDownLatch(1));
 		return rt("DISCOVER|udp://%s:%s"  + (protocol==null ? "" : "|" + protocol));
 	}
 	
@@ -154,78 +194,98 @@ public class OTServerDiscovery  {
 	 * Issues a Discover request over the multicast network and returns the URI of the endpoint to connect to
 	 * @return the URI of the endpoint to connect to which will be of the first protocol located and may be null of no server answered.
 	 */
-	public static String discover() {
+	public static String discover() {		
 		return discover(null);
 	}
 	
-	
+
 	
 	/**
 	 * Executes an OT Server discovery service call
 	 * @return the OT Server Discovery Service supplied response or null if there was no response.
 	 */
 	protected static String rt(String command) {
-		// the designated amount of time to wait for a response after each iteration
-		final int dsTimeout = Configuration.getDiscoveryTimeout();
-		// the maximum number of attempts to execute discovery before it is abandoned
-		final int dsMaxAttempts = Configuration.getDiscoveryMaxAttempts();
-		// When a discovery request succeeds, the connection URI will be writen here.
-		final AtomicReference<byte[]> responseRef = new AtomicReference<byte[]>(); 
-		final CountDownLatch completionLatch = new CountDownLatch(1);
-		MulticastSocket ms =  null;
-		UDPDiscoveryListener responseListener = new UDPDiscoveryListener(completionLatch, responseRef);
-		MulticastSocket[] msockets = getDiscoveryMSocks();
-		byte[] payload = command.getBytes();
-		String multicastGroup = Configuration.getDiscoveryNetwork();
-		int multicastPort = Configuration.getDiscoveryPort();
-		InetAddress group = null;
 		try {
-			group = InetAddress.getByName(multicastGroup);
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to create InetAddress for configured multicast group [" + multicastGroup + "]", e);
-		}
-		
-		if(msockets.length==0) {
-			log.warn("Failed to bind any multicast sockets for discovery. Result will be null.");
-			return null;
-		}
-		try {
-			for(int attempt = 0; attempt < dsMaxAttempts; attempt++) {
-				
-				for(MulticastSocket msock: msockets) {
-					if(log.isDebugEnabled()) log.debug("Executing Discovery Request #" + attempt + "\n\tRemote Address is [" + msock.getInetAddress() + ":" + msock.getPort() + "]");
-					DatagramPacket datagram = new DatagramPacket(payload, payload.length, group, multicastPort);					
-					msock.send(datagram);
-				}
-				if(log.isDebugEnabled()) log.debug("Waiting for response on Discovery Request #" + attempt);
-				try {
-					if(completionLatch.await(dsTimeout, TimeUnit.MILLISECONDS)) {
-						byte[] response = responseRef.get();
-						if(response!=null) {
-							if(log.isDebugEnabled()) log.debug("Discovery Request #" + attempt + " Succeeded");
-							return new String(response);
-						} else {
-							// if the response is null, we have to return null since the latch has been dropped.
-							// we should fix this so the response can simply be ignored and we can retry for a new one
-							log.warn("Discovery Request #" + attempt + " Succeeded but response was null");
-							return null;
-						}
-					}
-				} catch (InterruptedException iex) {
-					log.warn("Thread was interrupted while waiting for a response. Discovery terminating.");
-					return null;
-				}
+			// the designated amount of time to wait for a response after each iteration
+			final int dsTimeout = Configuration.getDiscoveryTimeout();
+			// the maximum number of attempts to execute discovery before it is abandoned
+			final int dsMaxAttempts = Configuration.getDiscoveryMaxAttempts();
+			// When a discovery request succeeds, the connection URI will be writen here.
+			final AtomicReference<byte[]> responseRef = new AtomicReference<byte[]>(); 
+			final CountDownLatch completionLatch = threadLatch.get();
+			if(completionLatch==null || completionLatch.getCount()<1) {
+				throw new RuntimeException("Completion Latch was null or had a < 1 count. Programmer Error", new Throwable());
 			}
-			// if we still have no response here, discovery failed.s
-			return null;
-		} catch (Exception e) {
-			throw new RuntimeException("Discovery Failed for Unexpected Reason", e);
+			UDPDiscoveryListener responseListener = new UDPDiscoveryListener(completionLatch, responseRef);
+			int responseListeningPort = -1;
+			try {
+				responseListeningPort = responseListener.start();
+			} catch (Exception e) {
+				log.warn("Failed to start response listener. Discovery failed.", e);
+			}
+			MulticastSocket[] msockets = getDiscoveryMSocks();
+			String formattedCommand = String.format(command, InetAddressHelper.hostName(), responseListeningPort);
+			if(log.isDebugEnabled()) log.debug("Sending Discovery Command [" + formattedCommand + "]");
+			byte[] payload = formattedCommand.getBytes();
+			String multicastGroup = Configuration.getDiscoveryNetwork();
+			int multicastPort = Configuration.getDiscoveryPort();
+			InetAddress group = null;
+			try {
+				group = InetAddress.getByName(multicastGroup);
+			} catch (Exception e) {
+				throw new RuntimeException("Failed to create InetAddress for configured multicast group [" + multicastGroup + "]", e);
+			}
+			
+			if(msockets.length==0) {
+				log.warn("Failed to bind any multicast sockets for discovery. Result will be null.");
+				return null;
+			}
+			try {
+				for(int attempt = 0; attempt < dsMaxAttempts; attempt++) {
+					
+					for(MulticastSocket msock: msockets) {
+						if(log.isDebugEnabled()) log.debug("Executing Discovery Request #" + attempt +
+								"\n\tNIC [" + msock.getNetworkInterface().getName() + "]" +
+								"\n\tMulticast Interface [" + msock.getInterface() + "]" +
+								"\n\tLocal Address[" + msock.getLocalSocketAddress() + "]" 							
+						);
+						DatagramPacket datagram = new DatagramPacket(payload, payload.length, group, multicastPort);					
+						msock.send(datagram);
+					}
+					if(log.isDebugEnabled()) log.debug("Waiting for response on Discovery Request #" + attempt);
+					try {
+						if(completionLatch.await(dsTimeout, TimeUnit.MILLISECONDS)) {
+							byte[] response = responseRef.get();
+							if(response!=null) {
+								if(log.isDebugEnabled()) log.debug("Discovery Request #" + attempt + " Succeeded");
+								String message = new String(response);
+								if(message.startsWith("***Error***")) {
+									throw new RuntimeException("Discovery Service Command Error:" + message);
+								} else {
+									return message;
+								}
+							} else {
+								// if the response is null, we have to return null since the latch has been dropped.
+								// we should fix this so the response can simply be ignored and we can retry for a new one
+								log.warn("Discovery Request #" + attempt + " Succeeded but response was null");
+								return null;
+							}
+						}
+					} catch (InterruptedException iex) {
+						log.warn("Thread was interrupted while waiting for a response. Discovery terminating.");
+						return null;
+					}
+				}
+				// if we still have no response here, discovery failed.
+				return null;
+			} catch (Exception e) {
+				throw new RuntimeException("Discovery Failed for Unexpected Reason", e);
+			} finally {
+				try { responseListener.stop(); } catch (Exception e) {}
+			
+			}
 		} finally {
-			try { responseListener.stop(); } catch (Exception e) {}
-			for(MulticastSocket msock: msockets) {
-				try { msock.close(); } catch (Exception e) {}
-			}			
-		
+			threadLatch.remove();
 		}
 	}
 	
@@ -282,8 +342,11 @@ public class OTServerDiscovery  {
 	 * @return an array of multicast sockets 
 	 */
 	protected static MulticastSocket[] getDiscoveryMSocks() {
+		if(multicastSockets!=null) {
+			return multicastSockets;
+		}
 		Set<MulticastSocket> msockets = new HashSet<MulticastSocket>();
-		Map<String, NetworkInterface> nics = InetAddressHelper.getNICMap();
+		
 		Pattern nicPattern = Configuration.getDiscoveryTransmitNic();
 		String multicastGroup = Configuration.getDiscoveryNetwork();
 		int multicastPort = Configuration.getDiscoveryPort();
@@ -296,32 +359,39 @@ public class OTServerDiscovery  {
 		}
 		// First get matches only, but if no interface matches, 
 		// or matching interfaces cannot join the group, iterate all the nics.
-		for(Map.Entry<String, NetworkInterface> nic: nics.entrySet()) {
-			if(nicPattern.matcher(nic.getKey()).matches()) {
+		for(Map.Entry<String, NetworkInterface> entry: knownNics.entrySet()) {
+			NetworkInterface nic = entry.getValue();
+			String name = entry.getKey();			
+			if(nicPattern.matcher(name).matches()) {
 				try {
+					if(!nic.isUp() || !nic.supportsMulticast()) continue;
 					MulticastSocket ms = new MulticastSocket(multicastPort);
-					ms.setNetworkInterface(nic.getValue());
-					ms.joinGroup(group);
+					ms.setNetworkInterface(nic);
+					//ms.joinGroup(group);
 					msockets.add(ms);
 				} catch (Exception e) {
-					if(log.isDebugEnabled()) log.debug("Failed to create multicast socket on matching NIC [" + nic.getKey() + "]", e);
+					if(log.isDebugEnabled()) log.debug("Failed to create multicast socket on matching NIC [" + name + "]:" + e);
 				}
 			}
 		}
 		if(msockets.isEmpty()) {
 			// No hits so try all nics
-			for(Map.Entry<String, NetworkInterface> nic: nics.entrySet()) {
+			for(Map.Entry<String, NetworkInterface> entry: knownNics.entrySet()) {
+				NetworkInterface nic = entry.getValue();
+				String name = entry.getKey();
 				try {
+					if(!nic.isUp() || !nic.supportsMulticast()) continue;
 					MulticastSocket ms = new MulticastSocket(multicastPort);
-					ms.setNetworkInterface(nic.getValue());
+					ms.setNetworkInterface(nic);
 					ms.joinGroup(group);
 					msockets.add(ms);
 				} catch (Exception e) {
-					if(log.isDebugEnabled()) log.debug("Failed to create multicast socket on matching NIC [" + nic.getKey() + "]", e);
+					if(log.isDebugEnabled()) log.debug("Failed to create multicast socket on matching NIC [" + name + "]:" + e);
 				}
 			}			
 		}
-		return msockets.toArray(new MulticastSocket[msockets.size()]);
+		multicastSockets =  msockets.toArray(new MulticastSocket[msockets.size()]);
+		return multicastSockets;
 	}
 	
 	
@@ -331,17 +401,67 @@ public class OTServerDiscovery  {
 	 */
 	public static void main(String[] args) {
 		BasicConfigurator.configure();
-		Logger.getRootLogger().setLevel(Level.DEBUG);
+		Logger.getRootLogger().setLevel(Level.INFO);
 		log("Discovery Test");
+		log(info());
+		System.setProperty(Configuration.DISCOVERY_TRANSMIT_NIC, "eth12");
+		System.setProperty("org.helios.connection.discovery.timeout", "500");
+		for(int i = 0; i < 10000; i++) {
+			if(ping("eth12")==null) {
+				throw new RuntimeException("Info failed");
+			}
+		}
+		System.setProperty(Configuration.PREF_IP4, "true");
+		int loopCount = 1000;
+		long totalTime = 0;
+		
+		log("Ping:" + ping("eth12"));
+		for(int i = 0; i < loopCount; i++) {
+			long start = System.currentTimeMillis();
+			String response = ping("eth12");			
+			if(response==null) throw new RuntimeException("Info call failed");
+			totalTime += (System.currentTimeMillis()-start);
+		}
+		
+		
+		
+		log("Total Time for IP V4:" + totalTime);
+		totalTime = 0;
+		System.setProperty(Configuration.PREF_IP4, "false");
+		for(int i = 0; i < loopCount; i++) {
+			long start = System.currentTimeMillis();
+			String response = info();			
+			if(response==null) throw new RuntimeException("Info call failed");
+			totalTime += (System.currentTimeMillis()-start);
+		}
+		log("Total Time for no IP Pref:" + totalTime);
 //		log(rt("INFO|udp://%s:%s"));
 		//log(rt("INFO|udp://%s:%s|TEXT"));
-		while(true) {
+//		while(true) {
 //			log(discover());
 //			log(discover("UDP"));
 //			log(discover("TCP"));
-			info();
-			info("XML");
-		}
+//			info();
+//			info("XML");
+//		}
+		//log(info());
+//		for(NetworkInterface nic: InetAddressHelper.getUpMCNICMap().values()) {
+//			String name = nic.getName();
+//			if(name==null) continue;
+//			System.setProperty(Configuration.DISCOVERY_TRANSMIT_NIC, name);
+//			if(name.equals("eth3")) {
+//				Logger.getRootLogger().setLevel(Level.DEBUG);
+//			} else {
+//				Logger.getRootLogger().setLevel(Level.INFO);
+//			}
+//			log("TESTING NIC:" + name);
+//			String result = info();
+//			if(result!=null) {
+//				log("Discovery Succeeded on [" + name + "]");
+//			} else {
+//				log("Discovery Failed on [" + name + "]");
+//			}
+//		}
 //		log(rt("DISCOVER|udp://%s:%s"));
 //		log(rt("DISCOVER|udp://%s:%s|UDP"));
 	}
