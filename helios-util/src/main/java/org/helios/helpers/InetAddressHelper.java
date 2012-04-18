@@ -30,7 +30,9 @@ import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -53,6 +55,23 @@ public class InetAddressHelper {
 	
 	/** The timeout on host reachability tests (ms.) */
 	protected static int reachableTimeOut = 100;
+	
+	/**
+	 * Returns a map of {@link NetworkInterface}s keyed by the interface name
+	 * @return a map of {@link NetworkInterface}s keyed by the interface name
+	 */
+	public static Map<String, NetworkInterface> getNICMap() {
+		Map<String, NetworkInterface> nics = new HashMap<String, NetworkInterface>();
+		try { 
+			for(Enumeration<NetworkInterface> nenum = NetworkInterface.getNetworkInterfaces(); nenum.hasMoreElements();) {
+				NetworkInterface nic = nenum.nextElement();
+				nics.put(nic.getName(), nic);
+			}
+			return nics;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to retrieve NIC Map", e);
+		}
+	}
 	
 	/**
 	 * Determines the best name or IP address to use as the default binding address
