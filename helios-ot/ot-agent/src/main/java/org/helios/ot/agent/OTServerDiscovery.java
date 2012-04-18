@@ -24,23 +24,28 @@
  */
 package org.helios.ot.agent;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
-import java.net.SocketTimeoutException;
+import java.net.SocketAddress;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.helios.helpers.InetAddressHelper;
+import org.helios.ot.agent.discovery.UDPDiscoveryListener;
 
 /**
  * <p>Title: OTServerDiscovery</p>
@@ -165,93 +170,158 @@ public class OTServerDiscovery  {
 		// the maximum number of attempts to execute discovery before it is abandoned
 		final int dsMaxAttempts = Configuration.getDiscoveryMaxAttempts();
 		// When a discovery request succeeds, the connection URI will be writen here.
-		final AtomicReference<String> responseRef = new AtomicReference<String>(); 
-		final CountDownLatch latch = new CountDownLatch(1);
-		final CountDownLatch listeningLatch = new CountDownLatch(1);
+		final AtomicReference<byte[]> responseRef = new AtomicReference<byte[]>(); 
+		final CountDownLatch completionLatch = new CountDownLatch(1);
 		MulticastSocket ms =  null;
-		
-		// Start
+		UDPDiscoveryListener responseListener = new UDPDiscoveryListener(completionLatch, responseRef);
+		MulticastSocket[] msockets = getDiscoveryMSocks();
+		byte[] payload = command.getBytes();
+		String multicastGroup = Configuration.getDiscoveryNetwork();
+		int multicastPort = Configuration.getDiscoveryPort();
+		InetAddress group = null;
 		try {
-			InetSocketAddress insock = new InetSocketAddress("0.0.0.0", 0); 
-			final DatagramSocket ds = new DatagramSocket(insock);
-			ds.setSoTimeout(dsTimeout);
-			final byte[] buffer = new byte[1000];
-			final DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
-			Runnable runnable = new Runnable(){
-				public void run() {
-					try {
-						listeningLatch.countDown();
-						ds.receive(dp);
-						log.info("Received Discovery Service Response");
-						responseRef.set(new String(dp.getData()).trim());
-					} catch (SocketTimeoutException  ste) {
-						log.warn("Discovery Request Timed Out After [" + dsTimeout + "] ms.");
-					} catch (Exception e) {
-						log.warn("Unexpected Discovery Request Failure", e);
-					} finally {
-						try { ds.close(); } catch (Exception ex) {}
-						latch.countDown();
-					}
+			group = InetAddress.getByName(multicastGroup);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to create InetAddress for configured multicast group [" + multicastGroup + "]", e);
+		}
+		
+		if(msockets.length==0) {
+			log.warn("Failed to bind any multicast sockets for discovery. Result will be null.");
+			return null;
+		}
+		try {
+			for(int attempt = 0; attempt < dsMaxAttempts; attempt++) {
+				
+				for(MulticastSocket msock: msockets) {
+					if(log.isDebugEnabled()) log.debug("Executing Discovery Request #" + attempt + "\n\tRemote Address is [" + msock.getInetAddress() + ":" + msock.getPort() + "]");
+					DatagramPacket datagram = new DatagramPacket(payload, payload.length, group, multicastPort);					
+					msock.send(datagram);
 				}
-			};
-			Thread t = new Thread(runnable, "OTServerDiscoveryThread#" + serial.incrementAndGet());
-			t.setDaemon(true);
-			// ==============================================
-			ms =  new MulticastSocket(Configuration.getDiscoveryPort());
-			InetAddress group = InetAddress.getByName(Configuration.getDiscoveryNetwork());
-			boolean joined = false;
-			try {
-				if(goodNic!=null) {
-					ms.setNetworkInterface(goodNic);
-				}
-				ms.joinGroup(group);
-				joined = true;
-			} catch (Exception e) {
-				if(e.getMessage().contains("No such device")) {
-					log.warn("\n\tFailed to bind to multicast group because of a \"No such device\" error."
-							+ "\n\tYou are probably not connected to a network or do not have a link."
-							+ "\n\tWill attempt overriding the network interface...."
-					);
-					for(Enumeration<NetworkInterface> nifaces = NetworkInterface.getNetworkInterfaces(); nifaces.hasMoreElements();) {
-						NetworkInterface niface = nifaces.nextElement();
-						try {						
-							ms.setNetworkInterface(niface);
-							ms.joinGroup(group);
-							joined = true;
-							log.info("SUCCESS! Joined Multicast Group [" + group + "] with Network Interface [" + niface + "]");
-							goodNic = niface;
-							break;
-						} catch (Exception ex) {
-							log.warn("Failed with network interface override [" + niface + "]");
+				if(log.isDebugEnabled()) log.debug("Waiting for response on Discovery Request #" + attempt);
+				try {
+					if(completionLatch.await(dsTimeout, TimeUnit.MILLISECONDS)) {
+						byte[] response = responseRef.get();
+						if(response!=null) {
+							if(log.isDebugEnabled()) log.debug("Discovery Request #" + attempt + " Succeeded");
+							return new String(response);
+						} else {
+							// if the response is null, we have to return null since the latch has been dropped.
+							// we should fix this so the response can simply be ignored and we can retry for a new one
+							log.warn("Discovery Request #" + attempt + " Succeeded but response was null");
+							return null;
 						}
 					}
-					if(!joined) {
-						log.error("Failed to join multicast group [" + group + "] with any NetworkInterface");
-						throw new IllegalStateException("Failed to join multicast group [" + group + "] with any NetworkInterface");
+				} catch (InterruptedException iex) {
+					log.warn("Thread was interrupted while waiting for a response. Discovery terminating.");
+					return null;
+				}
+			}
+			// if we still have no response here, discovery failed.s
+			return null;
+		} catch (Exception e) {
+			throw new RuntimeException("Discovery Failed for Unexpected Reason", e);
+		} finally {
+			try { responseListener.stop(); } catch (Exception e) {}
+			for(MulticastSocket msock: msockets) {
+				try { msock.close(); } catch (Exception e) {}
+			}			
+		
+		}
+	}
+	
+	
+	/**
+	 * Attempts to acquire a connection to the multicast network specified by 
+	 * the configured/default discovery network and port.
+	 * Deprecated but keeping it around 'cause it could be useful for debugging 
+	 * @return a connected multicast socket
+	 * @throws IOException
+	 * 
+	 */
+	@Deprecated()
+	protected static MulticastSocket connectMulticast() throws IOException {
+		InetAddress group = InetAddress.getByName(Configuration.getDiscoveryNetwork());
+		MulticastSocket ms = new MulticastSocket(Configuration.getDiscoveryPort());
+		boolean joined = false;
+		try {
+			if(goodNic!=null) {
+				ms.setNetworkInterface(goodNic);
+			}
+			ms.joinGroup(group);
+			joined = true;
+		} catch (Exception e) {
+			if(e.getMessage().contains("No such device")) {
+				log.warn("\n\tFailed to bind to multicast group because of a \"No such device\" error."
+						+ "\n\tYou are probably not connected to a network or do not have a link."
+						+ "\n\tWill attempt overriding the network interface...."
+				);
+				for(Enumeration<NetworkInterface> nifaces = NetworkInterface.getNetworkInterfaces(); nifaces.hasMoreElements();) {
+					NetworkInterface niface = nifaces.nextElement();
+					try {						
+						ms.setNetworkInterface(niface);
+						ms.joinGroup(group);
+						joined = true;
+						log.info("SUCCESS! Joined Multicast Group [" + group + "] with Network Interface [" + niface + "]");
+						goodNic = niface;
+						break;
+					} catch (Exception ex) {
+						log.warn("Failed with network interface override [" + niface + "]");
 					}
 				}
-			}					
-			//String fc = String.format(command, Configuration.getDiscoveryListenAddress(), ds.getLocalPort());
-			//String fc = String.format(command, InetAddressHelper.hostName(), ds.getLocalPort());
-			String fc = String.format(command, InetAddress.getByName(InetAddressHelper.hostName()).getHostAddress(), ds.getLocalPort());
-			log.info("Discovery Request [" + fc + "]");
-			byte[] buff = fc.getBytes();	
-			t.start();
-			listeningLatch.await();
-			ms.send(new DatagramPacket(buff, buff.length, group, Configuration.getDiscoveryPort()));
-			ms.close();			
-			try {
-				latch.await(Configuration.getDiscoveryTimeout()*2, TimeUnit.MILLISECONDS);
-			} catch (Exception e) {
-				e.printStackTrace(System.err);
+				if(!joined) {
+					log.error("Failed to join multicast group [" + group + "] with any NetworkInterface");
+					throw new IllegalStateException("Failed to join multicast group [" + group + "] with any NetworkInterface");
+				}
 			}
-			
-			return responseRef.get();
+		}					
+		return ms;
+	}
+	
+	/**
+	 * Returns an array of multicast sockets to use in transmitting the discovery request
+	 * @return an array of multicast sockets 
+	 */
+	protected static MulticastSocket[] getDiscoveryMSocks() {
+		Set<MulticastSocket> msockets = new HashSet<MulticastSocket>();
+		Map<String, NetworkInterface> nics = InetAddressHelper.getNICMap();
+		Pattern nicPattern = Configuration.getDiscoveryTransmitNic();
+		String multicastGroup = Configuration.getDiscoveryNetwork();
+		int multicastPort = Configuration.getDiscoveryPort();
+		log.info("Preparing Multicast Transmission Sockets for [" + multicastGroup + ":" + multicastPort + "]");
+		InetAddress group = null;
+		try {
+			group = InetAddress.getByName(multicastGroup);
 		} catch (Exception e) {
-			return null;
-		} finally {
-			try { ms.close(); } catch (Exception e) {}
+			throw new RuntimeException("Failed to create InetAddress for configured multicast group [" + multicastGroup + "]", e);
 		}
+		// First get matches only, but if no interface matches, 
+		// or matching interfaces cannot join the group, iterate all the nics.
+		for(Map.Entry<String, NetworkInterface> nic: nics.entrySet()) {
+			if(nicPattern.matcher(nic.getKey()).matches()) {
+				try {
+					MulticastSocket ms = new MulticastSocket(multicastPort);
+					ms.setNetworkInterface(nic.getValue());
+					ms.joinGroup(group);
+					msockets.add(ms);
+				} catch (Exception e) {
+					if(log.isDebugEnabled()) log.debug("Failed to create multicast socket on matching NIC [" + nic.getKey() + "]", e);
+				}
+			}
+		}
+		if(msockets.isEmpty()) {
+			// No hits so try all nics
+			for(Map.Entry<String, NetworkInterface> nic: nics.entrySet()) {
+				try {
+					MulticastSocket ms = new MulticastSocket(multicastPort);
+					ms.setNetworkInterface(nic.getValue());
+					ms.joinGroup(group);
+					msockets.add(ms);
+				} catch (Exception e) {
+					if(log.isDebugEnabled()) log.debug("Failed to create multicast socket on matching NIC [" + nic.getKey() + "]", e);
+				}
+			}			
+		}
+		return msockets.toArray(new MulticastSocket[msockets.size()]);
 	}
 	
 	
@@ -261,14 +331,14 @@ public class OTServerDiscovery  {
 	 */
 	public static void main(String[] args) {
 		BasicConfigurator.configure();
-		Logger.getRootLogger().setLevel(Level.INFO);
+		Logger.getRootLogger().setLevel(Level.DEBUG);
 		log("Discovery Test");
 //		log(rt("INFO|udp://%s:%s"));
 		//log(rt("INFO|udp://%s:%s|TEXT"));
 		while(true) {
-			log(discover());
-			log(discover("UDP"));
-			log(discover("TCP"));
+//			log(discover());
+//			log(discover("UDP"));
+//			log(discover("TCP"));
 			info();
 			info("XML");
 		}

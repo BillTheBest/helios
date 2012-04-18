@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import org.helios.helpers.ConfigurationHelper;
 import org.helios.helpers.InetAddressHelper;
@@ -113,6 +114,8 @@ public class Configuration {
 	public static final String DISCOVERY_PREF_PROTOCOL = DISCOVERY_PREFIX + ".prefprotocol";
 	/** The property name for the helios ot server discovery listening interface */
 	public static final String DISCOVERY_LISTEN_IFACE = DISCOVERY_PREFIX + ".interface";
+	/** The property name for the helios ot server discovery request transmission nic */
+	public static final String DISCOVERY_TRANSMIT_NIC = DISCOVERY_PREFIX + ".nic";
 
 	
 	/** The default ot server discovery multicast network */
@@ -129,7 +132,8 @@ public class Configuration {
 	public static final boolean DEFAULT_DISCOVERY_ENABLED = true;
 	/** The default maximum number of discovery attempts per connect round */
 	public static final int DEFAULT_DISCOVERY_MAX_ATTEMPTS = 3;
-	
+	/** The  default pattern for matching against NIC names that will be used to transmit the discovery request */
+	public static final String DEFAULT_DISCOVERY_TRANSMIT_NIC = ".*";
 	//=============================================
 	
 	public static void main(String[] args) {
@@ -324,6 +328,20 @@ public class Configuration {
 	public static int getDiscoveryTimeout() {
 		return ConfigurationHelper.getIntSystemThenEnvProperty(DISCOVERY_TIMEOUT, DEFAULT_DISCOVERY_TIMEOUT);
 	}
+	
+	/**
+	 * Returns the pattern that will match the NIC names to use to transmit the discovery request
+	 * @return a pattern match against NIC names
+	 */
+	public static Pattern getDiscoveryTransmitNic() {
+		String pattern = ConfigurationHelper.getSystemThenEnvProperty(DISCOVERY_TRANSMIT_NIC, DEFAULT_DISCOVERY_TRANSMIT_NIC);
+		try {
+			return Pattern.compile(pattern);
+		} catch (Exception e) {
+			return Pattern.compile(DEFAULT_DISCOVERY_TRANSMIT_NIC);
+		}		
+	}
+	
 	
 	/**
 	 * Returns the configured synchronous operation timeout in ms.

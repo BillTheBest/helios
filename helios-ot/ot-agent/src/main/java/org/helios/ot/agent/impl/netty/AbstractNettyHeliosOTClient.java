@@ -49,7 +49,7 @@ import org.helios.ot.agent.impl.netty.handler.listeners.ConnectionOpenedEventLis
 import org.helios.ot.agent.impl.netty.handler.listeners.ConnectionResponseListener;
 import org.helios.ot.agent.impl.netty.handler.listeners.InvocationDispatchListener;
 import org.helios.ot.agent.impl.netty.handler.listeners.SynchronousInvocationListener;
-import org.helios.ot.agent.jmx.WrappedLoggingHandler;
+//import org.helios.ot.agent.jmx.WrappedLoggingHandler;
 import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
 import org.helios.ot.trace.Trace;
@@ -115,7 +115,7 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	/** The synchronous request handler */
 	protected SynchronousInvocationListener synchronousInvocationListener;
 	/** The logging channel handler for enabling debug of the events occuring in the pipeline */
-	protected WrappedLoggingHandler loggingHandler; 
+//	protected WrappedLoggingHandler loggingHandler; 
 	/** The instrumentation */
 	protected final ConnectorChannelInstrumentation instrumentation = new ConnectorChannelInstrumentation();
 	/** The channel close listener */
@@ -255,7 +255,7 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 		//    Push this up to the top abstract with abstracts getting the right details from the impls.
 		//=================================
 		objectName = JMXHelper.objectName(new StringBuilder("org.helios.agent:service=HeliosOTClient,host=").append(host).append(",port=").append(port).append(",protocol=").append(getProtocol()));
-		loggingHandler = new WrappedLoggingHandler(objectName, workerExecutor, getClass().getName(), false);
+		//loggingHandler = new WrappedLoggingHandler(objectName, workerExecutor, getClass().getName(), false);
 		JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(this, objectName);
 		//=================================
 	}
@@ -332,8 +332,7 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 				} else {
 					channel = f.getChannel();
 					pipeline = channel.getPipeline();
-					logController.setPipeline(pipeline);
-					localSocketAddress = (InetSocketAddress) channel.getLocalAddress();
+ 					localSocketAddress = (InetSocketAddress) channel.getLocalAddress();
 					remoteSocketAddress = (InetSocketAddress) channel.getRemoteAddress();
 					onImplConnect(f);					
 					channelFuture = f.getChannel().getCloseFuture(); // Need to attach close listener here.
@@ -367,100 +366,100 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 		return Collections.unmodifiableMap(map);
 	}
 	
-	/**
-	 * Indicates if the logging handler is enabled anywhere in the pipeline
-	 * @return true if the logging handler is enabled anywhere in the pipeline, false otherwise
-	 */
-	@JMXAttribute(name="LoggingHandlerEnabled", description="Indicates if the logging handler is enabled anywhere in the pipeline", mutability=AttributeMutabilityOption.READ_WRITE)
-	public boolean getLoggingHandlerEnabled() {
-		for(ChannelHandler handler: pipeline.toMap().values()) {
-			if(handler==loggingHandler) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	
-	/**
-	 * Sets the enabled state of the logging handler.
-	 * When disabled, simply removes the logging handler from the pipeline.
-	 * When enabled, adds the logging handler to the front of the pipeline  
-	 * @param enable true to enable, false to disable
-	 */
-	public void setLoggingHandlerEnabled(boolean enable) {
-		boolean isEnabled = getLoggingHandlerEnabled();
-		if(enable==isEnabled) return;
-		if(enable) {
-			pipeline.addFirst(LOGGING_HANDLER_NAME, loggingHandler);
-		} else {
-			pipeline.remove(loggingHandler);
-		}
-	}
-	
-	
-	/**
-	 * Adds the logging handler before the named handler in the pipeline, removing it first if it already enabled.
-	 * @param handlerName The name of the handler to add the logging handler before
-	 */
-	@JMXOperation(name="enableLoggingHandlerBefore", description="Adds the logging handler before the named handler in the pipeline, removing it first if it already enabled.")
-	public void enableLoggingHandlerBefore(@JMXParameter(name="handlerName", description="The name of the handler to add the logging handler before") String handlerName) {
-		if(handlerName==null) throw new IllegalArgumentException("The passed handler name was null", new Throwable());
-		try {
-			if(!pipeline.toMap().containsKey(handlerName)) throw new IllegalArgumentException("The passed handler name [" + handlerName + "] is not registered in the pipeline", new Throwable());
-			setLoggingHandlerEnabled(false);
-			pipeline.addBefore(handlerName, LOGGING_HANDLER_NAME, loggingHandler);
-		} catch (Exception e) {
-			e.printStackTrace(System.err);
-			throw new RuntimeException(e);
-		}
-	}
-	
-	/**
-	 * Adds the logging handler after the named handler in the pipeline, removing it first if it already enabled.
-	 * @param handlerName The name of the handler to add the logging handler after
-	 */
-	@JMXOperation(name="enableLoggingHandlerAfter", description="Adds the logging handler after the named handler in the pipeline, removing it first if it already enabled.")
-	public void enableLoggingHandlerAfter(@JMXParameter(name="handlerName", description="The name of the handler to add the logging handler after") String handlerName) {
-		if(handlerName==null) throw new IllegalArgumentException("The passed handler name was null", new Throwable());
-		if(!pipeline.toMap().containsKey(handlerName)) throw new IllegalArgumentException("The passed handler name [" + handlerName + "] is not registered in the pipeline", new Throwable());
-		setLoggingHandlerEnabled(false);
-		pipeline.addAfter(handlerName, LOGGING_HANDLER_NAME, loggingHandler);
-	}
-	
-	/**
-	 * Returns the internal logging level of the logging handler
-	 * @return the internal logging level of the logging handler
-	 */
-	@JMXAttribute(name="LoggingHandlerLevel", description="The internal logging level of the logging handler" , mutability=AttributeMutabilityOption.READ_WRITE)
-	public String getLoggingHandlerLevel() {
-		return loggingHandler.getLogLevel();
-	}
-	
-	/**
-	 * Sets the logging level of the logging handler
-	 * @param level The name of the level to set
-	 */
-	public void setLoggingHandlerLevel(String level) {
-		loggingHandler.setLogLevel(level);
-	}
-	
-	/**
-	 * Indicates if the logging handler has JMX notifications enabled
-	 * @return true if the logging handler has JMX notifications enabled, false otherwise
-	 */
-	@JMXAttribute(name="JmxLoggingEnabled", description="Indicates if the logging handler has JMX notifications enabled" , mutability=AttributeMutabilityOption.READ_WRITE)
-	public boolean getJmxLoggingEnabled() {
-		return loggingHandler.isJmxEnabled();
-	}
-	
-	/**
-	 * Sets the enabled state of the logging handler's JMX notifications
-	 * @param enabled true to enable, false to disable
-	 */
-	public void setJmxLoggingEnabled(boolean enabled) {
-		loggingHandler.setJmxEnabled(enabled);
-	}
+//	/**
+//	 * Indicates if the logging handler is enabled anywhere in the pipeline
+//	 * @return true if the logging handler is enabled anywhere in the pipeline, false otherwise
+//	 */
+//	@JMXAttribute(name="LoggingHandlerEnabled", description="Indicates if the logging handler is enabled anywhere in the pipeline", mutability=AttributeMutabilityOption.READ_WRITE)
+//	public boolean getLoggingHandlerEnabled() {
+//		for(ChannelHandler handler: pipeline.toMap().values()) {
+//			if(handler==loggingHandler) {
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
+//	
+//	
+//	/**
+//	 * Sets the enabled state of the logging handler.
+//	 * When disabled, simply removes the logging handler from the pipeline.
+//	 * When enabled, adds the logging handler to the front of the pipeline  
+//	 * @param enable true to enable, false to disable
+//	 */
+//	public void setLoggingHandlerEnabled(boolean enable) {
+//		boolean isEnabled = getLoggingHandlerEnabled();
+//		if(enable==isEnabled) return;
+//		if(enable) {
+//			pipeline.addFirst(LOGGING_HANDLER_NAME, loggingHandler);
+//		} else {
+//			pipeline.remove(loggingHandler);
+//		}
+//	}
+//	
+//	
+//	/**
+//	 * Adds the logging handler before the named handler in the pipeline, removing it first if it already enabled.
+//	 * @param handlerName The name of the handler to add the logging handler before
+//	 */
+//	@JMXOperation(name="enableLoggingHandlerBefore", description="Adds the logging handler before the named handler in the pipeline, removing it first if it already enabled.")
+//	public void enableLoggingHandlerBefore(@JMXParameter(name="handlerName", description="The name of the handler to add the logging handler before") String handlerName) {
+//		if(handlerName==null) throw new IllegalArgumentException("The passed handler name was null", new Throwable());
+//		try {
+//			if(!pipeline.toMap().containsKey(handlerName)) throw new IllegalArgumentException("The passed handler name [" + handlerName + "] is not registered in the pipeline", new Throwable());
+//			setLoggingHandlerEnabled(false);
+//			pipeline.addBefore(handlerName, LOGGING_HANDLER_NAME, loggingHandler);
+//		} catch (Exception e) {
+//			e.printStackTrace(System.err);
+//			throw new RuntimeException(e);
+//		}
+//	}
+//	
+//	/**
+//	 * Adds the logging handler after the named handler in the pipeline, removing it first if it already enabled.
+//	 * @param handlerName The name of the handler to add the logging handler after
+//	 */
+//	@JMXOperation(name="enableLoggingHandlerAfter", description="Adds the logging handler after the named handler in the pipeline, removing it first if it already enabled.")
+//	public void enableLoggingHandlerAfter(@JMXParameter(name="handlerName", description="The name of the handler to add the logging handler after") String handlerName) {
+//		if(handlerName==null) throw new IllegalArgumentException("The passed handler name was null", new Throwable());
+//		if(!pipeline.toMap().containsKey(handlerName)) throw new IllegalArgumentException("The passed handler name [" + handlerName + "] is not registered in the pipeline", new Throwable());
+//		setLoggingHandlerEnabled(false);
+//		pipeline.addAfter(handlerName, LOGGING_HANDLER_NAME, loggingHandler);
+//	}
+//	
+//	/**
+//	 * Returns the internal logging level of the logging handler
+//	 * @return the internal logging level of the logging handler
+//	 */
+//	@JMXAttribute(name="LoggingHandlerLevel", description="The internal logging level of the logging handler" , mutability=AttributeMutabilityOption.READ_WRITE)
+//	public String getLoggingHandlerLevel() {
+//		return loggingHandler.getLogLevel();
+//	}
+//	
+//	/**
+//	 * Sets the logging level of the logging handler
+//	 * @param level The name of the level to set
+//	 */
+//	public void setLoggingHandlerLevel(String level) {
+//		loggingHandler.setLogLevel(level);
+//	}
+//	
+//	/**
+//	 * Indicates if the logging handler has JMX notifications enabled
+//	 * @return true if the logging handler has JMX notifications enabled, false otherwise
+//	 */
+//	@JMXAttribute(name="JmxLoggingEnabled", description="Indicates if the logging handler has JMX notifications enabled" , mutability=AttributeMutabilityOption.READ_WRITE)
+//	public boolean getJmxLoggingEnabled() {
+//		return loggingHandler.isJmxEnabled();
+//	}
+//	
+//	/**
+//	 * Sets the enabled state of the logging handler's JMX notifications
+//	 * @param enabled true to enable, false to disable
+//	 */
+//	public void setJmxLoggingEnabled(boolean enabled) {
+//		loggingHandler.setJmxEnabled(enabled);
+//	}
 	
 	/**
 	 * Event passed down from the Abstract client managing the connect process to the impl that has no idea what's going on.
