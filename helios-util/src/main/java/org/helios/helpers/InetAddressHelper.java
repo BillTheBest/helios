@@ -74,6 +74,44 @@ public class InetAddressHelper {
 	}
 	
 	/**
+	 * Returns a map of {@link NetworkInterface}s that are up keyed by the interface name
+	 * @return a map of {@link NetworkInterface}s that are up keyed by the interface name
+	 */
+	public static Map<String, NetworkInterface> getUpNICMap() {
+		Map<String, NetworkInterface> nics = new HashMap<String, NetworkInterface>();
+		try { 
+			for(Enumeration<NetworkInterface> nenum = NetworkInterface.getNetworkInterfaces(); nenum.hasMoreElements();) {
+				NetworkInterface nic = nenum.nextElement();
+				if(!nic.isUp()) continue;
+				nics.put(nic.getName(), nic);
+			}
+			return nics;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to retrieve NIC Map", e);
+		}
+	}
+	
+	/**
+	 * Returns a map of {@link NetworkInterface}s that are up and support multicast keyed by the interface name
+	 * @return a map of {@link NetworkInterface}s that are up and support multicast keyed by the interface name
+	 */
+	public static Map<String, NetworkInterface> getUpMCNICMap() {
+		Map<String, NetworkInterface> nics = new HashMap<String, NetworkInterface>();
+		try { 
+			for(Enumeration<NetworkInterface> nenum = NetworkInterface.getNetworkInterfaces(); nenum.hasMoreElements();) {
+				NetworkInterface nic = nenum.nextElement();
+				if(!nic.isUp() || !nic.supportsMulticast()) continue;
+				nics.put(nic.getName(), nic);
+			}
+			return nics;
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to retrieve NIC Map", e);
+		}
+	}
+	
+	
+	
+	/**
 	 * Determines the best name or IP address to use as the default binding address
 	 * @return the current host name or ip address.
 	 */

@@ -32,6 +32,7 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,6 +96,7 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 	static {
 		register(new InfoDumpDiscoveryCommand());
 		register(new HeliosOTAgentServerDiscovery());		
+		register(new PingCommand());
 	}
 	
 	/** Instance logger */
@@ -204,7 +206,9 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 							String response = commands.get(frags[0].trim().toUpperCase()).execute(frags, applicationContext);
 							sendResponse(frags, response, packet.getAddress());							
 						} else {
-							log.warn("Discovery Request[" + request + "] could not be interpreted");
+							String message = "***Error***:Discovery Request[" + request + "] could not be interpreted";
+							log.warn(message);
+							try { sendResponse(frags, message, packet.getAddress()); } catch (Exception e) {}
 						}						
 					}
 				});
@@ -228,26 +232,26 @@ public class HeliosDiscoveryService extends ManagedObjectDynamicMBean implements
 			if(uri.getScheme().trim().toLowerCase().equals("udp")) {
 				DatagramSocket socket = null;
 				try {
-					InetAddress ina = null;
-					try {
-						ina = InetAddress.getByName(uri.getHost());
-					} catch (Exception e) {
-						ina = null;
-					}
+//					InetAddress ina = null;
+//					try {
+//						ina = InetAddress.getByName(uri.getHost());
+//					} catch (Exception e) {
+//						ina = null;
+//					}
 					socket = new DatagramSocket();
 					byte[] bytes = message.getBytes();
-					
-					socket.send(new DatagramPacket(bytes, bytes.length, ina, uri.getPort()));
-					if(ina!=null) {
-						socket.send(new DatagramPacket(bytes, bytes.length, originatingAddress, uri.getPort()));
-					}
+					socket.send(new DatagramPacket(bytes, bytes.length, originatingAddress, uri.getPort()));
+//					socket.send(new DatagramPacket(bytes, bytes.length, ina, uri.getPort()));
+//					if(ina!=null) {
+//						socket.send(new DatagramPacket(bytes, bytes.length, originatingAddress, uri.getPort()));
+//					}
 					if(log.isDebugEnabled()) log.debug("Sent Repsonse to [" + uri + "] with [" + bytes.length + "] bytes");
 				} finally {
 					try { socket.close(); } catch (Exception e) {}
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace(System.err);
+			log.warn("Error processing multicast request from [" + originatingAddress + "]\n\tMessage [" + message + "]\n\tCommands " + Arrays.toString(commandFragments) + "\n\tException:" + e );
 		}
 	}
 

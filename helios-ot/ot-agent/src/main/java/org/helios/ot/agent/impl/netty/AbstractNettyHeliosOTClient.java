@@ -36,8 +36,6 @@ import org.helios.helpers.ConfigurationHelper;
 import org.helios.helpers.JMXHelper;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
-import org.helios.jmx.dynamic.annotations.JMXOperation;
-import org.helios.jmx.dynamic.annotations.JMXParameter;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
 import org.helios.jmxenabled.threads.ExecutorBuilder;
 import org.helios.ot.agent.AbstractHeliosOTClientImpl;
@@ -49,7 +47,7 @@ import org.helios.ot.agent.impl.netty.handler.listeners.ConnectionOpenedEventLis
 import org.helios.ot.agent.impl.netty.handler.listeners.ConnectionResponseListener;
 import org.helios.ot.agent.impl.netty.handler.listeners.InvocationDispatchListener;
 import org.helios.ot.agent.impl.netty.handler.listeners.SynchronousInvocationListener;
-//import org.helios.ot.agent.jmx.WrappedLoggingHandler;
+import org.helios.ot.agent.jmx.WrappedLoggingHandler;
 import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
 import org.helios.ot.trace.Trace;
@@ -61,7 +59,6 @@ import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.logging.InternalLogLevel;
 
 /**
  * <p>Title: AbstractNettyHeliosOTClient</p>
@@ -115,7 +112,7 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 	/** The synchronous request handler */
 	protected SynchronousInvocationListener synchronousInvocationListener;
 	/** The logging channel handler for enabling debug of the events occuring in the pipeline */
-//	protected WrappedLoggingHandler loggingHandler; 
+	protected WrappedLoggingHandler loggingHandler; 
 	/** The instrumentation */
 	protected final ConnectorChannelInstrumentation instrumentation = new ConnectorChannelInstrumentation();
 	/** The channel close listener */
@@ -255,7 +252,7 @@ public abstract class AbstractNettyHeliosOTClient extends AbstractHeliosOTClient
 		//    Push this up to the top abstract with abstracts getting the right details from the impls.
 		//=================================
 		objectName = JMXHelper.objectName(new StringBuilder("org.helios.agent:service=HeliosOTClient,host=").append(host).append(",port=").append(port).append(",protocol=").append(getProtocol()));
-		//loggingHandler = new WrappedLoggingHandler(objectName, workerExecutor, getClass().getName(), false);
+		loggingHandler = new WrappedLoggingHandler(objectName, workerExecutor, getClass().getName(), false);
 		JMXHelper.getRuntimeHeliosMBeanServer().registerMBean(this, objectName);
 		//=================================
 	}

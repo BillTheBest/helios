@@ -40,12 +40,21 @@
 		<property name="ignoreUnresolvablePlaceholders" value="true" />
 		<property name="order" value="1" />
 	</bean>
+	
+	
 
 	<bean id="MBeanServerJMXUrl" class="javax.management.remote.JMXServiceURL"
 		lazy-init="false" depends-on="systemProperties" >
 		<constructor-arg type="java.lang.String"
 			value="service:jmx:rmi://${java.rmi.server.hostname}:8002/jndi/rmi://${java.rmi.server.hostname}:8005/jmxrmi" />
 	</bean>
+	
+
+	<bean id="MBeanServerIIOPJMXUrl" class="javax.management.remote.JMXServiceURL"
+		lazy-init="false" depends-on="systemProperties" >
+		<constructor-arg type="java.lang.String"
+			value="service:jmx:iiop://${java.rmi.server.hostname}:7002/jndi/rmi://${java.rmi.server.hostname}:8005/jmxiiop" />
+	</bean>	
 	
 	<!-- 
 	org.helios.helpers.InetAddressHelper.hostName()
@@ -61,6 +70,38 @@
 		<constructor-arg value="8005" />
 	</bean>
 	
+	<!-- 
+	<bean id="IIOPRegistry" class="org.omg.CORBA.ORB" factory-method="init" >
+		<constructor-arg type="[Ljava.lang.String;">
+        <list>
+            <value>-ORBInitialPort</value>
+            <value>1025</value>
+        </list>
+    </constructor-arg>
+    <constructor-arg type="java.util.Properties">
+    	<value>
+    		ORBServerPort=1025
+    	</value>
+    </constructor-arg>	
+	</bean>
+	
+	-->
+	
+	<bean id="IIOPMBeanServerConnector" class="javax.management.remote.JMXConnectorServerFactory"
+		lazy-init="false" init-method="start" factory-method="newJMXConnectorServer"
+		depends-on="RMIRegistry">
+		
+		<constructor-arg ref="MBeanServerIIOPJMXUrl" />
+		<constructor-arg>
+			<map />
+		</constructor-arg>
+		<constructor-arg ref="MBeanServer" />
+	</bean>
+	<bean id="IIOPPrinter" class="org.helios.jmx.util.JMXServerConnectionPrinter">
+		<constructor-arg ref="IIOPMBeanServerConnector" />
+	</bean>
+	
+	
 	<bean name="GroovyService" class="org.helios.scripting.console.GroovyService" >
 		<property name="initScript">
 			<value><![CDATA[
@@ -71,6 +112,7 @@
 				    }
 				}				
 				gbindings.put("JMXHelper", org.helios.helpers.JMXHelper.class);
+				String svcsFile = System.getProperty("java.io.tmpdir") + "/services";
 				//TracerManager3.getInstance().getTracer().traceSticky(AppCtx.getBeanDefinitionNames().length, "Bean Count", "Helios", "Spring Container");
 			]]></value>
 		</property>
@@ -87,16 +129,21 @@
 		<constructor-arg ref="MBeanServer" />
 	</bean>
 	
+	
+	
 	<bean id="Printer" class="org.helios.jmx.util.JMXServerConnectionPrinter">
 		<constructor-arg ref="MBeanServerConnector" />
 	</bean>
+	
+	
 	
 	
 
 	<bean id="exporter" class="org.springframework.jmx.export.MBeanExporter">
 		<property name="beans">
 			<map>
-				<entry key="org.helios.jmx:service=JMXConnectorServer" value-ref="MBeanServerConnector" />
+				<entry key="org.helios.jmx:service=JMXConnectorServer,protocol=rmi" value-ref="MBeanServerConnector" />
+				<!-- <entry key="org.helios.jmx:service=JMXConnectorServer,protocol=iiop" value-ref="IIOPMBeanServerConnector" /> -->
 			</map>
 		</property>
 		<property name="server" ref="MBeanServer" />

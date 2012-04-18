@@ -68,8 +68,6 @@
    	<bean id="jettisonDriver" class="com.thoughtworks.xstream.io.json.JettisonMappedXmlDriver"/>
    	
    	
-	<bean id="OTXStreamDataFormatJSON" class="org.helios.server.ot.session.camel.transform.trace.AnnotationProcessingJsonDataFormat" scope="prototype" lazy-init="true" />
-	<bean id="OTXStreamDataFormatXML" class="org.helios.server.ot.session.camel.transform.trace.AnnotationProcessingXMLDataFormat" scope="prototype" lazy-init="true" />
 	
 	<bean id="SubscriberRouteRegistry" class="org.helios.server.ot.session.camel.routing.SubscriberRouteRegistry" lazy-init="true" depends-on="heliosAmqBroker" >
 
