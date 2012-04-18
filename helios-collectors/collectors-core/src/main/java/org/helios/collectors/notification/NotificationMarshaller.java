@@ -24,12 +24,12 @@
  */
 package org.helios.collectors.notification;
 
-import javax.management.Notification;
-import javax.management.ObjectName;
-
-import com.sdicons.json.mapper.JSONMapper;
-import com.sdicons.json.mapper.MapperException;
-import com.sdicons.json.model.JSONValue;
+//import javax.management.Notification;
+//import javax.management.ObjectName;
+//
+//import com.sdicons.json.mapper.JSONMapper;
+//import com.sdicons.json.mapper.MapperException;
+//import com.sdicons.json.model.JSONValue;
 
 /**
  * <p>Title: NotificationMarshaller</p>
@@ -39,13 +39,13 @@ import com.sdicons.json.model.JSONValue;
  */
 public class NotificationMarshaller{
 
-	public static JSONValue toJSON(Notification notification) throws NotificationMarshallerException {
-    	try{
-    		return JSONMapper.toJSON(notification);
-    	}catch(MapperException mex){
-    		throw new NotificationMarshallerException(mex);
-    	}
-	}
+//	public static JSONValue toJSON(Notification notification) throws NotificationMarshallerException {
+//    	try{
+//    		return JSONMapper.toJSON(notification);
+//    	}catch(MapperException mex){
+//    		throw new NotificationMarshallerException(mex);
+//    	}
+//	}
 	
 //	   "message" : "STOPPED",
 //	   "sequenceNumber" : 2,
@@ -69,24 +69,24 @@ public class NotificationMarshaller{
 //	   "userData" : null
 	
 	
-	public static String toString(Notification notification) throws NotificationMarshallerException {
-		StringBuilder builder = new StringBuilder("");
-		builder.append("message^"+notification.getMessage()+"\n");
-		builder.append("sequenceNumber^"+notification.getSequenceNumber()+"\n");
-		builder.append("timestamp^"+notification.getTimeStamp()+"\n");
-		builder.append("type^"+notification.getType()+"\n");
-		builder.append("userData^"+notification.getUserData()==null?"null":notification.getUserData()+"\n");
-		if(notification.getSource() instanceof ObjectName){
-			ObjectName oName = (ObjectName)notification.getSource();
-			builder.append("\tcanonicalKeyPropertyListString^"+oName.getCanonicalKeyPropertyListString()+"\n");
-			builder.append("\tcanonicalName^"+oName.getCanonicalName()+"\n");
-			builder.append("\tdomain^"+oName.getDomain()+"\n");
-			builder.append("\tkeyPropertyListString^"+oName.getKeyPropertyListString()+"\n");
-			builder.append("\tpattern^"+oName.isPattern()+"\n");
-			builder.append("\tdomainPattern^"+oName.isDomainPattern()+"\n");
-			builder.append("\tpropertyPattern^"+oName.isPropertyPattern()+"\n");
-		}
-		return builder.toString();
-	}
+//	public static String toString(Notification notification) throws NotificationMarshallerException {
+//		StringBuilder builder = new StringBuilder("");
+//		builder.append("message^"+notification.getMessage()+"\n");
+//		builder.append("sequenceNumber^"+notification.getSequenceNumber()+"\n");
+//		builder.append("timestamp^"+notification.getTimeStamp()+"\n");
+//		builder.append("type^"+notification.getType()+"\n");
+//		builder.append("userData^"+notification.getUserData()==null?"null":notification.getUserData()+"\n");
+//		if(notification.getSource() instanceof ObjectName){
+//			ObjectName oName = (ObjectName)notification.getSource();
+//			builder.append("\tcanonicalKeyPropertyListString^"+oName.getCanonicalKeyPropertyListString()+"\n");
+//			builder.append("\tcanonicalName^"+oName.getCanonicalName()+"\n");
+//			builder.append("\tdomain^"+oName.getDomain()+"\n");
+//			builder.append("\tkeyPropertyListString^"+oName.getKeyPropertyListString()+"\n");
+//			builder.append("\tpattern^"+oName.isPattern()+"\n");
+//			builder.append("\tdomainPattern^"+oName.isDomainPattern()+"\n");
+//			builder.append("\tpropertyPattern^"+oName.isPropertyPattern()+"\n");
+//		}
+//		return builder.toString();
+//	}
 
 }

@@ -30,7 +30,7 @@
    	</bean>
 
 
-   	<beans profile="windows-malhotrs">
+   	<beans profile="windows-MalhotrS">
 	   	<bean id="IntroscopeBuilder" class="org.helios.ot.endpoint.introscope.IntroscopeEndpoint.Builder">
 	   		 <property name="agentName" value="OTServer" />
 	   		 <property name="emHost" value="dev-em" />
