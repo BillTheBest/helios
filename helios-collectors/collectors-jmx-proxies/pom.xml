@@ -20,14 +20,14 @@
 				<scope>test</scope>
 			</dependency>
 			<!-- 3rd party compile dependencies -->
-			<dependency>
+			<!--dependency>
 				<groupId>com.sdicons.jsontools</groupId>
 				<artifactId>jsontools-core</artifactId>
 			</dependency>
 			<dependency>
 				<groupId>org.json</groupId>
 				<artifactId>json</artifactId>
-			</dependency>
+			</dependency-->
 
 			<!--dependency>
 			  <groupId>jboss</groupId>

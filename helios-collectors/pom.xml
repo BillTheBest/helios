@@ -38,16 +38,16 @@
 				<version>${log4j.version}</version>
 			</dependency>
 
-			<dependency>
+			<!--dependency>
 				<groupId>com.sdicons.jsontools</groupId>
 				<artifactId>jsontools-core</artifactId>
 				<version>${jsontools-core.version}</version>
-			</dependency>
-			<dependency>
+			</dependency-->
+			<!--dependency>
 				<groupId>org.json</groupId>
 				<artifactId>json</artifactId>
 				<version>${json.version}</version>
-			</dependency>
+			</dependency-->
 			<dependency>
 			  <groupId>commons-pool</groupId>
 			  <artifactId>commons-pool</artifactId>
