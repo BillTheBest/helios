@@ -29,11 +29,11 @@
 				<artifactId>json</artifactId>
 			</dependency>
 
-			<dependency>
+			<!--dependency>
 			  <groupId>jboss</groupId>
 			  <artifactId>jbossall-client</artifactId>
 			  <scope>provided</scope>
-			</dependency>
+			</dependency-->
 
 			<dependency>
 			  <groupId>commons-collections</groupId>

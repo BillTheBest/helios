@@ -68,12 +68,12 @@
 			  <artifactId>joesnmp</artifactId>
 			  <version>${joesnmp.version}</version>
 			</dependency>
-			<dependency>
+			<!--dependency>
 			  <groupId>jboss</groupId>
 			  <artifactId>jbossall-client</artifactId>
 			  <version>${jbossall-client.version}</version>
 			  <scope>provided</scope>
-			</dependency>
+			</dependency-->
 			<dependency>
 			  <groupId>org.springframework</groupId>
 			  <artifactId>spring-beans</artifactId>

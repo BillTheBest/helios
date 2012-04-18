@@ -29,31 +29,31 @@
 				<artifactId>json</artifactId>
 			</dependency>
 
-			<dependency>
+			<!--dependency>
 			  <groupId>jboss</groupId>
-			  <artifactId>jbossall-client</artifactId>			  			  
+			  <artifactId>jbossall-client</artifactId>
 			  <scope>provided</scope>
-			</dependency>
-			
+			</dependency-->
 
-			
 
-			
+
+
+
 			<!-- helios compile dependencies -->
 			<dependency>
 				<groupId>org.helios.helios-spring</groupId>
 				<artifactId>helios-spring-core</artifactId>
-			</dependency>						
+			</dependency>
 			<dependency>
 				<groupId>org.helios.helios-ot</groupId>
 				<artifactId>helios-ot-core2</artifactId>
-			</dependency>			
+			</dependency>
 			<dependency>
 				<groupId>org.helios</groupId>
 				<artifactId>helios-scripting</artifactId>
 			</dependency>
-			
-			
+
+
 		</dependencies>
-  
+
 </project>
