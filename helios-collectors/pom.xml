@@ -17,7 +17,7 @@
 		<module>collectors-core</module>
     		<module>collectors-snmp</module>
     		<module>collectors-http</module>
-    		<module>collectors-jmx-proxies</module>
+    		<!--module>collectors-jmx-proxies</module-->
     		<module>collectors-sigar</module>
   	</modules>
 
@@ -105,11 +105,11 @@
 				<artifactId>helios-collectors-core</artifactId>
 				<version>${helios.version}</version>
 			</dependency>
-			<dependency>
+			<!--dependency>
 				  <groupId>org.helios.helios-collectors</groupId>
 				  <artifactId>collectors-jmx-proxies</artifactId>
 				<version>${helios.version}</version>
-			</dependency>
+			</dependency-->
 			<dependency>
 				<groupId>org.helios.helios-persistence</groupId>
 					<artifactId>helios-persistence-core</artifactId>

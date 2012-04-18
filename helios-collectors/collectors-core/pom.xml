@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.helios.helios-collectors</groupId>
   <artifactId>helios-collectors-core</artifactId>
-  <version>1.0-SNAPSHOT</version>  
+  <version>1.0-SNAPSHOT</version>
   <url>http://maven.apache.org</url>
 		<dependencies>
 			<!--   Test Dependencies -->
@@ -18,7 +18,7 @@
 				<artifactId>junit</artifactId>
 				<scope>test</scope>
 			</dependency>
-			
+
 			<!-- 3rd party compile dependencies -->
 			<dependency>
 				<groupId>com.sdicons.jsontools</groupId>
@@ -31,28 +31,28 @@
 
 			<dependency>
 			  <groupId>jboss</groupId>
-			  <artifactId>jbossall-client</artifactId>			  			  
+			  <artifactId>jbossall-client</artifactId>
 			  <scope>provided</scope>
 			</dependency>
-			
+
 			<dependency>
 			  <groupId>commons-collections</groupId>
 			  <artifactId>commons-collections</artifactId>
 			</dependency>
-			
+
 			<dependency>
 			  <groupId>commons-pool</groupId>
 			  <artifactId>commons-pool</artifactId>
-			  <scope>provided</scope>			  
+			  <scope>provided</scope>
 			</dependency>
-			
+
 			<dependency>
 			  <groupId>net.sf.ehcache</groupId>
 			  <artifactId>ehcache-core</artifactId>
 			</dependency>
-			
 
-			
+
+
 			<!-- helios compile dependencies -->
 			<dependency>
 				<groupId>org.helios.helios-spring</groupId>
@@ -63,27 +63,27 @@
 			  <groupId>org.springframework</groupId>
 			  <artifactId>spring-jdbc</artifactId>
 			</dependency>
-			
+
 			<dependency>
 				<groupId>org.helios</groupId>
 				<artifactId>helios-jmx</artifactId>
 			</dependency>
-			
+
 			<dependency>
 				<groupId>org.helios.helios-ot</groupId>
 				<artifactId>helios-ot-core2</artifactId>
 			</dependency>
-			
+
 			<dependency>
 				<groupId>org.helios</groupId>
 				<artifactId>helios-scripting</artifactId>
 			</dependency>
-			<dependency>
+			<!--dependency>
 			  <groupId>org.helios.helios-collectors</groupId>
 			  <artifactId>collectors-jmx-proxies</artifactId>
-			</dependency>
-			
-			
+			</dependency-->
+
+
 		</dependencies>
-  
+
 </project>
