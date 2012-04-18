@@ -25,14 +25,12 @@
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>commons-pool</groupId>
 			<artifactId>commons-pool</artifactId>
 			<version>${commons.pool.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>net.sf.ehcache</groupId>
 			<artifactId>ehcache-core</artifactId>
@@ -42,26 +40,17 @@
 		<dependency>
 			<groupId>org.helios.helios-spring</groupId>
 			<artifactId>helios-spring-core</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
-
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-jdbc</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.helios</groupId>
-			<artifactId>helios-jmx</artifactId>
-		</dependency>
-
 		<dependency>
 			<groupId>org.helios.helios-ot</groupId>
 			<artifactId>helios-ot-core2</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-scripting</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
 	</dependencies>
 

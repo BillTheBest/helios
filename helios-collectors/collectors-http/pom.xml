@@ -14,12 +14,6 @@
 	<name>collectors-http</name>
 	<url>http://maven.apache.org</url>
 	<dependencies>
-		<!-- Test Dependencies -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
 		<!-- 3rd party compile dependencies -->
 		<dependency>
 			<groupId>commons-httpclient</groupId>
@@ -35,6 +29,7 @@
 		<dependency>
 			<groupId>org.helios.helios-collectors</groupId>
 			<artifactId>helios-collectors-core</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
 	</dependencies>
 

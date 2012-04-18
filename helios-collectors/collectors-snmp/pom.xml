@@ -14,17 +14,7 @@
 	<name>collectors-snmp</name>
 	<url>http://maven.apache.org</url>
 	<dependencies>
-		<!-- Test Dependencies -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
 		<!-- 3rd party compile dependencies -->
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>joesnmp</groupId>
 			<artifactId>joesnmp</artifactId>
@@ -34,10 +24,7 @@
 		<dependency>
 			<groupId>org.helios.helios-collectors</groupId>
 			<artifactId>helios-collectors-core</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.helios.helios-ot</groupId>
-			<artifactId>helios-ot-core2</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
 	</dependencies>
 </project>
