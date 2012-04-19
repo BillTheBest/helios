@@ -39,7 +39,8 @@ public enum ClientProtocolOperation implements IProtocolOperation {
 	PING(false),
 	ECHO(false),
 	CONNECT,
-	TRACE;
+	TRACE,
+	GROOVY;
 	
 	private static final Map<Integer, ClientProtocolOperation> ORDINAL2ENUM = new EnumOrdinalMapper().getOrdinalToEnumMap(ClientProtocolOperation.class);
 

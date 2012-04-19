@@ -29,7 +29,8 @@ public @interface OpenTypeAttribute {
 	 */
 	public String description() default "";
 	/**
-	 * The open type name of the item, defaulting to "" which means the builder will guess
+	 * The open type mapping class of the item, defaulting to {@link DefaultedType} 
+	 * which means the builder will use the return type
 	 */
 	public Class<?> openType() default DefaultedType.class;
 	/**

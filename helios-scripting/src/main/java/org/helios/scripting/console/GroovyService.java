@@ -31,8 +31,8 @@ import groovy.lang.Script;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Constructor;
-import java.util.Map;
 
 import javax.management.ObjectName;
 import javax.management.openmbean.TabularData;
@@ -48,7 +48,7 @@ import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.JMXOperation;
 import org.helios.jmx.dynamic.annotations.JMXParameter;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
-import org.helios.patterns.queues.TimeoutQueueMap;
+import org.helios.patterns.queues.DecayQueueMap;
 import org.helios.scripting.manager.ConcurrentBindings;
 import org.helios.scripting.stdio.SystemStreamRedirector;
 import org.springframework.beans.factory.InitializingBean;
@@ -89,7 +89,7 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 	/** The groovy classloader */
 	protected GroovyClassLoader gcl = null;
 	/** A map of compiled scripts keyed by the source's hashcode */
-	protected Map<Integer, Script> compiled;
+	protected DecayQueueMap<Integer, Script> compiled;
 
 	/**
 	 * {@inheritDoc}
@@ -157,7 +157,7 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 		LOG.info("\n\t==============================\n\tStarting GroovyService\n\t==============================\n");
 		InputStream is = null;
 		try {
-			compiled =  new TimeoutQueueMap<Integer, Script>(compiledTimeToLive);
+			compiled =  new DecayQueueMap<Integer, Script>(compiledTimeToLive);
 			// ==================================
 			// Prepare Console Class
 			// ==================================
@@ -262,17 +262,22 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 	 */
 	@JMXOperation(name="executeScript", description="Compiles and executes the passed script")
 	public String executeScript(@JMXParameter(name="script", description="The text of the script to execute") String script) {
-		return executeScript(script, new Object[0]);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
+		executeScript(baos, baos, script, new Object[0]);
+		try { baos.flush(); } catch (Exception e) {}
+		return baos.toString();
 	}
 	
 	
 	/**
 	 * Compiles and executes the passed script.
+	 * @param out The output stream where the script's standard out will be redirected to
+	 * @param err The output stream where the script's standard err will be redirected to
 	 * @param script The script source which will be compiled only if a cached version is not available
 	 * @param args Arguments passed to script's <code>main</code>
 	 * @return The interlaced system out and err of the script.
 	 */
-	public String executeScript(String script, Object...args) {
+	public Object executeScript(OutputStream out, OutputStream err, String script, Object...args) {
 		if(script==null) {
 			throw new IllegalArgumentException("The passed script was null");
 		}		
@@ -293,12 +298,10 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 				}
 			}
 			cscript.setBinding(bindings.getGroovyBinding());
-			cscript.setProperty("args", args);
-			ByteArrayOutputStream baos = new ByteArrayOutputStream(); // need to size this better
+			cscript.setProperty("args", args);			
 			SystemStreamRedirector.install();
-			SystemStreamRedirector.set(baos, baos);
-			cscript.run();
-			return baos.toString();
+			SystemStreamRedirector.set(out, err);			
+			return cscript.run();
 		} finally {
 			SystemStreamRedirector.reset();
 		}
@@ -312,6 +315,7 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 	public long getCompiledTimeToLive() {
 		return compiledTimeToLive;
 	}
+	
 
 	/**
 	 * Sets the time-to-live on compiled scripts in ms. 
@@ -320,6 +324,25 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 	public void setCompiledTimeToLive(long compiledTimeToLive) {
 		this.compiledTimeToLive = compiledTimeToLive;
 	}
+
+	/**
+	 * Returns the number of compiled scripts in cache
+	 * @return the number of compiled scripts in cache
+	 */
+	@JMXAttribute(name="CompiledScriptSize", description="The number of compiled scripts in cache.", mutability=AttributeMutabilityOption.READ_ONLY)
+	public int getCompiledScriptSize() {
+		return compiled.size();
+	}
+	
+	/**
+	 * Returns the number of compiled scripts evicted from cache
+	 * @return the number of compiled scripts evicted from cache
+	 */
+	@JMXAttribute(name="CompiledScriptEvictions", description="The number of compiled scripts evicted from cache.", mutability=AttributeMutabilityOption.READ_ONLY)
+	public long getCompiledScriptEvictions() {
+		return compiled.getTimeOutCount();
+	}
+	
 	
 	
 }

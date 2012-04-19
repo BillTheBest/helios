@@ -130,8 +130,6 @@ public class CompositeTypeFactory {
 	/**
 	 * <p>Title: ArrayTypeDimension</p>
 	 * <p>Description: A decomposed array type</p> 
-	 * <p>Company: ICE Futures US</p>
-	 * @author Whitehead (nicholas.whitehead@theice.com)
 	 * @version $LastChangedRevision$
 	 * <p><code>com.ice.helpers.jmx.opentype.CompositeTypeFactory.ArrayTypeDimension</code></p>
 	 */

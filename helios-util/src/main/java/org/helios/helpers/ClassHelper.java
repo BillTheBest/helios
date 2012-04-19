@@ -27,6 +27,7 @@ package org.helios.helpers;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -118,14 +119,14 @@ public class ClassHelper {
 		return null;
 	}
 	
-	public static void main(String[] args) {
-		log("MethodMatch Test");
-		log("MethodMatch On Simple1:" + getMatchingMethod(MethodMatchTestClass.class, "simple", new Date()));
-		log("MethodMatch On Simple2 With int:" + getMatchingMethod(MethodMatchTestClass.class, "simple", 1, new Date()));
-		log("MethodMatch On Simple2 With Integer:" + getMatchingMethod(MethodMatchTestClass.class, "simple", new Integer(1), new Date()));
-		log("MethodMatch On Simple2 With Integer:" + getMatchingMethod(MethodMatchTestClass.class, "simple", new Long(1), new Date()));
-		
-	}
+//	public static void main(String[] args) {
+//		log("MethodMatch Test");
+//		log("MethodMatch On Simple1:" + getMatchingMethod(MethodMatchTestClass.class, "simple", new Date()));
+//		log("MethodMatch On Simple2 With int:" + getMatchingMethod(MethodMatchTestClass.class, "simple", 1, new Date()));
+//		log("MethodMatch On Simple2 With Integer:" + getMatchingMethod(MethodMatchTestClass.class, "simple", new Integer(1), new Date()));
+//		log("MethodMatch On Simple2 With Integer:" + getMatchingMethod(MethodMatchTestClass.class, "simple", new Long(1), new Date()));
+//		
+//	}
 	
 	public static void log(Object msg) {
 		System.out.println(msg);
@@ -1483,6 +1484,34 @@ public class ClassHelper {
 	
 	public static Annotation getAnnotation(Class<?> type, AnnotatedElement element, Class<? extends Annotation> ann) {
 		return type.getAnnotation(ann);
+	}
+
+	
+	/**
+	 * Returns the root component type of an array
+	 * @param array The array type 
+	 * @return the root component type or null if it is not an array
+	 */
+	public static Class<?> getArrayType(Class<?> array) {
+		if(!nvl(array, "Passed class was null").isArray()) {
+			return null;
+		}
+		Class<?> cl = array.getComponentType();
+		while(cl.isArray()) {
+			cl = cl.getComponentType();
+		}
+		return cl;
+	}
+
+	
+	public static void main(String[] args) {
+		for(int i = 1; i < 10; i++) {
+			Class<?> arr = Array.newInstance(int.class, (int[])Array.newInstance(int.class, i)).getClass();
+			log("<" + arr.getName() + ">  type: [" + getArrayType(arr).getName() + "] dimension:" + getArrayTypeDimension(arr));
+		}
+		
+		
+	
 	}
 
 	

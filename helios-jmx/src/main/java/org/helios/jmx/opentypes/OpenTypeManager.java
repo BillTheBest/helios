@@ -161,9 +161,31 @@ public class OpenTypeManager {
 	public OpenType<?> getOpenTypeOrNull(String name) {
 		return REGISTERED_OPEN_TYPES.get(ClassHelper.nvl(name, "Passed name was null"));
 	}
-		
 	
+	@SuppressWarnings("unchecked")
+	public OpenType<?> getOpenTypeOrNull(Class<?> clazz) {
+		OpenType<?> ot = null;
+		String className = ClassHelper.nvl(clazz, "Passed class was null").getName();
+		ot = REGISTERED_OPEN_TYPES.get(ClassHelper.nvl(className, "Passed name was null"));
+		if(ot==null) {
+			if(clazz.isArray()) {
+				Class<?> rootType = ClassHelper.getArrayType(clazz);
+				int dimension = ClassHelper.getArrayTypeDimension(clazz);
+				OpenType<?> rootOpenType = REGISTERED_OPEN_TYPES.get(rootType.getName());
+				if(rootOpenType!=null) {
+					try {
+						ot = new ArrayType(dimension, rootOpenType);
+						putOpenType(ot);
+					} catch (OpenDataException e) {
+						ot = null;
+					}
+				}
+			}
+		}
+		return ot;
+	}
 	
+
 	/**
 	 * Returns the named OpenType
 	 * @param name The name of the OpenType

@@ -25,6 +25,7 @@
 package org.helios.server.ot.listener.helios.protocol;
 
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -48,12 +49,17 @@ import org.helios.ot.agent.protocol.impl.ClientProtocolOperation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolInvocation;
 import org.helios.ot.agent.protocol.impl.HeliosProtocolResponse;
 import org.helios.ot.trace.Trace;
+import org.helios.scripting.console.GroovyService;
 import org.helios.server.ot.listener.helios.protocol.jmx.ChannelGroupJMXWrapper;
 import org.helios.server.ot.listener.helios.protocol.jmx.ChannelMXBean;
+import org.jboss.netty.buffer.ChannelBufferOutputStream;
+import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.buffer.DynamicChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * <p>Title: HeliosProtocolServerInvoker</p>
@@ -64,10 +70,15 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
  */
 @JMXManagedObject(annotated=true, declared=true)
 public class HeliosProtocolServerInvoker extends ManagedObjectDynamicMBean implements Processor, StartupListener, CamelContextAware {
+	/**  */
+	private static final long serialVersionUID = 3420790739743393991L;
 	/** A cache of endpoints */
 	protected final Map<String, Endpoint> endpoints = new ConcurrentHashMap<String, Endpoint>();
 	/** The camel context */
 	protected CamelContext camelContext;
+	/** The groovy service */
+	@Autowired
+	protected GroovyService groovyService = null;
 	/** Instance logger */
 	protected Logger log = Logger.getLogger(getClass());
 	/** Logger control */
@@ -113,6 +124,8 @@ public class HeliosProtocolServerInvoker extends ManagedObjectDynamicMBean imple
 			producer.asyncSend(otAgentEndpoint, exchange.copy());		
 			int traceCount = ((Trace[])hpi.getPayload()).length;
 			exchange.getOut().setBody(traceCount);
+		} else if(hpi.getOp()==ClientProtocolOperation.GROOVY.ordinal()) {
+			
 		} else if(hpi.getOp()==ClientProtocolOperation.CONNECT.ordinal()) {			
 			if(log.isDebugEnabled()) log.debug("Processing CONNECT from [" + remoteAddress + "]");
 			Channel channel = channelHandlerContext.getChannel();
@@ -142,6 +155,23 @@ public class HeliosProtocolServerInvoker extends ManagedObjectDynamicMBean imple
 			log.info(b);
 			exchange.getOut().setBody(HeliosProtocolResponse.newInstance(ClientProtocolOperation.CONNECT, requestId, (exchange.getFromRouteId() + ":" + channelId)));
 		}
+	}
+	
+	protected void processGroovyRequest(Exchange exchange, HeliosProtocolInvocation hpi, ChannelHandlerContext channelHandlerContext, Channel channel) {
+		// Call the GroovyService executeScript. Handling is as follows:
+			// The script STDOUT and STDERR will be interleaved and streamed back to the caller
+			// The return value of the script execution will be returned in a HeliosProtocolResponse
+			//		when the script execution is complete
+		// But first, we need to figure out how to make this work on the client side.....
+		
+		
+		// switch pipeline to skip encoders and only stream bytes
+		ChannelOutputStream cos = new ChannelOutputStream(channel);
+		Object[] payload = (Object[])hpi.getPayload();
+		Object retValue = groovyService.executeScript(cos, cos, payload[0].toString(), Arrays.copyOfRange(payload, 1, payload.length-1));
+		// switch pipeline back to default
+		exchange.getOut().setBody(HeliosProtocolResponse.newInstance(ClientProtocolOperation.GROOVY, hpi.getRequestId(), retValue));
+		
 	}
 	
 	/**
