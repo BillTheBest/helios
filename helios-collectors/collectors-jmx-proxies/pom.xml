@@ -19,26 +19,6 @@
 				<artifactId>junit</artifactId>
 				<scope>test</scope>
 			</dependency>
-			<!-- 3rd party compile dependencies -->
-			<!--dependency>
-				<groupId>com.sdicons.jsontools</groupId>
-				<artifactId>jsontools-core</artifactId>
-			</dependency>
-			<dependency>
-				<groupId>org.json</groupId>
-				<artifactId>json</artifactId>
-			</dependency-->
-
-			<!--dependency>
-			  <groupId>jboss</groupId>
-			  <artifactId>jbossall-client</artifactId>
-			  <scope>provided</scope>
-			</dependency-->
-
-
-
-
-
 			<!-- helios compile dependencies -->
 			<dependency>
 				<groupId>org.helios.helios-spring</groupId>

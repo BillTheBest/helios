@@ -44,11 +44,13 @@
 		<dependency>
 			<groupId>com.sdicons.jsontools</groupId>
 			<artifactId>jsontools-core</artifactId>
+			<version>${jsontools-core.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
+			<version>${json.version}</version>
 		</dependency>
 
 		<!-- helios compile dependencies -->
