@@ -554,34 +554,6 @@
 		</dependency>
 
 
-
-		<!-- ActiveMQ -->
-		<dependency>
-		  <groupId>org.apache.activemq</groupId>
-		  <artifactId>activemq-core</artifactId>
-		  <version>${activemq.version}</version>
-		</dependency>
-		<dependency>
-		  <groupId>org.apache.activemq</groupId>
-		  <artifactId>activemq-pool</artifactId>
-		  <version>${activemq.version}</version>
-		</dependency>
-		<dependency>
-		  <groupId>org.apache.activemq</groupId>
-		  <artifactId>activemq-camel</artifactId>
-		  <version>${activemq.version}</version>
-		</dependency>
-		<dependency>
-		  <groupId>org.apache.activemq</groupId>
-		  <artifactId>activemq-web</artifactId>
-		  <version>${activemq.version}</version>
-		</dependency>
-
-
-
-
-
-
 		<!--  XStream -->
 	      <dependency>
 		<groupId>com.thoughtworks.xstream</groupId>
