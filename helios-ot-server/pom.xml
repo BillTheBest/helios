@@ -71,6 +71,7 @@
 	    <dependency>
 	      <groupId>org.jboss.netty</groupId>
 	      <artifactId>netty</artifactId>
+	      <version>${netty.version}</version>
 	    </dependency>
 
 
@@ -108,6 +109,7 @@
 	<dependency>
 	  <groupId>org.codehaus.groovy</groupId>
 	  <artifactId>groovy-all</artifactId>
+	  <version>${groovy.version}</version>
 	</dependency>
 
 	<!-- ActiveMQ -->

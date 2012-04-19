@@ -179,11 +179,6 @@
 			<version>${quartz.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>javassist</groupId>
-			<artifactId>javassist</artifactId>
-			<version>${javassist.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 			<version>${servlet.version}</version>
@@ -197,24 +192,6 @@
 		  <groupId>trove</groupId>
 		  <artifactId>trove</artifactId>
   		  <version>${trove.version}</version>
-		</dependency>
-		<!-- ===============  -->
-		<dependency>
-		  <groupId>org.codehaus.groovy</groupId>
-		  <artifactId>groovy-all</artifactId>
-		  <version>${groovy.version}</version>
-		</dependency>
-		<dependency>
-		  <groupId>org.jboss.netty</groupId>
-		  <artifactId>netty</artifactId>
-		  <version>${netty.version}</version>
-		</dependency>
-
-		<!-- ehcache -->
-		<dependency>
-		  <groupId>net.sf.ehcache</groupId>
-		  <artifactId>ehcache-core</artifactId>
-		  <version>${ehcache.version}</version>
 		</dependency>
 
 		<!-- Spring Mongo DB -->

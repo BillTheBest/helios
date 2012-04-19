@@ -64,12 +64,6 @@
 		  <artifactId>trove</artifactId>
 		  <version>${trove.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>javassist</groupId>
-			<artifactId>javassist</artifactId>
-                        <version>${javassist.version}</version>
-		</dependency>
-
 	<!-- helios compile dependencies -->
 		<dependency>
 			<groupId>org.helios.helios-ot</groupId>

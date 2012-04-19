@@ -33,6 +33,7 @@
 		<dependency>
 			<groupId>javassist</groupId>
 			<artifactId>javassist</artifactId>
+			<version>${javassist.version}</version>
 		</dependency>
 		<dependency>
 		  <groupId>trove</groupId>
