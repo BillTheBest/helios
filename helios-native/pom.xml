@@ -37,11 +37,6 @@
 			<artifactId>log4j</artifactId>
 			<version>${log4j.version}</version>
 		</dependency>
-		<dependency>
-		  <groupId>org.glassfish.external</groupId>
-		  <artifactId>jmxremote_optional-repackaged</artifactId>			
-		  <version>${jmxremote-optional.version}</version>
-		</dependency>
 	      <dependency>
 		<groupId>args4j</groupId>
 		<artifactId>args4j</artifactId>

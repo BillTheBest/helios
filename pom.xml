@@ -305,30 +305,10 @@
 
 		<!-- ===============  -->
 		<dependency>
-		  <groupId>commons-httpclient</groupId>
-		  <artifactId>commons-httpclient</artifactId>
-		  <version>${httpclient.version}</version>
-		</dependency>
-		<dependency>
-		  <groupId>org.apache.commons</groupId>
-		  <artifactId>not-yet-commons-ssl</artifactId>
-		  <version>${httpclient-ssl.version}</version>
-		</dependency>
-		<dependency>
-		  <groupId>joesnmp</groupId>
-		  <artifactId>joesnmp</artifactId>
-		  <version>${joesnmp.version}</version>
-		</dependency>
-		<dependency>
 		  <groupId>org.codehaus.groovy</groupId>
 		  <artifactId>groovy-all</artifactId>
 		  <version>${groovy.version}</version>
 		</dependency>
-		<!--dependency>
-		  <groupId>jboss</groupId>
-		  <artifactId>jbossall-client</artifactId>
-		  <version>${jbossall-client.version}</version>
-		</dependency-->
 		  <dependency>
 		    <groupId>org.fusesource.jansi</groupId>
 		    <artifactId>jansi</artifactId>
@@ -339,11 +319,6 @@
 		  <artifactId>atmosphere-modules</artifactId>
 		  <version>${atmosphere.version}</version>
 		  <type>pom</type>
-		</dependency>
-		<dependency>
-		  <groupId>org.glassfish.external</groupId>
-		  <artifactId>jmxremote_optional-repackaged</artifactId>
-		  <version>${jmxremote-optional.version}</version>
 		</dependency>
 		<dependency>
 		  <groupId>org.jboss.netty</groupId>
