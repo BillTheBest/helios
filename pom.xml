@@ -166,26 +166,6 @@
 	      <scope>test</scope>
 	    </dependency>
 
-
-	<!-- 3rd party compile dependencies -->
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-		<dependency>
-		  <groupId>trove</groupId>
-		  <artifactId>trove</artifactId>
-  		  <version>${trove.version}</version>
-		</dependency>
-
-		<!-- Spring Mongo DB -->
-		  <dependency>
-		    <groupId>org.springframework.data</groupId>
-		    <artifactId>spring-data-mongodb</artifactId>
-		    <version>${spring-mongodb.version}</version>
-		  </dependency>
-
 		<!-- Spring -->
 
 		<dependency>
@@ -254,17 +234,11 @@
 		  <version>${spring.version}</version>
 		</dependency>
 
-		<dependency>
-		  <groupId>org.codehaus.redback.components.cache</groupId>
-		  <artifactId>spring-cache-ehcache</artifactId>
-		  <version>1.1</version>
-		</dependency>
-
-	    <dependency>
-		<groupId>org.reflections</groupId>
-		<artifactId>reflections</artifactId>
-		<version>${reflections.version}</version>
-	    </dependency>
+		  <dependency>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-mongodb</artifactId>
+			<version>${spring-mongodb.version}</version>
+		  </dependency>
 
 	  </dependencies>
 	</dependencyManagement>

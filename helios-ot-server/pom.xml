@@ -207,6 +207,7 @@
 	    <dependency>
 			<groupId>org.reflections</groupId>
 			<artifactId>reflections</artifactId>
+			<version>${reflections.version}</version>
 	    </dependency>
 
 
@@ -318,6 +319,7 @@
 		<dependency>
 		  <groupId>org.codehaus.redback.components.cache</groupId>
 		  <artifactId>spring-cache-ehcache</artifactId>
+		  <version>1.1</version>
 		</dependency>
 
 
