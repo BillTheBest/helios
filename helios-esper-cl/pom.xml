@@ -64,6 +64,7 @@
 		<dependency>
 			<groupId>com.espertech</groupId>
 			<artifactId>esper</artifactId>
+			<version>${esper.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>args4j</groupId>

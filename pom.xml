@@ -302,17 +302,7 @@
 		  <artifactId>json</artifactId>
 		  <version>${json.version}</version>
 		</dependency>
-		<!--  Esper -->
-		<dependency>
-			<groupId>com.espertech</groupId>
-			<artifactId>esper</artifactId>
-			<version>${esper.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.espertech</groupId>
-			<artifactId>esperio-springjms</artifactId>
-			<version>${esper.version}</version>
-		</dependency>
+
 
 		<!-- Morphia -->
 		<dependency>

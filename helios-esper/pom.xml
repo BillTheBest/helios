@@ -28,17 +28,19 @@
 		<dependency>
 			<groupId>com.espertech</groupId>
 			<artifactId>esper</artifactId>
+			<version>${esper.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.espertech</groupId>
 			<artifactId>esperio-springjms</artifactId>
+			<version>${esper.version}</version>
 		</dependency>
         <dependency>
 		  <groupId>javax.jms</groupId>
 		  <artifactId>jms</artifactId>
 		  <version>1.1</version>
          </dependency>
-				
+
 		<dependency>
 			<groupId>com.sdicons.jsontools</groupId>
 			<artifactId>jsontools-core</artifactId>
@@ -60,6 +62,6 @@
 		    <artifactId>generic-ot</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
-		
+
 	</dependencies>
 </project>
