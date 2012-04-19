@@ -26,6 +26,10 @@ package org.helios.patterns.queues;
 
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import junit.framework.Assert;
 
@@ -139,10 +143,51 @@ public class DecayQueueMapTestCase {
 		Assert.assertNull("Value returned from map was not null", value2);
 		Assert.assertEquals("DecayMap size was not 0", 0, decayMap.size());
 		Assert.assertEquals("DecayMap timeout count was not 1", 1, decayMap.getTimeOutCount());
-		
-		
+	}
+	
+	@Test
+	public void testItemRetrievedThenRemoved() throws Exception {
+		decayMap = new DecayQueueMap<Long, String>(2000);
+		Long key = System.nanoTime();
+		String value = testName.getMethodName();
+		decayMap.put(key, value);		
+		String value2 = decayMap.get(key);
+		Assert.assertNotNull("Value returned from map was null", value2);
+		Assert.assertEquals("Value returned from map was not the expected value", value, value2);
+		String value3 = decayMap.remove(key);
+		Assert.assertNotNull("Value removed from map was null", value3);
+		Assert.assertEquals("Value removed from map was not the expected value", value, value3);
+		Assert.assertEquals("DecayMap size was not 0", 0, decayMap.size());
+		Assert.assertEquals("DecayMap timeout count was not 0", 0, decayMap.getTimeOutCount());		
+	}
+	
+	@Test
+	public void testRemoveListener() throws Exception {
+		final CountDownLatch latch = new CountDownLatch(1);
+		final AtomicLong tKey = new AtomicLong(0);
+		final AtomicReference<String> tValue = new AtomicReference<String>();
+		decayMap = new DecayQueueMap<Long, String>(2000);
+		Long key = System.nanoTime();
+		String value = testName.getMethodName();
+		decayMap.put(key, value);		
+		String value2 = decayMap.get(key);
+		Assert.assertNotNull("Value returned from map was null", value2);
+		Assert.assertEquals("Value returned from map was not the expected value", value, value2);
+		decayMap.addListener(new TimeoutListener<Long, String>(){
+			public void onTimeout(Long key, String value) {
+				tKey.set(key);
+				tValue.set(value);
+				latch.countDown();
+			}
+		});
+		Assert.assertTrue("Latch did not drop within the timeout period", latch.await(2020, TimeUnit.MILLISECONDS));
+		Assert.assertEquals("Listener provided key was not the expected key", key, new Long(tKey.get()));
+		Assert.assertEquals("Listener provided value was not the expected value", value, tValue.get());
+		Assert.assertEquals("DecayMap size was not 0", 0, decayMap.size());
+		Assert.assertEquals("DecayMap timeout count was not 1", 1, decayMap.getTimeOutCount());		
 		
 	}
+	// Test variable timeouts on inserted values
 	
 
 }
