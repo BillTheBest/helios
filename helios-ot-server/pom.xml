@@ -78,6 +78,7 @@
 	<dependency>
 	  <groupId>com.h2database</groupId>
 	  <artifactId>h2</artifactId>
+	  <version>${h2.version}</version>
 	</dependency>
 
 
@@ -95,6 +96,7 @@
 	   <dependency>
 	      <groupId>com.googlecode.disruptor</groupId>
 	      <artifactId>disruptor</artifactId>
+	      <version>${disruptor.version}</version>
 	   </dependency>
 
 
@@ -408,7 +410,7 @@
 	    <dependency>
 	      <groupId>org.slf4j</groupId>
 	      <artifactId>slf4j-api</artifactId>
-	      <version>1.6.2</version>
+	      version>${slf4j.version}</version>
 	    </dependency>
 
 
