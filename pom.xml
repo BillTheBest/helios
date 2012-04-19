@@ -204,17 +204,6 @@
 		  <artifactId>groovy-all</artifactId>
 		  <version>${groovy.version}</version>
 		</dependency>
-		  <dependency>
-		    <groupId>org.fusesource.jansi</groupId>
-		    <artifactId>jansi</artifactId>
-		    <version>1.4</version>
-		  </dependency>
-		<dependency>
-		  <groupId>org.atmosphere</groupId>
-		  <artifactId>atmosphere-modules</artifactId>
-		  <version>${atmosphere.version}</version>
-		  <type>pom</type>
-		</dependency>
 		<dependency>
 		  <groupId>org.jboss.netty</groupId>
 		  <artifactId>netty</artifactId>

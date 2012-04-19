@@ -35,6 +35,7 @@
 		<dependency>
 			<groupId>net.sf.ehcache</groupId>
 			<artifactId>ehcache-core</artifactId>
+			<version>${ehcache.version}</version>
 		</dependency>
 
 		<!-- helios compile dependencies -->
