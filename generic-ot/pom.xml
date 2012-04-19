@@ -19,20 +19,7 @@
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
-	<!-- Morphia & MongoDB -->
-	<!-- 
-	<dependency>
-		<groupId>com.google.code.morphia</groupId>
-		<artifactId>morphia</artifactId>
-	</dependency>
-	<dependency>
-		<groupId>org.mongodb</groupId>
-		<artifactId>mongo-java-driver</artifactId>
-		<version>2.7.1</version>
-	</dependency>
-	-->
 
-    
   </dependencies>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

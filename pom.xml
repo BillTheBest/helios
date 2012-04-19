@@ -303,15 +303,6 @@
 		  <version>${json.version}</version>
 		</dependency>
 
-
-		<!-- Morphia -->
-		<dependency>
-			<groupId>com.google.code.morphia</groupId>
-			<artifactId>morphia</artifactId>
-			<version>${morphia.version}</version>
-		</dependency>
-
-
 		<!-- ===============  -->
 		<dependency>
 		  <groupId>commons-httpclient</groupId>
