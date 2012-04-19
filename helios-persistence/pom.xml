@@ -57,13 +57,6 @@
 		  <version>${h2.version}</version>
 		  <scope>test</scope>
 		</dependency>
-
-	<!-- 3rd party compile dependencies -->
-		<dependency>
-		  <groupId>trove</groupId>
-		  <artifactId>trove</artifactId>
-		  <version>${trove.version}</version>
-		</dependency>
 	<!-- helios compile dependencies -->
 		<dependency>
 			<groupId>org.helios.helios-ot</groupId>

@@ -174,21 +174,6 @@
 			<version>${log4j.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.opensymphony.quartz</groupId>
-			<artifactId>quartz</artifactId>
-			<version>${quartz.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>${servlet.version}</version>
-		</dependency>
-       <dependency>
-		<groupId>args4j</groupId>
-		<artifactId>args4j</artifactId>
-		<version>${args4j.version}</version>
-	      </dependency>
-		<dependency>
 		  <groupId>trove</groupId>
 		  <artifactId>trove</artifactId>
   		  <version>${trove.version}</version>
@@ -200,10 +185,6 @@
 		    <artifactId>spring-data-mongodb</artifactId>
 		    <version>${spring-mongodb.version}</version>
 		  </dependency>
-
-
-
-
 
 		<!-- Spring -->
 

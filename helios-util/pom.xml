@@ -38,6 +38,7 @@
 		<dependency>
 		  <groupId>trove</groupId>
 		  <artifactId>trove</artifactId>
+		  <version>${trove.version}</version>
 		</dependency>
 
 

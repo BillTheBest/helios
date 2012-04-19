@@ -47,6 +47,7 @@
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
+			<version>${servlet.version}</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -78,6 +79,7 @@
     <dependency>
 			<groupId>args4j</groupId>
 			<artifactId>args4j</artifactId>
+			<version>${args4j.version}</version>
     </dependency>
 <dependency>
   <groupId>org.apache.ivy</groupId>

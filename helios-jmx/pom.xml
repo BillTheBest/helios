@@ -23,6 +23,7 @@
 		<dependency>
 			<groupId>org.opensymphony.quartz</groupId>
 			<artifactId>quartz</artifactId>
+			<version>${quartz.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -34,11 +35,13 @@
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
+			<version>${servlet.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 		  <groupId>trove</groupId>
 		  <artifactId>trove</artifactId>
+		  <version>${trove.version}</version>
 		</dependency>
 
 
