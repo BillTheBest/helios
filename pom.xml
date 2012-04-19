@@ -293,11 +293,6 @@
   		  <version>${trove.version}</version>
 		</dependency>
 		<dependency>
-		  <groupId>com.rabbitmq</groupId>
-		  <artifactId>amqp-client</artifactId>
-		  <version>${rabbitmq.version}</version>
-		</dependency>
-		<dependency>
 		  <groupId>com.sdicons.jsontools</groupId>
 		  <artifactId>jsontools-core</artifactId>
 		  <version>${jsontools-core.version}</version>
