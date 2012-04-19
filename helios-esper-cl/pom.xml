@@ -82,10 +82,12 @@
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-scripting</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-esper</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
 
 		<!-- runtime dependencies -->

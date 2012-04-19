@@ -16,7 +16,7 @@
 	<!--   Test Dependencies -->
 	    <dependency>
 	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>	
+	      <artifactId>junit</artifactId>
 	      <scope>test</scope>
 	    </dependency>
 	<!-- 3rd party compile dependencies -->
@@ -46,6 +46,7 @@
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-util</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
   </dependencies>
 </project>
