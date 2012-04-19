@@ -122,6 +122,27 @@ public class DecayQueueMapTestCase {
 	}
 	
 	
+	@Test
+	public void testItemRetrievedThenRefreshed() throws Exception {
+		decayMap = new DecayQueueMap<Long, String>(1000);
+		Long key = System.nanoTime();
+		String value = testName.getMethodName();
+		decayMap.put(key, value);		
+		for(int i = 0; i < 10; i++) {
+			String value2 = decayMap.get(key);
+			Assert.assertNotNull("Value returned from map was null on loop " + i, value2);
+			Assert.assertEquals("Value returned from map was not the expected value on loop " + i, value, value2);
+			Thread.currentThread().join(500);			
+		}
+		Thread.currentThread().join(1010);
+		String value2 = decayMap.get(key);
+		Assert.assertNull("Value returned from map was not null", value2);
+		Assert.assertEquals("DecayMap size was not 0", 0, decayMap.size());
+		Assert.assertEquals("DecayMap timeout count was not 1", 1, decayMap.getTimeOutCount());
+		
+		
+		
+	}
 	
 
 }
