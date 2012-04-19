@@ -85,6 +85,7 @@
 	<dependency>
 	  <groupId>commons-dbcp</groupId>
 	  <artifactId>commons-dbcp</artifactId>
+	  <version>${commons.dbcp.version}</version>
 	</dependency>
 
 	<dependency>
@@ -410,7 +411,7 @@
 	    <dependency>
 	      <groupId>org.slf4j</groupId>
 	      <artifactId>slf4j-api</artifactId>
-	      version>${slf4j.version}</version>
+	      <version>${slf4j.version}</version>
 	    </dependency>
 
 

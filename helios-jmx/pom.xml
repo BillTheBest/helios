@@ -28,6 +28,7 @@
 		<dependency>
 			<groupId>commons-modeler</groupId>
 			<artifactId>commons-modeler</artifactId>
+			<version>${modeler.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
