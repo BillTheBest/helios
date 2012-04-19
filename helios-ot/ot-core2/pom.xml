@@ -16,36 +16,10 @@
 	<!--   Test Dependencies -->
 	    <dependency>
 	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>	
+	      <artifactId>junit</artifactId>
 	      <scope>test</scope>
 	    </dependency>
-	  
-	  <!--   
-	    <dependency>
-	      <groupId>org.apache.activemq</groupId>
-	      <artifactId>activemq-core</artifactId>
-	      <scope>test</scope>
-          <exclusions>
-              <exclusion>
-                  <groupId>org.slf4j</groupId>
-                  <artifactId>slf4j-api</artifactId>
-              </exclusion>
-              <exclusion>
-                  <groupId>org.slf4j</groupId>
-                  <artifactId>slf4j-log4j12</artifactId>
-              </exclusion>              
-          </exclusions>		  	      
-	    </dependency>
-	    
-	  
-      <dependency>
-		<groupId>com.thoughtworks.xstream</groupId>
-		<artifactId>xstream</artifactId>
-		<scope>compile</scope>
-	  </dependency>
-	  -->
-	    
-	<!-- 3rd party compile dependencies -->
+
 	<!-- helios compile dependencies -->
 		<dependency>
 			<groupId>org.helios</groupId>

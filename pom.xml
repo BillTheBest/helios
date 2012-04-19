@@ -196,12 +196,6 @@
 	</dependency-->
 
 	    <dependency>
-	      <groupId>org.slf4j</groupId>
-	      <artifactId>slf4j-log4j12</artifactId>
-	      <version>${slf4j.version}</version>
-	    </dependency>
-
-	    <dependency>
 		    <groupId>org.ubercraft.statsd</groupId>
 		    <artifactId>statsd-over-slf4j</artifactId>
 		    <version>${statsd.version}</version>
@@ -486,15 +480,6 @@
 		<artifactId>reflections</artifactId>
 		<version>${reflections.version}</version>
 	    </dependency>
-
-		<!--  JSON Libraries -->
-		<dependency>
-		  <groupId>com.googlecode.json-simple</groupId>
-		  <artifactId>json-simple</artifactId>
-		  <version>${json-simple.version}</version>
-		</dependency>
-
-
 
 	  </dependencies>
 	</dependencyManagement>
