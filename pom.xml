@@ -173,19 +173,6 @@
 			<artifactId>log4j</artifactId>
 			<version>${log4j.version}</version>
 		</dependency>
-	    <dependency>
-		    <groupId>org.ubercraft.statsd</groupId>
-		    <artifactId>statsd-over-slf4j</artifactId>
-		    <version>${statsd.version}</version>
-	    </dependency>
-
-		<dependency>
-		  <groupId>org.restlet.jee</groupId>
-		  <artifactId>org.restlet.ext.spring</artifactId>
-		  <version>${restlet.version}</version>
-		</dependency>
-
-
 		<dependency>
 			<groupId>org.opensymphony.quartz</groupId>
 			<artifactId>quartz</artifactId>
@@ -201,17 +188,7 @@
 			<artifactId>servlet-api</artifactId>
 			<version>${servlet.version}</version>
 		</dependency>
-		<dependency>
-		  <groupId>org.hibernate</groupId>
-		  <artifactId>hibernate-core</artifactId>
-		  <version>${hibernate.version}</version>
-		</dependency>
-	      <dependency>
-		<groupId>org.freemarker</groupId>
-		<artifactId>freemarker</artifactId>
-		<version>${freemarker.version}</version>
-	      </dependency>
-	      <dependency>
+       <dependency>
 		<groupId>args4j</groupId>
 		<artifactId>args4j</artifactId>
 		<version>${args4j.version}</version>
