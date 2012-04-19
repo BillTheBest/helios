@@ -103,7 +103,7 @@
 		<json-simple.version>1.1</json-simple.version>
 		<statsd.version>1.0.0</statsd.version>
 		<disruptor.version>2.7.1</disruptor.version>
-		<icu4j.version>4.8.1.1</icu4j.version>
+		<!--icu4j.version>4.8.1.1</icu4j.version-->
 		<google-data.version>1.41.5</google-data.version>
 		<morphia.version>0.99</morphia.version>
 
@@ -189,11 +189,11 @@
 	       <version>${disruptor.version}</version>
 	    </dependency>
 
-	<dependency>
+	<!--dependency>
 	  <groupId>com.ibm.icu</groupId>
 	  <artifactId>icu4j</artifactId>
 	  <version>${icu4j.version}</version>
-	</dependency>
+	</dependency-->
 
 		<!-- Google Data API -->
 
