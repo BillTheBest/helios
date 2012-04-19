@@ -56,7 +56,8 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 	protected final Set<TimeoutListener<K, V>> timeOutListeners = new CopyOnWriteArraySet<TimeoutListener<K, V>>();
 	/** The number of timeout events that have occured */
 	protected final AtomicLong timeOutCount = new AtomicLong(0L);
-	
+	/** A flag indicating that the timeout thread should keep running */
+	protected boolean running = true;
 	/** A serial number factory for timeout threads */
 	private static final AtomicLong serial = new AtomicLong(0L);
 	/** The thread group that timeout threads run in */
@@ -156,6 +157,7 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 	 * @param delayTime The timeout delay time in ms.
 	 */
 	public synchronized V put(K key, V value, long delayTime) {
+		if(!running) throw new IllegalStateException("This TimeoutQueueMap has been shutdown", new Throwable());
 		V oldValue = referenceMap.put(key, value);
 		if(oldValue!=null) {
 			timeOutQueue.remove(getKeyFor(key));
@@ -181,6 +183,7 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 	 * @param value THe value to delay
 	 */	
 	public V put(K key, V value) {
+		if(!running) throw new IllegalStateException("This TimeoutQueueMap has been shutdown", new Throwable());
 		return put(key, value, defaultDelayTime);
 	}
 	
@@ -208,7 +211,7 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
-		while(true) {
+		while(running) {
 			try {
 				TimeoutQueueMapKey<K, V> mapKey = timeOutQueue.take();
 				referenceMap.remove(mapKey.key);
@@ -216,7 +219,8 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 				for(TimeoutListener<K, V> listener: timeOutListeners) {
 					listener.onTimeout(mapKey.key, mapKey.delayed);
 				}
-			} catch (Exception e) {				
+			} catch (Exception e) {	
+				if(!running) return;
 			}
 		}
 	}
@@ -235,6 +239,12 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 	 */
 	public int getSize() {
 		return referenceMap.size();
+	}
+	
+	public void shutdown() {
+		timeoutThread.interrupt();
+		referenceMap.clear();
+		timeOutQueue.clear();
 	}
 	
 	/**
@@ -271,7 +281,7 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 		/**
 		 * Creates a new TimeoutQueueMapKey
 		 * @param key The delayed value key
-		 * @param delayed THe object to wrap as a delay
+		 * @param delayed The object to wrap as a delay
 		 * @param delayTime The number of milliseconds to delay this object for
 		 */
 		public TimeoutQueueMapKey(K key, V delayed, long delayTime) {
@@ -453,15 +463,32 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 
 
 	/**
-	 * @param m
+	 * Puts all the elements in the passed map into this map
+	 * @param m The map of members to add
 	 * @see java.util.Map#putAll(java.util.Map)
 	 */
 	public void putAll(Map<? extends K, ? extends V> m) {
+		if(!running) throw new IllegalStateException("This TimeoutQueueMap has been shutdown", new Throwable());
 		for(Map.Entry<? extends K, ? extends V> entry: m.entrySet()) {
 			put(entry.getKey(), entry.getValue());
 		}
 		referenceMap.putAll(m);
 	}
+	
+	/**
+	 * Puts all the elements in the passed map into this map
+	 * @param m The map of members to add
+	 * @param timeout The timeout in ms. of the elements being added
+	 * @see java.util.Map#putAll(java.util.Map)
+	 */
+	public void putAll(Map<? extends K, ? extends V> m, long timeout) {
+		if(!running) throw new IllegalStateException("This TimeoutQueueMap has been shutdown", new Throwable());
+		for(Map.Entry<? extends K, ? extends V> entry: m.entrySet()) {
+			put(entry.getKey(), entry.getValue(), timeout);
+		}
+		referenceMap.putAll(m);
+	}
+	
 
 	/**
 	 * 

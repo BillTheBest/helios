@@ -24,7 +24,9 @@
  */
 package org.helios.patterns.queues;
 
-import org.helios.patterns.queues.TimeoutQueueMap.TimeoutQueueMapKey;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -37,12 +39,44 @@ import org.helios.patterns.queues.TimeoutQueueMap.TimeoutQueueMapKey;
 
 public class DecayQueueMap<K, V> extends TimeoutQueueMap<K, V> {
 
-	protected TimeoutQueueMapKey<K, V> getKeyFor(K key, V value, long delayTime) {
-		return new TimeoutQueueMapKey<K, V>(key, value, delayTime);
+	/**
+	 * {@inheritDoc}
+	 * @see org.helios.patterns.queues.TimeoutQueueMap#getKeyFor(java.lang.Object, java.lang.Object, long)
+	 */
+	protected DecayQueueMapKey<K, V> getKeyFor(K key, V value, long delayTime) {
+		return new DecayQueueMapKey<K, V>(key, value, delayTime);
+	}
+	
+	/**
+	 * @param key
+	 * @return
+	 * @see java.util.Map#get(java.lang.Object)
+	 */
+	public V get(Object key) {
+		V v = referenceMap.get(key);
+		if(v!=null) {
+			/*  Need to touch key in queue
+			 * but there's no way to retrieve a reference
+			 * to the mapkey in the queue, so we have to iterate
+			 * all the keys in the queue.
+			 * Needs to be optimized. 
+			 */ 
+			boolean foundKey = false;
+			for(TimeoutQueueMapKey<K, V> k: this.timeOutQueue) {
+				if(key.equals(k.getKey())) {
+					((DecayQueueMapKey)k).touch();
+					foundKey = true;
+					break;
+				}
+			}			
+			if(!foundKey) {
+				throw new RuntimeException("Value for key [" + key + "] was found in reference map but not in decay queue. Programmer Error", new Throwable());
+			}
+		}
+		return v;
 	}
 
-	
-	
+
 	/**
 	 * Creates a new DecayQueueMap
 	 * @param defaultDelayTime
@@ -84,6 +118,48 @@ public class DecayQueueMap<K, V> extends TimeoutQueueMap<K, V> {
 		super(defaultDelayTime, initialCapacity);
 	}
 	
-	
+	/**
+	 * <p>Title: DecayQueueMapKey</p>
+	 * <p>Description: A timestamped {@link Delayed} wrapper around a referenced object</p> 
+	 * <p>Company: Helios Development Group LLC</p>
+	 * @author Whitehead (nwhitehead AT heliosdev DOT org)
+	 * <p><code>org.helios.patterns.queues.DecayQueueMap.DecayQueueMapKey</code></p>
+	 */
+	protected class DecayQueueMapKey<K, V> extends TimeoutQueueMapKey<K, V> {
+		/** The updateable delay timestamp */
+		protected final AtomicLong decayTimestamp = new AtomicLong(-1L);
+		/** The original delay time offset */
+		protected final long delayTime;
+		
+		/**
+		 * Creates a new DecayQueueMapKey
+		 * @param key
+		 * @param delayed
+		 * @param delayTime
+		 */
+		public DecayQueueMapKey(K key, V delayed, long delayTime) {
+			super(key, delayed, delayTime);
+			this.delayTime = delayTime;
+			touch();
+		}
+		
+		/**
+		 * Returns the time remaining on the delay for this object.
+		 * {@inheritDoc}
+		 * @see java.util.concurrent.Delayed#getDelay(java.util.concurrent.TimeUnit)
+		 */
+		@Override
+		public long getDelay(TimeUnit unit) {
+			return unit.convert((decayTimestamp.get()-System.currentTimeMillis()), TimeUnit.MILLISECONDS);
+		}
+		
+		/**
+		 * Touches the updateable delay timestamp
+		 */
+		public void touch() {
+			decayTimestamp.set(System.currentTimeMillis() + delayTime);
+		}
+		
+	}	
 
 }
