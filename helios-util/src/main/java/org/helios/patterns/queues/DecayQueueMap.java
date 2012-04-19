@@ -48,8 +48,10 @@ public class DecayQueueMap<K, V> extends TimeoutQueueMap<K, V> {
 	}
 	
 	/**
-	 * @param key
-	 * @return
+	 * Retrieves the object keyed by the passed key.
+	 * If the key is found, the decay timestamp of the entry is refreshed to prolong the eviction
+	 * @param key The key of the object to retrieve
+	 * @return The value bound to the passed key or null if no value was bound
 	 * @see java.util.Map#get(java.lang.Object)
 	 */
 	public V get(Object key) {
@@ -74,6 +76,15 @@ public class DecayQueueMap<K, V> extends TimeoutQueueMap<K, V> {
 			}
 		}
 		return v;
+	}
+	
+	/**
+	 * Retrieves the object keyed by the passed key but does not refresh the decay timestamp
+	 * @param key The key of the object to retrieve
+	 * @return The value bound to the passed key or null if no value was bound
+	 */
+	public V quietGet(Object key) {
+		return referenceMap.get(key);
 	}
 
 

@@ -145,6 +145,17 @@ public class DecayQueueMapTestCase {
 		Assert.assertEquals("DecayMap timeout count was not 1", 1, decayMap.getTimeOutCount());
 	}
 	
+//	@Test
+//	public void testItemRetrievedQuietly() throws Exception {
+//		decayMap = new DecayQueueMap<Long, String>(1000);
+//		Long key = System.nanoTime();
+//		String value = testName.getMethodName();
+//		decayMap.put(key, value);	
+//		for(int i = 0; i < 5; i++) {
+//			String value2 = decayMap.quietlyGet(key);
+//	}
+
+	
 	@Test
 	public void testItemRetrievedThenRemoved() throws Exception {
 		decayMap = new DecayQueueMap<Long, String>(2000);
@@ -187,7 +198,30 @@ public class DecayQueueMapTestCase {
 		Assert.assertEquals("DecayMap timeout count was not 1", 1, decayMap.getTimeOutCount());		
 		
 	}
-	// Test variable timeouts on inserted values
-	
+
+//	@Test
+//	public void testVariableDecayRates() throws Exception {
+//		final int itemCount = 5;
+//		final CountDownLatch latch = new CountDownLatch(itemCount);
+//		final AtomicLong tKey = new AtomicLong(0);
+//		final AtomicReference<String> tValue = new AtomicReference<String>();
+//		decayMap = new DecayQueueMap<Long, String>(2000);
+//		decayMap.addListener(new TimeoutListener<Long, String>(){
+//			public void onTimeout(Long key, String value) {
+//				System.out.println("Evicted [" + key + "]--[" + value + "]");
+//			}
+//		});		
+//		Long key = 0L;
+//		String value = testName.getMethodName();
+//		for(int i = 0; i < 5; i++) {
+//			decayMap.put(key+i, value + i, 300 + ((i+1))*1000);
+//		}
+//		Assert.assertEquals("DecayMap size was not 5", 5, decayMap.size());
+//		for(int i = 0; i < 5; i++) {
+//			Thread.currentThread().join(300 + ((i+1))*1000);
+//			int size = 5-(i+1);
+//			Assert.assertEquals("DecayMap size was not " + size, size, decayMap.size());
+//		}
+//	}
 
 }
