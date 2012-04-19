@@ -40,34 +40,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
-
-	<dependencyManagement>
-  <dependencies>
-	<!--   Test Dependencies -->
-	    <dependency>
-	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>
-	      <version>${junit.version}</version>
-	      <scope>test</scope>
-	    </dependency>
-		<dependency>
-		  <groupId>com.h2database</groupId>
-		  <artifactId>h2</artifactId>
-		  <version>${h2.version}</version>
-		  <scope>test</scope>
-		</dependency>
-	<!-- helios compile dependencies -->
-		<dependency>
-			<groupId>org.helios.helios-ot</groupId>
-			<artifactId>helios-ot-core2</artifactId>
-			<version>${helios.version}</version>
-		</dependency>
-
-
-  </dependencies>
-
-	</dependencyManagement>
-
-
 </project>

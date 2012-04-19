@@ -16,35 +16,4 @@
     <module>helios-sigar</module>
     <module>helios-native-jmx</module>
   </modules>
-
-	<dependencyManagement>
-	  <dependencies>
-	<!--   Test Dependencies -->
-	    <dependency>
-	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>
-	      <version>${junit.version}</version>
-	      <scope>test</scope>
-	    </dependency>
-	<!-- 3rd party compile dependencies -->
-		<dependency>
-		  <groupId>org.hyperic</groupId>
-		  <artifactId>sigar</artifactId>
-		  <version>1.6.4</version>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-
-	<!-- helios compile dependencies -->
-		<dependency>
-			<groupId>org.helios</groupId>
-			<artifactId>helios-jmx</artifactId>
-			<version>${helios.version}</version>
-		</dependency>
-	  </dependencies>
-	</dependencyManagement>
-
 </project>
