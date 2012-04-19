@@ -23,7 +23,7 @@
     <!-- <module>helios-persistence</module> -->
     <module>helios-webapp</module>
     <module>helios-ot-server</module>
-    <module>helios-native</module>
+    <!--<module>helios-native</module>-->
     <module>generic-ot</module>
   </modules>
 

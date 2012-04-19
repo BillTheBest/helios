@@ -4,3 +4,5 @@ target/
 .project
 .jdb
 *~
+EsperCL.launch
+CollectorTest.launch
