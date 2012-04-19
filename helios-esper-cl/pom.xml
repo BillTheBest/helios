@@ -64,28 +64,34 @@
 		<dependency>
 			<groupId>com.espertech</groupId>
 			<artifactId>esper</artifactId>
+			<version>${esper.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>args4j</groupId>
 			<artifactId>args4j</artifactId>
+			<version>${args4j.version}</version>
 		</dependency>
 		  <dependency>
 		    <groupId>org.fusesource.jansi</groupId>
 		    <artifactId>jansi</artifactId>
+		    <version>1.4</version>
 		  </dependency>
 		<dependency>
 		  <groupId>org.codehaus.groovy</groupId>
 		  <artifactId>groovy-all</artifactId>
+		  <version>${groovy.version}</version>
 		</dependency>
 
 		<!-- helios compile dependencies -->
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-scripting</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-esper</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
 
 		<!-- runtime dependencies -->

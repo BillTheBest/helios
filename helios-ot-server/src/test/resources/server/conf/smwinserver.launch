@@ -15,7 +15,7 @@
 <booleanAttribute key="org.eclipse.jdt.launching.DEFAULT_CLASSPATH" value="false"/>
 <stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-6"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="org.helios.spring.container.HeliosContainerMain"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-conf ./src/test/resources/server/conf&#13;&#10;-conf C:/Docume~1/malhotrs/hotdir&#13;&#10;-lib C:/Docume~1/malhotrs/hotdir&#13;&#10;-log4j ./src/test/resources/server/conf/log4j/log4j.xml&#13;&#10;-daemon"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-conf ./src/test/resources/server/conf&#13;&#10;-conf C:/Docume~1/malhotrs/hotdir&#13;&#10;-lib C:/Docume~1/malhotrs/hotdir&#13;&#10;-log4j ./src/test/resources/server/conf/log4j/log4j.xml&#13;&#10;-profiles windows-malhotrs&#13;&#10;-daemon"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="helios-ot-server"/>
 <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-XX:MaxPermSize=256m  -Xms512m -Xmx512m&#13;&#10;-Dorg.helios.ot.mod=4&#13;&#10;-Dactivemq.base=C:/tools/apache-activemq-5.5.1&#13;&#13;&#10;-Djava.rmi.server.hostname=localhost&#13;&#10;-Dorg.helios.application.name=HeliosOTServer&#13;&#10;-DAgentJVMMonitor.disable=true"/>
 </launchConfiguration>

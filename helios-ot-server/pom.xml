@@ -71,6 +71,7 @@
 	    <dependency>
 	      <groupId>org.jboss.netty</groupId>
 	      <artifactId>netty</artifactId>
+	      <version>${netty.version}</version>
 	    </dependency>
 
 
@@ -78,12 +79,14 @@
 	<dependency>
 	  <groupId>com.h2database</groupId>
 	  <artifactId>h2</artifactId>
+	  <version>${h2.version}</version>
 	</dependency>
 
 
 	<dependency>
 	  <groupId>commons-dbcp</groupId>
 	  <artifactId>commons-dbcp</artifactId>
+	  <version>${commons.dbcp.version}</version>
 	</dependency>
 
 	<dependency>
@@ -95,6 +98,7 @@
 	   <dependency>
 	      <groupId>com.googlecode.disruptor</groupId>
 	      <artifactId>disruptor</artifactId>
+	      <version>${disruptor.version}</version>
 	   </dependency>
 
 
@@ -105,22 +109,30 @@
 	<dependency>
 	  <groupId>org.codehaus.groovy</groupId>
 	  <artifactId>groovy-all</artifactId>
+	  <version>${groovy.version}</version>
 	</dependency>
 
 	<!-- ActiveMQ -->
 	<dependency>
 	  <groupId>org.apache.activemq</groupId>
 	  <artifactId>activemq-core</artifactId>
+	  <version>${activemq.version}</version>
 	</dependency>
 	<dependency>
 	  <groupId>org.apache.activemq</groupId>
 	  <artifactId>activemq-web</artifactId>
+	  <version>${activemq.version}</version>
 	</dependency>
 	<dependency>
 	  <groupId>org.apache.activemq</groupId>
 	  <artifactId>activemq-camel</artifactId>
+	  <version>${activemq.version}</version>
 	</dependency>
-
+	<dependency>
+	  <groupId>org.apache.activemq</groupId>
+	  <artifactId>activemq-pool</artifactId>
+	  <version>${activemq.version}</version>
+	</dependency>
 
 	<dependency>
 	  <groupId>opensymphony</groupId>
@@ -133,64 +145,76 @@
 	<dependency>
 	    <groupId>org.apache.camel</groupId>
 	    <artifactId>camel-netty</artifactId>
+	    <version>${camel.version}</version>
 	</dependency>
 
 
 	<dependency>
 	  <groupId>org.apache.camel</groupId>
 	  <artifactId>camel-core</artifactId>
+	  <version>${camel.version}</version>
 	</dependency>
 
 	<dependency>
 	  <groupId>org.apache.camel</groupId>
 	  <artifactId>camel-spring</artifactId>
+	  <version>${camel.version}</version>
 	</dependency>
 
 	<dependency>
 	  <groupId>org.apache.camel</groupId>
 	  <artifactId>camel-jms</artifactId>
+	  <version>${camel.version}</version>
 	</dependency>
 
 	<dependency>
 	  <groupId>org.apache.camel</groupId>
 	  <artifactId>camel-jetty</artifactId>
+	  <version>${camel.version}</version>
 	</dependency>
 
 	<dependency>
 	  <groupId>org.apache.camel</groupId>
 	  <artifactId>camel-jmx</artifactId>
+	  <version>${camel.version}</version>
 	</dependency>
 
 
 	<dependency>
 	  <groupId>org.apache.camel</groupId>
 	  <artifactId>camel-servlet</artifactId>
+	  <version>${camel.version}</version>
 	</dependency>
 
 		<dependency>
 		  <groupId>org.apache.camel</groupId>
 		  <artifactId>camel-jaxb</artifactId>
+		  <version>${camel.version}</version>
 		</dependency>
 
 		<dependency>
 		  <groupId>org.apache.camel</groupId>
 		  <artifactId>camel-jackson</artifactId>
+		  <version>${camel.version}</version>
 		</dependency>
 
 		<dependency>
 		  <groupId>org.apache.camel</groupId>
 		  <artifactId>camel-xstream</artifactId>
+		  <version>${camel.version}</version>
 		</dependency>
 
 	    <dependency>
 			<groupId>org.reflections</groupId>
 			<artifactId>reflections</artifactId>
+			<version>${reflections.version}</version>
 	    </dependency>
 
 
 		<dependency>
 		  <groupId>org.apache.camel</groupId>
 		  <artifactId>camel-web</artifactId>
+		  <version>${camel.version}</version>
 		  <type>war</type>
 		</dependency>
 
@@ -200,33 +224,39 @@
                 <dependency>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-core</artifactId>
+                    <version>${jersey-version}</version>
 		</dependency>
 
                 <dependency>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-server</artifactId>
+                    <version>${jersey-version}</version>
 		</dependency>
 
                 <dependency>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-client</artifactId>
+                    <version>${jersey-version}</version>
 		</dependency>
 
 
                 <dependency>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-json</artifactId>
+                    <version>${jersey-version}</version>
 		</dependency>
 
                 <dependency>
                     <groupId>org.codehaus.jackson</groupId>
                     <artifactId>jackson-jaxrs</artifactId>
+                    <version>${jackson.version}</version>
 		</dependency>
 
 
                 <dependency>
                     <groupId>com.sun.jersey.contribs</groupId>
                     <artifactId>jersey-spring</artifactId>
+                    <version>${jersey-version}</version>
                     <exclusions>
                     <exclusion>
           <groupId>org.springframework</groupId>
@@ -284,10 +314,12 @@
 		<dependency>
 		  <groupId>net.sf.ehcache</groupId>
 		  <artifactId>ehcache-core</artifactId>
+		  <version>${ehcache.version}</version>
 		</dependency>
 		<dependency>
 		  <groupId>org.codehaus.redback.components.cache</groupId>
 		  <artifactId>spring-cache-ehcache</artifactId>
+		  <version>1.1</version>
 		</dependency>
 
 
@@ -297,61 +329,73 @@
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-servlet</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-http</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-continuation</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-util</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-xml</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-io</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-jmx</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-annotations</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-server</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-deploy</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-websocket</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>org.eclipse.jetty</groupId>
 	      <artifactId>jetty-jsp-2.1</artifactId>
+	      <version>${jetty.version}</version>
 	    </dependency>
 
 		<!--
@@ -372,7 +416,7 @@
 	    <dependency>
 	      <groupId>org.slf4j</groupId>
 	      <artifactId>slf4j-api</artifactId>
-	      <version>1.6.2</version>
+	      <version>${slf4j.version}</version>
 	    </dependency>
 
 
@@ -381,13 +425,6 @@
 	      <artifactId>slf4j-log4j12</artifactId>
 	      <version>1.6.2</version>
 	    </dependency>
-
-
-
-		<dependency>
-		  <groupId>org.apache.activemq</groupId>
-		  <artifactId>activemq-pool</artifactId>
-		</dependency>
 
 
 	<!-- -->
@@ -434,6 +471,7 @@
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-esper</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
 
 
@@ -443,6 +481,7 @@
 		<dependency>
 		  <groupId>com.googlecode.json-simple</groupId>
 		  <artifactId>json-simple</artifactId>
+		  <version>${json-simple.version}</version>
 		</dependency>
 
 

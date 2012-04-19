@@ -24,29 +24,34 @@
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
+			<version>${log4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.espertech</groupId>
 			<artifactId>esper</artifactId>
+			<version>${esper.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.espertech</groupId>
 			<artifactId>esperio-springjms</artifactId>
+			<version>${esper.version}</version>
 		</dependency>
         <dependency>
 		  <groupId>javax.jms</groupId>
 		  <artifactId>jms</artifactId>
 		  <version>1.1</version>
          </dependency>
-				
+
 		<dependency>
 			<groupId>com.sdicons.jsontools</groupId>
 			<artifactId>jsontools-core</artifactId>
+			<version>${jsontools-core.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
+			<version>${json.version}</version>
 		</dependency>
 
 		<!-- helios compile dependencies -->
@@ -60,6 +65,6 @@
 		    <artifactId>generic-ot</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
-		
+
 	</dependencies>
 </project>

@@ -22,16 +22,18 @@
     <!-- 3rd party compile dependencies -->
 		<dependency>
 		  <groupId>com.espertech</groupId>
-		  <artifactId>esper</artifactId>		  
+		  <artifactId>esper</artifactId>
 		</dependency>
 		<dependency>
 		  <groupId>com.sdicons.jsontools</groupId>
 		  <artifactId>jsontools-core</artifactId>
+		  <version>${jsontools-core.version}</version>
 		</dependency>
-		
+
 		<dependency>
 		  <groupId>org.json</groupId>
 		  <artifactId>json</artifactId>
+		  <version>${json.version}</version>
 		</dependency>
 
 		<dependency>
@@ -39,7 +41,7 @@
 		  <artifactId>spring-context</artifactId>
 		</dependency>
 
-		
+
 	<!-- helios compile dependencies -->
                 <dependency>
                         <groupId>org.helios.helios-ot</groupId>
@@ -47,19 +49,19 @@
                         <version>${helios.version}</version>
                 </dependency>
 
-		
+
     <!-- runtime dependencies -->
 		<dependency>
 		  <groupId>cglib</groupId>
 		  <artifactId>cglib-nodep</artifactId>
 		  <version>2.2</version>
 		</dependency>
-		
+
 		<dependency>
 		  <groupId>org.antlr</groupId>
 		  <artifactId>antlr-runtime</artifactId>
 		  <version>3.2</version>
 		</dependency>
-    
+
   </dependencies>
 </project>

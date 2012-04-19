@@ -22,37 +22,43 @@
     <!-- 3rd party compile dependencies -->
 
 		<!-- Google Data API -->
-		
+
 	    <dependency>
 	      <groupId>com.google.gdata</groupId>
 	      <artifactId>gdata-core-1.0 </artifactId>
+	      <version>${google-data.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>com.google.gdata</groupId>
 	      <artifactId>gdata-client-1.0 </artifactId>
+	      <version>${google-data.version}</version>
 	    </dependency>
 
 
 	    <dependency>
 	      <groupId>com.google.gdata</groupId>
 	      <artifactId>gdata-base-1.0 </artifactId>
+	      <version>${google-data.version}</version>
 	    </dependency>
 
 
 	    <dependency>
 	      <groupId>com.google.gdata</groupId>
 	      <artifactId>gdata-docs-3.0 </artifactId>
+	      <version>${google-data.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>com.google.gdata</groupId>
 	      <artifactId>gdata-spreadsheet-3.0 </artifactId>
+	      <version>${google-data.version}</version>
 	    </dependency>
 
 	    <dependency>
 	      <groupId>com.google.gdata</groupId>
 	      <artifactId>gdata-media-1.0 </artifactId>
+	      <version>${google-data.version}</version>
 	    </dependency>
 
 
@@ -63,6 +69,6 @@
 			<artifactId>helios-ot-core2</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
-		
+
   </dependencies>
 </project>

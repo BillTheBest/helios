@@ -16,28 +16,32 @@
 	<!--   Test Dependencies -->
 	    <dependency>
 	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>	
+	      <artifactId>junit</artifactId>
 	      <scope>test</scope>
 	    </dependency>
 		<dependency>
 		  <groupId>com.h2database</groupId>
-		  <artifactId>h2</artifactId>		  
+		  <artifactId>h2</artifactId>
+		  <version>${h2.version}</version>
 		  <scope>test</scope>
-		</dependency>	    
+		</dependency>
 	<!-- 3rd party compile dependencies -->
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
+			<version>${log4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>javassist</groupId>
 			<artifactId>javassist</artifactId>
+			<version>${javassist.version}</version>
 		</dependency>
 		<dependency>
 		  <groupId>trove</groupId>
 		  <artifactId>trove</artifactId>
+		  <version>${trove.version}</version>
 		</dependency>
-		
+
 
   </dependencies>
 </project>

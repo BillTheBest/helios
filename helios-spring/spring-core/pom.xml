@@ -20,7 +20,7 @@
     		<artifactId>maven-jar-plugin</artifactId>
     		<inherited>true</inherited>
     		<configuration>
-        		<archive>                   
+        		<archive>
 		            <manifest>
 		                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 		                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
@@ -31,12 +31,12 @@
 	</plugins>
   </build>
 
-              
+
   <dependencies>
 	<!--   Test Dependencies -->
 	    <dependency>
 	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>	
+	      <artifactId>junit</artifactId>
 	      <scope>test</scope>
 	    </dependency>
 	<!-- 3rd party compile dependencies -->
@@ -47,8 +47,9 @@
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
+			<version>${servlet.version}</version>
 			<scope>compile</scope>
-		</dependency>	
+		</dependency>
 		<dependency>
 		  <groupId>org.springframework</groupId>
 		  <artifactId>spring-core</artifactId>
@@ -69,14 +70,16 @@
 		  <groupId>org.springframework</groupId>
 		  <artifactId>spring-web</artifactId>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.freemarker</groupId>
 			<artifactId>freemarker</artifactId>
+			<version>${freemarker.version}</version>
 		</dependency>
     <dependency>
 			<groupId>args4j</groupId>
 			<artifactId>args4j</artifactId>
+			<version>${args4j.version}</version>
     </dependency>
 <dependency>
   <groupId>org.apache.ivy</groupId>
@@ -89,6 +92,7 @@
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-jmx</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
   </dependencies>
 </project>

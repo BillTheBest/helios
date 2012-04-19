@@ -16,28 +16,32 @@
 	<!--   Test Dependencies -->
 	    <dependency>
 	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>	
+	      <artifactId>junit</artifactId>
 	      <scope>test</scope>
 	    </dependency>
 	<!-- 3rd party compile dependencies -->
 		<dependency>
 			<groupId>org.opensymphony.quartz</groupId>
 			<artifactId>quartz</artifactId>
+			<version>${quartz.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>commons-modeler</groupId>
 			<artifactId>commons-modeler</artifactId>
+			<version>${modeler.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
+			<version>${servlet.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 		  <groupId>trove</groupId>
 		  <artifactId>trove</artifactId>
+		  <version>${trove.version}</version>
 		</dependency>
 
 
@@ -46,6 +50,7 @@
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-util</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
   </dependencies>
 </project>

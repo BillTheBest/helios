@@ -7,7 +7,7 @@
     <artifactId>helios-persistence</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
-  
+
   <groupId>org.helios.helios-persistence</groupId>
   <artifactId>helios-persistence-core</artifactId>
   <version>1.0-SNAPSHOT</version>
@@ -17,27 +17,30 @@
 	<!--   Test Dependencies -->
 	    <dependency>
 	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>	
+	      <artifactId>junit</artifactId>
 	      <scope>test</scope>
 	    </dependency>
 		<dependency>
 		  <groupId>com.h2database</groupId>
 		  <artifactId>h2</artifactId>
 		  <scope>test</scope>
-		</dependency>	    
-	    
+		</dependency>
+
 	<!-- 3rd party compile dependencies -->
 		<dependency>
 		  <groupId>trove</groupId>
 		  <artifactId>trove</artifactId>
+		  <version>${trove.version}</version>
 		</dependency>
 		<dependency>
 		  <groupId>org.hibernate</groupId>
 		  <artifactId>hibernate-core</artifactId>
+		  <version>${hibernate.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>javassist</groupId>
 			<artifactId>javassist</artifactId>
+			<version>${javassist.version}</version>
 		</dependency>
 
 	<!-- helios compile dependencies -->
