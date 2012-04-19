@@ -27,22 +27,30 @@ package org.helios.scripting.console;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
+import groovy.lang.Script;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.util.Map;
 
 import javax.management.ObjectName;
 import javax.management.openmbean.TabularData;
 
 import org.apache.log4j.Logger;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.helios.helpers.JMXHelper;
 import org.helios.helpers.StreamHelper;
+import org.helios.helpers.StringHelper;
 import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
 import org.helios.jmx.dynamic.annotations.JMXAttribute;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
 import org.helios.jmx.dynamic.annotations.JMXOperation;
+import org.helios.jmx.dynamic.annotations.JMXParameter;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
+import org.helios.patterns.queues.TimeoutQueueMap;
 import org.helios.scripting.manager.ConcurrentBindings;
+import org.helios.scripting.stdio.SystemStreamRedirector;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -70,6 +78,8 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 	protected ApplicationContext applicationContext = null;
 	/** The useful bindings init script */
 	protected String initScript = null;
+	/** The compiled script TTL in ms. */
+	protected long compiledTimeToLive = 60000; 
 	/** The container for the useful bindings */
 	protected final ConcurrentBindings bindings = new ConcurrentBindings();
 	/** The console class */
@@ -78,7 +88,8 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 	protected Constructor<?> consoleCtor = null;
 	/** The groovy classloader */
 	protected GroovyClassLoader gcl = null;
-	
+	/** A map of compiled scripts keyed by the source's hashcode */
+	protected Map<Integer, Script> compiled;
 
 	/**
 	 * {@inheritDoc}
@@ -146,6 +157,7 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 		LOG.info("\n\t==============================\n\tStarting GroovyService\n\t==============================\n");
 		InputStream is = null;
 		try {
+			compiled =  new TimeoutQueueMap<Integer, Script>(compiledTimeToLive);
 			// ==================================
 			// Prepare Console Class
 			// ==================================
@@ -168,8 +180,7 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 			LOG.error("Failed to start GroovyService", e);
 		} finally {
 			if(is!=null) try { is.close(); } catch (Exception e) {}
-		}
-		
+		}		
 	}
 
 	/**
@@ -241,6 +252,73 @@ public class GroovyService extends ManagedObjectDynamicMBean implements Applicat
 	@JMXAttribute(name="GroovyClassLoaderString", description="The groovy class loader string", mutability=AttributeMutabilityOption.READ_ONLY)
 	public String getGroovyClassLoaderString() {
 		return gcl==null ? "Null" : gcl.toString();
+	}
+	
+	/**
+	 * Compiles and executes the passed script.
+	 * @param script The script source which will be compiled only if a cached version is not available
+	 * @param args Arguments passed to script's <code>main</code>
+	 * @return The interlaced system out and err of the script.
+	 */
+	@JMXOperation(name="executeScript", description="Compiles and executes the passed script")
+	public String executeScript(@JMXParameter(name="script", description="The text of the script to execute") String script) {
+		return executeScript(script, new Object[0]);
+	}
+	
+	
+	/**
+	 * Compiles and executes the passed script.
+	 * @param script The script source which will be compiled only if a cached version is not available
+	 * @param args Arguments passed to script's <code>main</code>
+	 * @return The interlaced system out and err of the script.
+	 */
+	public String executeScript(String script, Object...args) {
+		if(script==null) {
+			throw new IllegalArgumentException("The passed script was null");
+		}		
+		try {
+			int hash = script.hashCode();
+			Script cscript = compiled.get(hash);
+			if(cscript==null) {
+				synchronized(compiled) {
+					cscript = compiled.get(hash);
+					if(cscript==null) {
+						try {
+							cscript = new GroovyShell().parse(script);
+							compiled.put(hash, cscript);
+						} catch (CompilationFailedException cfe) {
+							return new StringBuilder("Script could not be compiled\n").append(StringHelper.formatStackTrace(cfe)).toString();
+						}
+					}
+				}
+			}
+			cscript.setBinding(bindings.getGroovyBinding());
+			cscript.setProperty("args", args);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream(); // need to size this better
+			SystemStreamRedirector.install();
+			SystemStreamRedirector.set(baos, baos);
+			cscript.run();
+			return baos.toString();
+		} finally {
+			SystemStreamRedirector.reset();
+		}
+	}
+
+	/**
+	 * Returns the time-to-live on compiled scripts in ms. 
+	 * @return the time-to-live on compiled scripts in ms.
+	 */
+	@JMXAttribute(name="CompiledTimeToLive", description="The the time-to-live on compiled scripts in ms.", mutability=AttributeMutabilityOption.READ_WRITE)
+	public long getCompiledTimeToLive() {
+		return compiledTimeToLive;
+	}
+
+	/**
+	 * Sets the time-to-live on compiled scripts in ms. 
+	 * @param compiledTimeToLive the time-to-live on compiled scripts in ms.
+	 */
+	public void setCompiledTimeToLive(long compiledTimeToLive) {
+		this.compiledTimeToLive = compiledTimeToLive;
 	}
 	
 	

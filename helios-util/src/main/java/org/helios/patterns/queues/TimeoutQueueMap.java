@@ -160,8 +160,19 @@ public class TimeoutQueueMap<K, V>  implements Runnable, Map<K, V> {
 		if(oldValue!=null) {
 			timeOutQueue.remove(getKeyFor(key));
 		}
-		timeOutQueue.add(new TimeoutQueueMapKey<K, V>(key, value, delayTime));
+		timeOutQueue.add(getKeyFor(key, value, delayTime));
 		return oldValue;
+	}
+	
+	
+	/**
+	 * @param key
+	 * @param value
+	 * @param delayTime
+	 * @return
+	 */
+	protected TimeoutQueueMapKey<K, V> getKeyFor(K key, V value, long delayTime) {
+		return new TimeoutQueueMapKey<K, V>(key, value, delayTime);
 	}
 
 	/**
