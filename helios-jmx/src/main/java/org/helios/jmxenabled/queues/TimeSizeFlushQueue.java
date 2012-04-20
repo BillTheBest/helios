@@ -125,32 +125,6 @@ public class TimeSizeFlushQueue<T> extends ManagedObjectDynamicMBean implements 
 		return defaultScheduler;
 	}
 	
-	/**
-	 * Creates the default thread pool
-	 * @return an executor
-	 */
-	private static ExecutorService getDefaultExecutor() {
-		if(defaultThreadPool==null) {
-			synchronized(threadPoolLock) {
-				if(defaultThreadPool==null) {
-					defaultThreadPool = new ThreadPoolExecutor(1, 5, 60, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1200, false), 
-						ThreadFactoryBuilder.newBuilder()
-							.setThreadGroupNamePrefix("TimeSizeFlushQueue DefaultExecutor ThreadGroup")
-							.setThreadNamePrefix("TimeSizeFlushQueue DefaultExecutor Thread")
-							.build(), 
-							new RejectedExecutionHandler() {
-								public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-									LOG.warn("DefaultExecutor rejected submited runnable [" + r.toString() + "]");
-								}
-						
-							}
-					);
-						
-				}
-			}
-		}
-		return defaultThreadPool;
-	}
 	
 	
 	
