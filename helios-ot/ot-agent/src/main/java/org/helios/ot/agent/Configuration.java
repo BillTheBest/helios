@@ -44,7 +44,9 @@ import org.helios.helpers.InetAddressHelper;
 public class Configuration {
 	/** The property name prefix for all connection properties */
 	public static final String CONNECTION_PREFIX = "org.helios.connection";	
-	
+	/** The command line argument name for passing an XML config file for the ot-agent */
+	public static final String XML_CONFIG = "-otagentxml";
+	/** The prefer IP V4 system propertys */
 	public static final String PREF_IP4 = "java.net.preferIPv4Stack";
 	
 	/** The property name for the helios ot server host name or ip address */

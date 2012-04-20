@@ -24,11 +24,15 @@
  */
 package org.helios.ot.agent;
 
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Arrays;
 
 import org.apache.log4j.BasicConfigurator;
 import org.helios.helpers.ConfigurationHelper;
+import org.helios.helpers.URLHelper;
 import org.helios.ot.agent.discovery.OTServerDiscovery;
 import org.helios.time.SystemClock;
 
@@ -44,6 +48,95 @@ public class HeliosOTClientFactory {
 
 	/** The service loader stub */
 	private static volatile HeliosOTClientProviderSet providerSet = null;
+	
+	/**
+	 * Scans the passed string array looking for command line provided XML configuration directives
+	 * and if successfully located, returns the URL of the XML configuration resource
+	 * @param commandLineArgs The string array to scan (most likely command line args)
+	 * @return The XML resource URL or null if the arguments were not found, or were demonstrably incorrect
+	 */
+	protected static URL getXMLConfigURL(String...commandLineArgs) {
+		// We're looking for the command line arguments that specify 
+		//		the argument key {X}
+		//      the config URL  {Y}
+		// try to be friendly and allow 
+		//	"{X} {Y}"     2
+		//	"{X}={Y}"     minimum: 1
+		//	"{X} = {Y}	  maximum: 3
+		//	"{X}= {Y}	  2
+		//	"{X} ={Y}	  2
+		// There are a minimum of 1 and maximum of 3 possible arguments involved
+		// So let's get the possible suspects first
+//		String[] args = getPossFrags(ManagementFactory.getRuntimeMXBean().getInputArguments().toArray(new String[0]));
+		String[] args = getPossFrags(commandLineArgs);
+		//System.out.print(Arrays.toString(args) + "  :" + args.length + "\t:");
+		String fileName = null;
+		switch (args.length) {
+		case 1:
+			String[] frags = args[0].split("=");
+			if(frags.length==2) fileName = frags[1];
+			break;
+		case 2:
+			fileName = args[1].replace("=", "");
+			break;
+		case 3:
+			fileName = args[3].replace("=", "");
+			break;
+		default:
+			break;
+		}
+		//System.out.println(fileName==null ? "NULL" : fileName.trim());
+		if(fileName!=null) {
+			fileName = fileName.trim();
+			File f = new File(fileName);
+			if(f.canRead()) {
+				return URLHelper.toURL(f);
+			} else {
+				if(URLHelper.isValidURL(fileName)) {
+					return URLHelper.toURL(fileName);
+				}				
+			}
+		}
+		return null;
+	}
+	
+	private static String[] getPossFrags(String...args) {
+		int argsLength = args.length;
+		String[] possFrags = {};
+		for(int i = 0; i < argsLength; i++) {
+			if(args[i].toLowerCase().startsWith(Configuration.XML_CONFIG)) {
+				int mal = argsLength-i;
+				int arrSize = mal>=3 ? 3 : mal==0 ? 1 : mal;
+				possFrags = new String[arrSize];
+				System.arraycopy(args, i, possFrags, 0, arrSize);
+			}
+		}
+		return possFrags;		
+	}
+	
+	public static void main(String[] args) {
+		String fn = "/home/nwhitehead/bookmarks.html";
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "="));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " ="));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "=" + fn));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " =" + fn));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "= " + fn));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " = " + fn));
+		fn = "file://home/nwhitehead/bookmarks.html";
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "=" + fn));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " =" + fn));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "= " + fn));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " = " + fn));
+
+		fn = "/home/nwhitehead/bookmarks.h";
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "=" + fn));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " =" + fn));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "= " + fn));
+		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " = " + fn));
+
+	}
+	
 	
 	/**
 	 * Returns a HeliosOTClient instance using discovery to acquire the server supplied connection URI
@@ -112,7 +205,7 @@ public class HeliosOTClientFactory {
 		return providerSet;
 	}
 	
-	public static void main(String[] args) {
+	public static void mainX(String[] args) {
 		BasicConfigurator.configure();
 		log("Loader Test");
 		try {
