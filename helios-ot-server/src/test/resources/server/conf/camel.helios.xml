@@ -213,6 +213,20 @@
   		<property name="completionTimeout" value="3000" />	
 	</bean>	    
 
+	<camelContext xmlns="http://camel.apache.org/schema/spring" trace="false" id="JMXNotificationsContext" depends-on="SubscriberRouteRegistry"  autoStartup="true"  >
+		<camel:dataFormats>
+			<camel:custom ref="JSONDataFormat"  id="JMXOTStreamDataFormatJSON"/>
+			<camel:json library="Jackson" id="JacksonDataFormatJSON"/>
+		</camel:dataFormats>
+	
+		<camel:route id="JMX2WebSockets"  >
+			<camel:from uri="jmx:platform?objectDomain=java.lang&amp;key.type=GarbageCollector&amp;key.name=PS Scavenge" />
+			<camel:marshal ref="JacksonDataFormatJSON"  />
+			<camel:multicast>				
+				<camel:to uri="log:spring.container.HeliosContainerMain?level=WARN" />
+			</camel:multicast>
+		</camel:route>
+	</camelContext>
 
 </beans>
 

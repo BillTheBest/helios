@@ -175,7 +175,7 @@ public class ManagedObjectDynamicMBean extends NotificationBroadcasterSupport im
 	 * @return an executor
 	 */
 	@SuppressWarnings("cast")
-	private static ExecutorService getDefaultExecutor() {
+	protected static ExecutorService getDefaultExecutor() {
 		if(defaultThreadPool==null) {
 			synchronized(threadPoolLock) {
 				if(defaultThreadPool==null) {

@@ -218,6 +218,8 @@
 		  <type>war</type>
 		</dependency>
 
+		
+
 		<!-- Jersey -->
 
 
@@ -471,6 +473,11 @@
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-esper</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-util</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
 
