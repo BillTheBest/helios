@@ -143,7 +143,11 @@ public class Configuration {
 		try {
 			for(Field f: Configuration.class.getDeclaredFields()) {
 				if(!Modifier.isStatic(f.getModifiers())) continue;
-				System.out.println(f.getName() + ":" + f.get(null));
+				//System.out.println(f.getName() + ":" + f.get(null));
+				String s = f.get(null).toString();
+				if(s.startsWith("org.")) {
+					System.out.println(s + "=");
+				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace(System.err);

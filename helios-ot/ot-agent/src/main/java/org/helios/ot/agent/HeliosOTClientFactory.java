@@ -25,16 +25,20 @@
 package org.helios.ot.agent;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Arrays;
+import java.util.Properties;
 
 import org.apache.log4j.BasicConfigurator;
 import org.helios.helpers.ConfigurationHelper;
 import org.helios.helpers.URLHelper;
+import org.helios.helpers.XMLHelper;
 import org.helios.ot.agent.discovery.OTServerDiscovery;
 import org.helios.time.SystemClock;
+import org.w3c.dom.Node;
 
 /**
  * <p>Title: HeliosOTClientFactory</p>
@@ -80,7 +84,7 @@ public class HeliosOTClientFactory {
 			fileName = args[1].replace("=", "");
 			break;
 		case 3:
-			fileName = args[3].replace("=", "");
+			fileName = args[2].replace("=", "");
 			break;
 		default:
 			break;
@@ -115,25 +119,42 @@ public class HeliosOTClientFactory {
 	}
 	
 	public static void main(String[] args) {
-		String fn = "/home/nwhitehead/bookmarks.html";
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "="));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " ="));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "=" + fn));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " =" + fn));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "= " + fn));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " = " + fn));
-		fn = "file://home/nwhitehead/bookmarks.html";
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "=" + fn));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " =" + fn));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "= " + fn));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " = " + fn));
-
-		fn = "/home/nwhitehead/bookmarks.h";
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "=" + fn));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " =" + fn));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "= " + fn));
-		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " = " + fn));
+		URL configUrl = getXMLConfigURL(Configuration.XML_CONFIG, "=", "./src/test/resources/agent/std/ot-agent.xml");
+		log("Config URL:" + configUrl);
+		Node doc = XMLHelper.parseXML(configUrl).getDocumentElement();
+		Node propNode = XMLHelper.getChildNodeByName(doc, "properties", false);
+		if(propNode!=null) {
+			Properties props = new Properties();
+			Properties modprops = new Properties();
+			try {
+				props.load(new StringReader(XMLHelper.getNodeTextValue(propNode).trim()));
+				for(String key: props.stringPropertyNames()) {
+					log(key + ":" + props.getProperty(key));
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+//		String fn = "/home/nwhitehead/bookmarks.html";
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "="));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " ="));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "=" + fn));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " =" + fn));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "= " + fn));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " = " + fn));
+//		fn = "file://home/nwhitehead/bookmarks.html";
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "=" + fn));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " =" + fn));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "= " + fn));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " = " + fn));
+//
+//		fn = "/home/nwhitehead/bookmarks.h";
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "=" + fn));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " =" + fn));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + "= " + fn));
+//		log("URL:" + getXMLConfigURL(Configuration.XML_CONFIG + " = " + fn));
 
 	}
 	
