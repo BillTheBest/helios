@@ -18,7 +18,7 @@
 		<dependency>
 			<groupId>org.hyperic</groupId>
 			<artifactId>sigar</artifactId>
-			<version>1.6.4</version>
+			<version>${sigar.version}</version>
 		</dependency>
 		<!-- helios compile dependencies -->
 		<dependency>

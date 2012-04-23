@@ -61,6 +61,7 @@
 		<dependency>
 		  <groupId>org.hyperic</groupId>
 		  <artifactId>sigar</artifactId>
+		  <version>${sigar.version}</version>
 		</dependency>
   </dependencies>
 </project>
