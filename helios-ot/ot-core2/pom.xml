@@ -24,6 +24,7 @@
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-jmx</artifactId>
+			<version>${helios.version}</version>
 		</dependency>
   </dependencies>
 </project>
