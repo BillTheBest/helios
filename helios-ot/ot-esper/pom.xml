@@ -54,13 +54,13 @@
 		<dependency>
 		  <groupId>cglib</groupId>
 		  <artifactId>cglib-nodep</artifactId>
-		  <version>2.2</version>
+		  <version>${cglib-nodep.version}</version>
 		</dependency>
 
 		<dependency>
 		  <groupId>org.antlr</groupId>
 		  <artifactId>antlr-runtime</artifactId>
-		  <version>3.2</version>
+		  <version>${antlr-runtime.version}</version>
 		</dependency>
 
   </dependencies>

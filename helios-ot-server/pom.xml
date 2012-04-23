@@ -92,7 +92,7 @@
 	<dependency>
 	  <groupId>org.codehaus.jettison</groupId>
 	  <artifactId>jettison</artifactId>
-	  <version>1.3</version>
+	  <version>${jettison.version}</version>
 	</dependency>
 
 	   <dependency>
@@ -137,7 +137,7 @@
 	<dependency>
 	  <groupId>opensymphony</groupId>
 	  <artifactId>sitemesh</artifactId>
-	  <version>2.5-atlassian-5</version>
+	  <version>${sitemesh.version}</version>
 	</dependency>
 
 	<!-- Camel -->
@@ -218,7 +218,7 @@
 		  <type>war</type>
 		</dependency>
 
-		
+
 
 		<!-- Jersey -->
 
@@ -321,7 +321,7 @@
 		<dependency>
 		  <groupId>org.codehaus.redback.components.cache</groupId>
 		  <artifactId>spring-cache-ehcache</artifactId>
-		  <version>1.1</version>
+		  <version>${spring-cache-ehcache.version}</version>
 		</dependency>
 
 
@@ -400,14 +400,6 @@
 	      <version>${jetty.version}</version>
 	    </dependency>
 
-		<!--
-		<dependency>
-		  <groupId>org.apache.geronimo.ext.tomcat</groupId>
-		  <artifactId>jasper</artifactId>
-		  <version>7.0.0.1</version>
-		</dependency>
-		-->
-
 	<!--   TEMP. If we use these, clean them up -->
 		<dependency>
 		  <groupId>org.apache.xbean</groupId>
@@ -415,7 +407,7 @@
 		  <version>3.8</version>
 		</dependency>
 
-	    <dependency>
+	    <!--dependency>
 	      <groupId>org.slf4j</groupId>
 	      <artifactId>slf4j-api</artifactId>
 	      <version>${slf4j.version}</version>
@@ -426,7 +418,7 @@
 	      <groupId>org.slf4j</groupId>
 	      <artifactId>slf4j-log4j12</artifactId>
 	      <version>1.6.2</version>
-	    </dependency>
+	    </dependency-->
 
 
 	<!-- -->
