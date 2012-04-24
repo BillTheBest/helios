@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.helios</groupId>
+		<artifactId>helios-collectors</artifactId>
+		<version>1.0-SNAPSHOT</version>
+	</parent>
+	<groupId>org.helios.helios-collectors</groupId>
+	<artifactId>helios-collectors-scheduler</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<url>http://maven.apache.org</url>
+	<dependencies>
+		<!-- Test Dependencies -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- 3rd party compile dependencies -->
+		<dependency>
+			<groupId>org.opensymphony.quartz</groupId>
+			<artifactId>quartz</artifactId>
+			<version>${quartz.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-modeler</groupId>
+			<artifactId>commons-modeler</artifactId>
+			<version>${modeler.version}</version>
+		</dependency>
+		<!-- helios compile dependencies -->
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-jmx</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+	</dependencies>
+
+</project>

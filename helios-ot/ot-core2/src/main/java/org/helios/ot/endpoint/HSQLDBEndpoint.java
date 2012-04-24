@@ -33,7 +33,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
-import org.helios.jmx.threadservices.scheduling.HeliosScheduler;
+//import org.helios.jmx.threadservices.scheduling.HeliosScheduler;
 import org.helios.ot.trace.Trace;
 import org.helios.ot.trace.types.ITraceValue;
 import org.helios.ot.tracer.disruptor.TraceCollection;
@@ -198,7 +198,7 @@ public class HSQLDBEndpoint<T extends Trace<? extends ITraceValue>> extends Abst
 		// for now the Collection of traces is not used as we only insert
 		// one metric per processTrace callback
 		//processTraces(null);
-		HeliosScheduler hScheduler = HeliosScheduler.getInstance();
+		//HeliosScheduler hScheduler = HeliosScheduler.getInstance();
 	}
 
 	@Override

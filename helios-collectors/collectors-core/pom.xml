@@ -30,7 +30,6 @@
 			<groupId>commons-pool</groupId>
 			<artifactId>commons-pool</artifactId>
 			<version>${commons.pool.version}</version>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>net.sf.ehcache</groupId>
@@ -42,6 +41,11 @@
 		<dependency>
 			<groupId>org.helios.helios-spring</groupId>
 			<artifactId>helios-spring-core</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.helios.helios-collectors</groupId>
+			<artifactId>helios-collectors-scheduler</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
 		<dependency>

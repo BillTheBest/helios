@@ -94,5 +94,11 @@
 			<artifactId>helios-jmx</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
+
+		<dependency>
+			  <groupId>org.helios.helios-ot</groupId>
+			  <artifactId>ot-agent</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
   </dependencies>
 </project>

@@ -65,7 +65,7 @@ import org.helios.jmx.dynamic.annotations.JMXNotificationType;
 import org.helios.jmx.dynamic.annotations.JMXNotifications;
 import org.helios.jmx.dynamic.annotations.JMXOperation;
 import org.helios.jmx.dynamic.annotations.options.AttributeMutabilityOption;
-import org.helios.jmx.threadservices.scheduling.HeliosScheduler;
+import org.helios.collectors.scheduler.HeliosScheduler;
 import org.helios.jmx.threadservices.scheduling.NamedTask;
 import org.helios.jmx.threadservices.scheduling.ObjectExecutionTask;
 import org.helios.jmx.threadservices.scheduling.ScheduledTaskHandle;

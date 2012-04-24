@@ -15,6 +15,7 @@
 	<packaging>pom</packaging>
 
 	<modules>
+		<module>collectors-scheduler</module>
 		<module>collectors-core</module>
 		<module>collectors-snmp</module>
 		<module>collectors-http</module>

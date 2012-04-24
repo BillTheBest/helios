@@ -42,7 +42,7 @@ import org.helios.collectors.jmx.connection.ConnectionVerifier;
 import org.helios.helpers.JMXHelper;
 import org.helios.jmx.dynamic.ManagedObjectDynamicMBean;
 import org.helios.jmx.dynamic.annotations.JMXManagedObject;
-import org.helios.jmx.threadservices.scheduling.HeliosScheduler;
+import org.helios.collectors.scheduler.HeliosScheduler;
 import org.helios.jmx.threadservices.scheduling.ScheduledTaskHandle;
 
 /**
