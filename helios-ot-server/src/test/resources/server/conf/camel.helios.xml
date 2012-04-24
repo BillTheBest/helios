@@ -213,6 +213,8 @@
   		<property name="completionTimeout" value="3000" />	
 	</bean>	    
 
+	<!-- Does not work in Java < 1.7 -->
+	<!--
 	<camelContext xmlns="http://camel.apache.org/schema/spring" trace="false" id="JMXNotificationsContext" depends-on="SubscriberRouteRegistry"  autoStartup="true"  >
 		<camel:dataFormats>
 			<camel:custom ref="JSONDataFormat"  id="JMXOTStreamDataFormatJSON"/>
@@ -227,6 +229,8 @@
 			</camel:multicast>
 		</camel:route>
 	</camelContext>
-
+ -->
+ 
+ 
 </beans>
 
