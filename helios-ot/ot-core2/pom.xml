@@ -19,8 +19,22 @@
 	      <artifactId>junit</artifactId>
 	      <scope>test</scope>
 	    </dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>trove</groupId>
+			<artifactId>trove</artifactId>
+			<version>${trove.version}</version>
+		</dependency>
 
-	<!-- helios compile dependencies -->
+		<!-- Helios Compile dependencies -->
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-util</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-jmx</artifactId>

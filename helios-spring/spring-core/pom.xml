@@ -18,6 +18,7 @@
     	<plugin>
     		<groupId>org.apache.maven.plugins</groupId>
     		<artifactId>maven-jar-plugin</artifactId>
+    		<version>2.3.1</version>
     		<inherited>true</inherited>
     		<configuration>
         		<archive>
@@ -33,16 +34,10 @@
 
 
   <dependencies>
-	<!--   Test Dependencies -->
-	    <dependency>
-	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>
-	      <scope>test</scope>
-	    </dependency>
 	<!-- 3rd party compile dependencies -->
 		<dependency>
-		  <groupId>org.springframework</groupId>
-		  <artifactId>spring-asm</artifactId>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -64,40 +59,28 @@
 		</dependency>
 		<dependency>
 		  <groupId>org.springframework</groupId>
-		  <artifactId>spring-expression</artifactId>
-		</dependency>
-		<dependency>
-		  <groupId>org.springframework</groupId>
 		  <artifactId>spring-web</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.freemarker</groupId>
 			<artifactId>freemarker</artifactId>
 			<version>${freemarker.version}</version>
 		</dependency>
-    <dependency>
+		<dependency>
 			<groupId>args4j</groupId>
 			<artifactId>args4j</artifactId>
 			<version>${args4j.version}</version>
-    </dependency>
-<dependency>
-  <groupId>org.apache.ivy</groupId>
-  <artifactId>ivy</artifactId>
-  <version>${ivy.version}</version>
-</dependency>
+		</dependency>
 
-
-	<!-- helios compile dependencies -->
+		<!-- Helios Compile dependencies -->
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-util</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-jmx</artifactId>
-			<version>${helios.version}</version>
-		</dependency>
-
-		<dependency>
-			  <groupId>org.helios.helios-ot</groupId>
-			  <artifactId>ot-agent</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
   </dependencies>

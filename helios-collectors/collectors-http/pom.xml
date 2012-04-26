@@ -16,6 +16,15 @@
 	<dependencies>
 		<!-- 3rd party compile dependencies -->
 		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>mx4j</groupId>
+			<artifactId>mx4j-jmx</artifactId>
+			<version>${mx4j.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>commons-httpclient</groupId>
 			<artifactId>commons-httpclient</artifactId>
 			<version>${httpclient.version}</version>

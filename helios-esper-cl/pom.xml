@@ -50,17 +50,12 @@
         </plugins>
     </build>
 
-
-
-
 	<dependencies>
-		<!--   Test Dependencies -->
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
 		<!-- 3rd party compile dependencies -->
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>com.espertech</groupId>
 			<artifactId>esper</artifactId>
@@ -76,24 +71,16 @@
 		    <artifactId>jansi</artifactId>
 		    <version>${jansi.version}</version>
 		  </dependency>
-		<dependency>
-		  <groupId>org.codehaus.groovy</groupId>
-		  <artifactId>groovy-all</artifactId>
-		  <version>${groovy.version}</version>
-		</dependency>
-
 		<!-- helios compile dependencies -->
-		<dependency>
-			<groupId>org.helios</groupId>
-			<artifactId>helios-scripting</artifactId>
-			<version>${helios.version}</version>
-		</dependency>
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-esper</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
-
-		<!-- runtime dependencies -->
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-scripting</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
 	</dependencies>
 </project>

@@ -20,6 +20,10 @@
 			<artifactId>joesnmp</artifactId>
 			<version>${joesnmp.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>
 		<!-- helios compile dependencies -->
 		<dependency>
 			<groupId>org.helios.helios-collectors</groupId>

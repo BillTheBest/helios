@@ -30,24 +30,12 @@
 	  <scope>test</scope>
 	</dependency>
 	<dependency>
-	  <groupId>org.helios</groupId>
-	  <artifactId>helios-util</artifactId>
-	  <version>${helios.version}</version>
-	  <scope>test</scope>
-	</dependency>
-
-	<dependency>
 	  <groupId>javax.activation</groupId>
 	  <artifactId>activation</artifactId>
 	  <version>${activation.version}</version>
 	  <scope>test</scope>
 	</dependency>
 	<!-- Compile Dependencies -->
-	<dependency>
-	  <groupId>org.eclipse.jetty</groupId>
-	  <artifactId>jetty-continuation</artifactId>
-	  <version>${jetty.version}</version>
-	</dependency>
 	<dependency>
 	  <groupId>javax.servlet</groupId>
 	  <artifactId>servlet-api</artifactId>
@@ -56,15 +44,17 @@
 	<dependency>
 	  <groupId>log4j</groupId>
 	  <artifactId>log4j</artifactId>
-	  <version>${log4j.version}</version>
 	</dependency>
 	<!-- Runtime Dependencies -->
-   <dependency>
+    <dependency>
         <groupId>org.mortbay.jetty</groupId>
         <artifactId>jsp-2.1-glassfish</artifactId>
         <version>${jsp-2.1-glassfish.version}</version>
     </dependency>
-
-
+	<dependency>
+		<groupId>org.helios</groupId>
+		<artifactId>helios-util</artifactId>
+		<version>${helios.version}</version>
+	</dependency>
   </dependencies>
 </project>

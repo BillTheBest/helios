@@ -12,7 +12,7 @@
   <version>1.0-SNAPSHOT</version>
   <name>ot-helios</name>
   <url>http://www.heliosdev.org/projects/helios-opentrace/core</url>
-  
+
     <build>
         <plugins>
         </plugins>
@@ -34,70 +34,65 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>2.3.1</version>
-					<configuration>						
-					    <archive>			    	
-					        <manifest>					        
+					<configuration>
+					    <archive>
+					        <manifest>
 					            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 					            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-					            <addClasspath>true</addClasspath>					         					              
+					            <addClasspath>true</addClasspath>
 					        </manifest>
 					        <manifestEntries>
-					        	 <Main-Class>org.helios.ot.helios.HeliosEndpoint</Main-Class>					        	
+					        	 <Main-Class>org.helios.ot.helios.HeliosEndpoint</Main-Class>
 					        </manifestEntries>
 					    </archive>
 					</configuration>
             	</plugin>
 	            <plugin>
 		            <artifactId>maven-assembly-plugin</artifactId>
-		            
+
 		            <configuration>
-		            	<!-- 
+		            	<!--
 			             <descriptors>
 	            			<descriptor>src/main/assembly/agent-jar.xml</descriptor>
 	          			 </descriptors>
 	          			  -->
-		            	 <finalName>ot-helios</finalName>	               
+		            	 <finalName>ot-helios</finalName>
 			              <descriptorRefs>
 			                    <descriptorRef>jar-with-dependencies</descriptorRef>
-			                    
+
 			              </descriptorRefs>
-					    <archive>					    	
-					        <manifest>					        
+					    <archive>
+					        <manifest>
 					            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 					            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-					            <addClasspath>true</addClasspath>					            
+					            <addClasspath>true</addClasspath>
 					        </manifest>
 					        <manifestEntries>
-					        	 <Main-Class>org.helios.ot.helios.HeliosEndpoint</Main-Class>					        	
+					        	 <Main-Class>org.helios.ot.helios.HeliosEndpoint</Main-Class>
 					        </manifestEntries>
-					    </archive>		              
+					    </archive>
 		            </configuration>
-	            </plugin>            	
+	            </plugin>
             </plugins>
         </pluginManagement>
     </build>
-  
-  <dependencies>
-	<!--   Test Dependencies -->
-	    <dependency>
-	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>	
-	      <scope>test</scope>
-	    </dependency>
 
-	<!-- helios compile dependencies -->
-	    <dependency>
-		    <groupId>org.helios.helios-ot</groupId>
-		    <artifactId>helios-ot-core2</artifactId>
-		    <version>${helios.version}</version>
-	    </dependency>
-	    
+  <dependencies>
+	<dependency>
+		<groupId>log4j</groupId>
+		<artifactId>log4j</artifactId>
+	</dependency>
+
+		<!-- Helios Compile dependencies -->
 		<dependency>
-			  <groupId>org.helios.helios-ot</groupId>
-			  <artifactId>ot-agent</artifactId>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-jmx</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
-	    
-
+		<dependency>
+			<groupId>org.helios.helios-ot</groupId>
+			<artifactId>ot-agent</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
   </dependencies>
 </project>

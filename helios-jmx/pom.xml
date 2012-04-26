@@ -13,39 +13,22 @@
   <name>helios-jmx</name>
   <url>http://www.heliosdev.org/projects/helios-jmx</url>
   <dependencies>
-	<!--   Test Dependencies -->
-	    <dependency>
-	      <groupId>junit</groupId>
-	      <artifactId>junit</artifactId>
-	      <scope>test</scope>
-	    </dependency>
 	<!-- 3rd party compile dependencies -->
-		<!--dependency>
-			<groupId>org.opensymphony.quartz</groupId>
-			<artifactId>quartz</artifactId>
-			<version>${quartz.version}</version>
-			<scope>provided</scope>
-		</dependency>
 		<dependency>
-			<groupId>commons-modeler</groupId>
-			<artifactId>commons-modeler</artifactId>
-			<version>${modeler.version}</version>
-			<scope>provided</scope>
-		</dependency-->
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>${servlet.version}</version>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
 		</dependency>
 		<dependency>
 		  <groupId>trove</groupId>
 		  <artifactId>trove</artifactId>
 		  <version>${trove.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>javassist</groupId>
+			<artifactId>javassist</artifactId>
+			<version>${javassist.version}</version>
+		</dependency>
 
-
-
-	<!-- helios compile dependencies -->
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-util</artifactId>

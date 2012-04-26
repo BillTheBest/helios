@@ -22,6 +22,20 @@
 
 		<!-- 3rd party compile dependencies -->
 		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>mx4j</groupId>
+			<artifactId>mx4j-jmx</artifactId>
+			<version>${mx4j.version}</version>
+		</dependency>
+		<dependency>
+		  <groupId>trove</groupId>
+		  <artifactId>trove</artifactId>
+		  <version>${trove.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
 			<version>${commons.collections.version}</version>
@@ -36,6 +50,25 @@
 			<artifactId>ehcache-core</artifactId>
 			<version>${ehcache.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
+		</dependency>
+		<dependency>
+		  <groupId>javax.servlet</groupId>
+		  <artifactId>servlet-api</artifactId>
+		  <version>${servlet.version}</version>
+		</dependency>
+		<dependency>
+		  <groupId>xml-apis</groupId>
+		  <artifactId>xml-apis</artifactId>
+		  <version>${xml-apis.version}</version>
+		</dependency>
+
 
 		<!-- helios compile dependencies -->
 		<dependency>
@@ -56,6 +89,11 @@
 		<dependency>
 			<groupId>org.helios</groupId>
 			<artifactId>helios-scripting</artifactId>
+			<version>${helios.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.helios</groupId>
+			<artifactId>helios-util</artifactId>
 			<version>${helios.version}</version>
 		</dependency>
 	</dependencies>

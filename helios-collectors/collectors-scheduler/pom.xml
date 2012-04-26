@@ -13,11 +13,9 @@
 	<version>1.0-SNAPSHOT</version>
 	<url>http://maven.apache.org</url>
 	<dependencies>
-		<!-- Test Dependencies -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
 		</dependency>
 
 		<!-- 3rd party compile dependencies -->
@@ -31,6 +29,12 @@
 			<artifactId>commons-modeler</artifactId>
 			<version>${modeler.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>mx4j</groupId>
+			<artifactId>mx4j-jmx</artifactId>
+			<version>${mx4j.version}</version>
+		</dependency>
+
 		<!-- helios compile dependencies -->
 		<dependency>
 			<groupId>org.helios</groupId>

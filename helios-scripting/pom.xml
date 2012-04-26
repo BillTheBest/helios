@@ -23,10 +23,8 @@
 	<dependency>
 		<groupId>log4j</groupId>
 		<artifactId>log4j</artifactId>
-		<version>${log4j.version}</version>
 	</dependency>
 
-	<!-- 3rd party runtime dependencies -->
 	<dependency>
 	  <groupId>org.codehaus.groovy</groupId>
 	  <artifactId>groovy-all</artifactId>
@@ -36,15 +34,20 @@
 		<groupId>org.springframework</groupId>
 		<artifactId>spring-context</artifactId>
     </dependency>
+    <dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-beans</artifactId>
+    </dependency>
 
-
-    <!-- helios compile dependencies -->
 	<dependency>
 		<groupId>org.helios</groupId>
-	    <artifactId>helios-jmx</artifactId>
-	    <version>${helios.version}</version>
+		<artifactId>helios-util</artifactId>
+		<version>${helios.version}</version>
 	</dependency>
-
-
+	<dependency>
+		<groupId>org.helios</groupId>
+		<artifactId>helios-jmx</artifactId>
+		<version>${helios.version}</version>
+	</dependency>
   </dependencies>
 </project>
