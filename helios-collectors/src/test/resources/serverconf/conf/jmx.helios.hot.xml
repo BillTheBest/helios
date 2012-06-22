@@ -36,7 +36,7 @@
         <property name="availabilityAttribute" value="State" />
         <property name="availabilitySegment" value="JMX,JBoss"/>
         <property name="traceMXBeans" value="false"/>
-        
+
 
         <property name="jmxObjects">
             <list>
@@ -67,9 +67,9 @@
             </list>
         </property>
     </bean>
-    
-    
-    
+
+
+
     <bean id="DataSources" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss.jca:service=ManagedConnectionPool,*"/>
         <property name="targetAttributeTraces">
@@ -111,33 +111,7 @@
             </list>
         </property>
     </bean>
-    
-    
-    <!-- 
-   <bean id="Entities" class="org.helios.collectors.jmx.JMXObject">
-        <property name="targetObjectName" value="com.ice.ecs.entity:service=ExclusiveLockInterceptor,*"/>
-        <property name="targetAttributeTraces">
-            <list>
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
-                    <property name="targetAttributeName" value="ThreadsHoldingLocksCount"/>
-                    <property name="segmentPrefixElements" value="Entities"/>
-                    <property name="segment" value="{TARGET-PROPERTY:class}"/>
-                             <property name="defaultValue" value="0"/>
-                    <property name="traceType" value="STICKY_INT_AVG"/>
-                </bean>
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace">
-                    <property name="targetAttributeName" value="Invalidations"/>
-                    <property name="segmentPrefixElements" value="Entities"/>
-                    <property name="segment" value="{TARGET-PROPERTY:class}"/>
-                    <property name="defaultValue" value="0"/>
-                    <property name="traceType" value="STICKY_INT_AVG"/>
-                </bean>
-                
-            </list>
-        </property>
-    </bean>    
-    -->
-    
+
     <bean id="JBossMQ" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss.mq.destination:service=Queue,*"/>
         <property name="targetAttributeTraces">
@@ -161,9 +135,9 @@
                 </bean>
             </list>
         </property>
-    </bean>        
-    
-    
+    </bean>
+
+
     <bean name="DestinationManagerAvailability" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss.mq:service=DestinationManager"/>
         <property name="targetAttributeTraces">
@@ -181,8 +155,8 @@
                 </bean>
             </list>
         </property>
-    </bean>    
-    
+    </bean>
+
     <bean name="State2Availability" class="org.helios.collectors.jmx.ScriptObjectFormatter">
         <property name="scriptBean">
             <bean class="org.helios.scripting.ScriptBean">
@@ -204,7 +178,7 @@
         </property>
         <property name="metricName" value="Availability"/>
     </bean>
-    
+
     <bean id="CollectBSExceptionScript" class="org.helios.scripting.ScriptBeanWrapper">
         <property name="scriptBean">
             <bean class="org.helios.scripting.ScriptBean">

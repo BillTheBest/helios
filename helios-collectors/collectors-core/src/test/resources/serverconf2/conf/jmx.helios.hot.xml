@@ -5,22 +5,22 @@
    xmlns:p="http://www.springframework.org/schema/p"
    xmlns:c="http://www.springframework.org/schema/c"
    xmlns:util="http://www.springframework.org/schema/util"
-   xsi:schemaLocation="http://www.springframework.org/schema/beans 
+   xsi:schemaLocation="http://www.springframework.org/schema/beans
    					   http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
    					   http://www.springframework.org/schema/jee
 					   http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
 					   http://www.springframework.org/schema/util
 					   http://www.springframework.org/schema/util/spring-util-3.1.xsd
-					   http://www.springframework.org/schema/util 
+					   http://www.springframework.org/schema/util
 					   http://www.springframework.org/schema/util/spring-util-3.1.xsd"
     default-init-method="start" default-destroy-method="destroy">
 
     <bean id="HeliosNotificationListener" class="org.helios.collectors.notification.HeliosNotificationListener"
     		 factory-method="getInstance" depends-on="HeliosExecutorService" c:_0-ref="HeliosExecutorService" />
 
-    <bean id="HeliosExecutorService" class="java.util.concurrent.Executors" 
+    <bean id="HeliosExecutorService" class="java.util.concurrent.Executors"
     		factory-method="newFixedThreadPool" c:_0="5" />
-	
+
 	<bean id="MBeanServerConnectionPoolFactory" class="org.helios.collectors.jmx.MBeanServerConnectionPool" scope="prototype"  >
 		<property name="maxActive" value="5" />
 		<property name="maxIdle" value="3" />
@@ -29,8 +29,8 @@
 		<property name="testOnBorrow" value="true" />
 		<property name="timeBetweenEvictionRunsMillis" value="10000" />
 	</bean>
-	
-	
+
+
     <bean id="Jndi_MBeanServer" class="org.helios.collectors.jmx.JNDIMBeanServerConnectionFactory" init-method="start" destroy-method="stop">
     	<constructor-arg>
 			<util:properties>
@@ -38,10 +38,10 @@
 	             <prop key="java.naming.provider.url">localhost:1099</prop>
 	             <prop key="jndi.name">jmx/invoker/RMIAdaptor</prop>
 			</util:properties>
-		</constructor-arg>    
+		</constructor-arg>
     	<property name="serverIdentifierClassName" value="JBossMBeanServerIdentifier" />
     </bean>
-    
+
     <!--
     <bean id="HeliosHQ_Jndi_MBeanServer" class="org.helios.collectors.jmx.JNDIMBeanServerConnectionFactory" init-method="start" destroy-method="stop">
     	<constructor-arg>
@@ -50,21 +50,21 @@
 	             <prop key="java.naming.provider.url">helioshq:1099</prop>
 	             <prop key="jndi.name">jmx/invoker/RMIAdaptor</prop>
 			</util:properties>
-		</constructor-arg>    
+		</constructor-arg>
     	<property name="serverIdentifierClassName" value="JBossMBeanServerIdentifier" />
     </bean>
     -->
-    
-    
-<!--    
-    <bean id="JMXUrl_MBeanServer" class="org.helios.collectors.jmx.JMXServiceURLConnectionFactory" 
-    		c:_0="service:jmx:rmi://10.230.13.67:2097/jndi/rmi://10.230.13.67:2098/jmxconnectord" />
-    		
--->    		
 
-    <bean id="JBossJMX" class="org.helios.collectors.jmx.JMXCollector" 
+
+<!--
+    <bean id="JMXUrl_MBeanServer" class="org.helios.collectors.jmx.JMXServiceURLConnectionFactory"
+    		c:_0="service:jmx:rmi://10.230.13.67:2097/jndi/rmi://10.230.13.67:2098/jmxconnectord" />
+
+-->
+
+    <bean id="JBossJMX" class="org.helios.collectors.jmx.JMXCollector"
     	depends-on="TracerFactory"
-        c:_0-ref="Jndi_MBeanServer" 
+        c:_0-ref="Jndi_MBeanServer"
         p:objectName="org.helios.collectors:type=JMXCollector,name=JBoss"
         p:logErrors="true"
         p:logCollectionResult="true"
@@ -104,9 +104,9 @@
             </list>
         </property>
     </bean>
-    
-    
-    
+
+
+
     <bean id="DataSources" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss.jca:service=ManagedConnectionPool,*"/>
         <property name="targetAttributeTraces">
@@ -140,7 +140,7 @@
             </list>
         </property>
     </bean>
-    
+
     <bean name="DestinationManagerAvailability" class="org.helios.collectors.jmx.JMXObject">
         <property name="targetObjectName" value="jboss.mq:service=DestinationManager"/>
         <property name="targetAttributeTraces">
@@ -158,56 +158,8 @@
                 </bean>
             </list>
         </property>
-    </bean>      
+    </bean>
 
-   <bean id="Entities" class="org.helios.collectors.jmx.JMXObject">
-        <property name="targetObjectName" value="com.ice.ecs.entity:service=ExclusiveLockInterceptor,*"/>
-        <property name="targetAttributeTraces">
-            <list>
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="ThreadsHoldingLocksCount"
-                    p:segmentPrefixElements="Entities"
-                    p:segment="{TARGET-PROPERTY:class}"
-                    p:traceType="STICKY_INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="Invalidations"
-                    p:segmentPrefixElements="Entities"
-                    p:segment="{TARGET-PROPERTY:class}"
-                    p:traceType="LONG_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="InvalidPojoCount"
-                    p:segmentPrefixElements="Entities"
-                    p:segment="{TARGET-PROPERTY:class}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="CachedPojoCount"
-                    p:segmentPrefixElements="Entities"
-                    p:segment="{TARGET-PROPERTY:class}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="ActiveLocks"
-                    p:segmentPrefixElements="Entities"
-                    p:segment="{TARGET-PROPERTY:class}"
-                    p:traceType="LONG_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="Revalidations"
-                    p:segmentPrefixElements="Entities"
-                    p:segment="{TARGET-PROPERTY:class}"
-                    p:traceType="LONG_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="RevalidationFailures"
-                    p:segmentPrefixElements="Entities"
-                    p:segment="{TARGET-PROPERTY:class}"
-                    p:traceType="LONG_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="WaitingThreadCount"
-                    p:segmentPrefixElements="Entities"
-                    p:segment="{TARGET-PROPERTY:class}"
-                    p:traceType="INT_AVG" />
-            </list>
-        </property>
-    </bean>    
-    
     <bean name="State2Availability" class="org.helios.collectors.jmx.ScriptObjectFormatter">
         <property name="scriptBean">
             <bean class="org.helios.scripting.ScriptBean">
@@ -222,7 +174,7 @@
         </property>
         <property name="metricName" value="Availability"/>
     </bean>
-    
+
     <bean id="CollectBSExceptionScript" class="org.helios.scripting.ScriptBeanWrapper">
         <property name="scriptBean">
             <bean class="org.helios.scripting.ScriptBean">
@@ -236,98 +188,5 @@
             </bean>
         </property>
     </bean>
-    
-    <bean id="JBossQueues" class="org.helios.collectors.jmx.JMXObject">
-        <property name="targetObjectName" value="com.ecs.jms.destinations:service=jboss,type=Queue,*"/>
-        <property name="targetAttributeTraces">
-            <list>
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="MessageCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="STICKY_INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="DeliveringCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="ScheduledMessageCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="ConsumerCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-            </list>
-        </property>
-    </bean>
-    
-    <bean id="JBossTopics" class="org.helios.collectors.jmx.JMXObject">
-        <property name="targetObjectName" value="com.ecs.jms.destinations:service=jboss,type=Topic,*"/>
-        <property name="targetAttributeTraces">
-            <list>
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="AllMessageCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="STICKY_INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="DurableMessageCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="NonDurableMessageCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="AllSubscriptionsCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="DurableSubscriptionsCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="NonDurableSubscriptionsCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-            </list>
-        </property>
-    </bean>        
 
-    <bean id="MQQueues" class="org.helios.collectors.jmx.JMXObject">
-        <property name="targetObjectName" value="com.ecs.jms.destinations:service=jboss,type=Queue,*"/>
-        <property name="targetAttributeTraces">
-            <list>
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="MessageCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="STICKY_INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="DeliveringCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="ScheduledMessageCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-                <bean class="org.helios.collectors.jmx.JMXAttributeTrace"
-                    p:targetAttributeName="ConsumerCount"
-                    p:segmentPrefixElements="JMS,{TARGET-PROPERTY:service},{TARGET-PROPERTY:type}s"
-                    p:segment="{TARGET-PROPERTY:name}"
-                    p:traceType="INT_AVG" />
-            </list>
-        </property>
-    </bean>
 </beans>

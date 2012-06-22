@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this software; if not, write to the Free
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org. 
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  *
  */
 package org.helios.collectors.jmx.tracers;
@@ -28,8 +28,8 @@ import org.helios.collectors.jmx.AbstractObjectFormatter;
 
 /**
  * <p>Title: ServiceMBeanStateTracer</p>
- * <p>Description: Simple Tracer to interpret whether an 
- * MBean is online based on value for attribute state returned by an MBean Server</p> 
+ * <p>Description: Simple Tracer to interpret whether an
+ * MBean is online based on value for attribute state returned by an MBean Server</p>
  * <p>Company: Helios Development Group</p>
  * @author Whitehead (whitehead.nicholas@gmail.com)
  */
@@ -37,16 +37,15 @@ public class ServiceMBeanStateFormatter extends AbstractObjectFormatter {
 
 	/**
 	 * Reads a string value, converts to an int, then returns 1 if the value is 3 and 0 for all other values.
-	 * @param obj An object presumed to be an Integer. 
-	 * @return A 1 if the service is <code>Started</code> (3) or 0. 
-	 * @see com.adp.sbs.metrics.tracing.collectors.jmx.IObjectFormatter#renderTracingValue(java.lang.Object)
+	 * @param obj An object presumed to be an Integer.
+	 * @return A 1 if the service is <code>Started</code> (3) or 0.
 	 */
 	public String format(Object obj) {
 		try {
 			Integer state = (Integer)obj;
-			if(state.intValue()==3) 
+			if(state.intValue()==3)
 				return "1";
-			else 
+			else
 				return "0";
 		} catch (Exception e) {
 			return "0";
