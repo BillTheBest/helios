@@ -2,10 +2,10 @@
 <launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
 <stringAttribute key="bad_container_name" value="\helios-ot-server\src\test\resources\server\con"/>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/helios-spring-core/src/main/java/org/helios/spring/container/HeliosContainerMain.java"/>
+<listEntry value="/helios-ot-server"/>
 </listAttribute>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
-<listEntry value="1"/>
+<listEntry value="4"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-6"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="org.helios.spring.container.HeliosContainerMain"/>

@@ -15,6 +15,7 @@ set CMD_LINE=%CMD_LINE% -lib %M2_REPO%\org\helios\helios-ot-server\1.0-SNAPSHOT
 set CMD_LINE=%CMD_LINE% -lib %M2_REPO%\org\helios\helios-collectors\helios-collectors-core\1.0-SNAPSHOT 
 set CMD_LINE=%CMD_LINE% -lib %M2_REPO%\org\helios\helios-scripting\1.0-SNAPSHOT 
 set CMD_LINE=%CMD_LINE% -lib %M2_REPO%\org\helios\helios-ot\helios-ot-core2\1.0-SNAPSHOT 
+set CMD_LINE=%CMD_LINE% -lib C:/tools/jboss-eap-5.1/jboss-as/client/jbossjmx-ant.jar 
 set SYS_PROPS=
 set JAVA_OPTS=
 

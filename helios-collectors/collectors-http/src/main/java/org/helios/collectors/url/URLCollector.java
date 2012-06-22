@@ -576,9 +576,10 @@ public class URLCollector extends SocketAbstractCollector {
 								holder = new char[BYTES_TO_READ];
 								bytesRead = reader.read(holder,0,BYTES_TO_READ);
 							}
-							log.info("Time taken for success/failure pattern matcher: " + (System.currentTimeMillis() - startT));
+							tracer.traceSticky(contentSize, "Content Size", getTracingNameSpace());
+							log.debug("Time taken for success/failure pattern matcher: " + (System.currentTimeMillis() - startT));
 						}catch(IOException iox){
-							//Ignore
+							log.debug("An error occured while matching the success/failure pattern..." + iox.getMessage());
 						}		
 						
 						if(failureContentMatched==1) 
@@ -606,10 +607,10 @@ public class URLCollector extends SocketAbstractCollector {
 					reader.close();
 				}
 				tracer.traceSticky(availability, defaultAvailabilityLabel, getTracingNameSpace());
+				tracer.trace(1, httpResponseCode+"", StringHelper.append(getTracingNameSpace(),true,"Response Codes"));
 				//tracer.traceSticky(httpResponseCode, "Response Code", getTracingNameSpace());
 				//tracer.traceStickyDelta(1, httpResponseCode+"", StringHelper.append(getTracingNameSpace(),true,"Response Codes"));
-				tracer.traceIncident(1, httpResponseCode+"", StringHelper.append(getTracingNameSpace(),true,"Response Codes"));
-				tracer.traceSticky(contentSize, "Content Size", getTracingNameSpace());
+				//tracer.traceIncident(1, httpResponseCode+"", StringHelper.append(getTracingNameSpace(),true,"Response Codes"));
 				tracer.traceSticky(System.currentTimeMillis()-startTime, "Elapsed Time", getTracingNameSpace());
 				if(successContentPattern != null){
 					tracer.traceSticky(successContentMatched, "Success Content Match", getTracingNameSpace());
